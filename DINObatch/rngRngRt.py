@@ -25,7 +25,7 @@ import socket
 import pdb
 import scipy.integrate as integ
 import scipy.io as io
-import spiceypy as SP
+# import spiceypy as SP
 
 import numpy as np
 
