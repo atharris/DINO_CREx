@@ -16,17 +16,6 @@ __date__ = '$Date$'[7:26]
 #                     I M P O R T     L I B R A R I E S
 ################################################################################
 
-import os
-import pickle
-import sys
-import time
-import optparse
-import socket
-import pdb
-import scipy.integrate as integ
-import scipy.io as io
-import spiceypy as SP
-
 import numpy as np
 
 import math

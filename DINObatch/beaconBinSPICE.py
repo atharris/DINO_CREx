@@ -16,21 +16,8 @@ __date__ = '$Date$'[7:26]
 #                     I M P O R T     L I B R A R I E S
 ################################################################################
 
-import os
-import pickle
-import sys
-import time
-import optparse
-import socket
-import pdb
-import scipy.integrate as integ
-import scipy.io as io
-import spiceypy as SP
+
 import numpy as np
-
-from rngRngRt import fncH
-from rngRngRt import fncG
-
 from numpy.random import normal as rndNrm
 
 
@@ -46,7 +33,6 @@ def getObs(input):
     observation_uncertainty = input[1]
     extras = input[-1]
     n_beacons = extras['n_beacons']
-
     # number of observations in a mini observation set per beacon
     n_obs = extras['n_obs']
 
@@ -69,7 +55,6 @@ def getObs(input):
     # pattern repeats until the last beacon in the list of 
     # possible objects has been reached. After this, the pattern repeats once again
     bin_size = n_obs * n_beacons
-
     # The largest number of whole bins that it will take to get as close as possible to the
     # amount of provided data samples
     n_bins = n_samples / bin_size
@@ -205,7 +190,7 @@ def putObs( input ) :
       
 
    for ii in xrange( n_samples ) :
-      print wow
+      print 'wow'
       
    return obs_data
 
