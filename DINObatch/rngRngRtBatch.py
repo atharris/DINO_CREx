@@ -16,20 +16,8 @@ __date__ = '$Date$'[7:26]
 #                     I M P O R T     L I B R A R I E S
 ################################################################################
 
-import os
-import pickle
-import sys
-import time
-import optparse
-import socket
-import pdb
-import scipy.integrate as integ
-import scipy.io as io
-import spiceypy as SP
-
 import numpy as np
 
-import math
 ################################################################################
 #                  E X P O R T     F U N C T I O N S:
 ################################################################################
@@ -78,7 +66,6 @@ def fncG(input):
     # create array to be twice the size of the number of beacons. this is because there are
     # two data types: range and range rate
     G = np.zeros((n_beacons,2))
-
     for ii in xrange(n_beacons):
         beacon_state = SPICE_data[ii,:]
        

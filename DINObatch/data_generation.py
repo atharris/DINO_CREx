@@ -1,16 +1,19 @@
 # data_generation.py
 
-import os
-import pickle
-import sys
-import time
-import optparse
-import socket
-import pdb
-import scipy.integrate as integ
-import scipy.io as io
-import spiceypy as SP
-import matplotlib.pyplot as plt
+import sys, os, inspect
+
+filename = inspect.getframeinfo(inspect.currentframe()).filename
+path = os.path.dirname(os.path.abspath(filename))
+bskName = 'Basilisk'
+dinoName = 'DINO_CREx'
+splitPath = path.split(bskName)
+splitPath2 = path.split(dinoName)
+bskSpicePath = splitPath2[0] + bskName + '/External/EphemerisData/'
+bskPath = splitPath[0] + '/' + bskName + '/'
+sys.path.append(bskPath + 'modules')
+sys.path.append(bskPath + 'PythonModules')
+
+import pyswice
 import numpy as np
 
 
@@ -18,14 +21,18 @@ def generate_data(sc_ephem_file, planet_beacons,
                   beacon_ids, n_observations=10,
                   start_et=None, end_et=None, ref='J2000'):
     # Load Ephemeris Files
-    SP.furnsh(sc_ephem_file)
-    SP.furnsh('SPICE/de430.bsp')
-    SP.furnsh('SPICE/epoch_11JUL2020.bsp')
-    # SP.furnsh('SPICE/mar097.bsp')
-    SP.furnsh('SPICE/naif0011.tls')
+    pyswice.furnsh_c(sc_ephem_file)
+    pyswice.furnsh_c(bskSpicePath + 'de430.bsp')
+    pyswice.furnsh_c('SPICE/epoch_11JUL2020.bsp')
+    #pyswice.furnsh_c('SPICE/mar097.bsp')
+    pyswice.furnsh_c('SPICE/naif0011.tls')
 
-    #for beacon_id in beacon_ids:
-    #    SP.furnsh('SPICE/' + str(beacon_id) + '.bsp')
+    for beacon in planet_beacons:
+        found = pyswice.new_intArray(1)
+        pyswice.intArray_setitem(found, 0, 0)
+        beaconid = pyswice.new_intArray(1)
+        pyswice.bodn2c_c(beacon, beaconid, found)
+        beacon_ids.append(pyswice.intArray_getitem(beaconid, 0))
 
     # Identify Spacecraft Body
     body_id = -100  # SP.spkobj(sc_ephem_file)
@@ -56,28 +63,42 @@ def generate_data(sc_ephem_file, planet_beacons,
 
     sc_states = []
     for t in observation_times:
-        sc_states.append(SP.spkezr(targ=body_id_str, et=t, ref=ref, abcorr='None', obs='SUN')[0])
+        state = pyswice.new_doubleArray(6)
+        lt = pyswice.new_doubleArray(1)
+        stateArray = np.zeros(6)
+        pyswice.spkezr_c(body_id_str, t, ref, 'None', 'SUN', state, lt)
+        for i in range(6):
+            stateArray[i] = pyswice.doubleArray_getitem(state, i)
+        sc_states.append(stateArray)
     ephemerides = {'spacecraft': np.array(sc_states).T}
 
-    planet_ids = {'mercury': '1', 'venus': '2', 'earth': '3', 'mars':'4', 'jupiter':'5'}
-    for planet in planet_beacons:
-        planet = planet.lower()
-
-        states = []
-        for t in observation_times:
-            planet_id = planet_ids[planet]
-            states.append(SP.spkezr(targ=planet_id, et=t, ref=ref, abcorr='None', obs='SUN')[0])
-
-        ephemerides[planet] = np.array(states).T
+    # for planet in planet_beacons:
+    #     planet = planet.lower()
+    #
+    #     states = []
+    #     for t in observation_times:
+    #         stateArray = np.zeros(6)
+    #         state = pyswice.new_doubleArray(6)
+    #         lt = pyswice.new_doubleArray(1)
+    #         pyswice.spkezr_c(body_id_str, t, ref, 'None', 'SUN', state, lt)
+    #         for i in range(6):
+    #             stateArray[i] = pyswice.doubleArray_getitem(state, i)
+    #         sc_states.append(stateArray)
+    #
+    #     ephemerides[planet] = np.array(states).T
 
     for beacon_id in beacon_ids:
         beacon_states = []
         for t in observation_times:
-            beacon_states.append(
-                SP.spkezr(targ=str(beacon_id), et=t, ref=ref, abcorr='None', obs='SUN')[0])
+            stateArray = np.zeros(6)
+            state = pyswice.new_doubleArray(6)
+            lt = pyswice.new_doubleArray(1)
+            pyswice.spkezr_c(str(beacon_id), t, ref, 'None', 'SUN', state, lt)
+            for i in range(6):
+                stateArray[i] = pyswice.doubleArray_getitem(state, i)
+            beacon_states.append(stateArray)
         beacon_states = np.array(beacon_states).T
         ephemerides[str(beacon_id)] = np.array(beacon_states)
-
     return ephemerides, observation_times
 
 # generate_data(sc_ephem_file='Ephem1.bsp', beacon_ephem_files=[], n_observations=100,

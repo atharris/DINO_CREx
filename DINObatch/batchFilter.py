@@ -16,16 +16,7 @@ __date__ = '$Date$'[7:26]
 #                     I M primary_index O R T     L I B R A R I E secondary_indices
 ################################################################################
 
-import os
-import pickle
-import sys
-import time
-import optparse
-import socket
-import pdb
 import scipy.integrate as integ
-import scipy.io as io
-import spiceypy as SP
 import numpy as np
 
 from rngRngRtBatch import fncH
@@ -159,7 +150,6 @@ def run_batch( input ) :
   
   # execute propagation
   state      = runRef( prop_input )
-
   ref_state  = np.copy( state )
 
   ##################################################################################
@@ -185,22 +175,21 @@ def run_batch( input ) :
 
   # inputs for Y_refs (G) calculation
   G_ref_inputs = ( ref_state[:,0:n_state], SPICE_data_GH, extras )
-  
+
   # calculate the estimated observables and organize into an array
   Y_refs = fncG( G_ref_inputs )
 
   # using the inputs of G, calculate the H matrix
   H_inputs = ( ref_state[:,0:n_state], SPICE_data_GH, extras )
   H_tilde   = fncH( H_inputs )
- 
+
   # calculate the deviation of the observables ( Y - G )
   y    = Y_obs['data'] - Y_refs
 
   # initiate an array to hold the filtered covariances
   P_array = np.zeros( (n_samples, n_state, n_state) )
-
   # cycle through the observations/reference states and build up the filter data
-  for ii in xrange( n_samples ) :
+  for ii in xrange( extras['n_obs'] ) :
       # pull out the STM
       phi_t_t0  = np.reshape( ref_state[ii,n_state:], (n_state,n_state) )
       # matrix multiply the H matrix at time tii with that of the contemporary STM
@@ -250,7 +239,8 @@ def run_batch( input ) :
   Y_est = fncG( G_est_inputs )
 
   # compute the postfits using the updated observables and the measured values
-  postfits = Y_obs['data'] - Y_est
+  postfits = y
+
 
   # store various arrays in a data dictionary
   extra_data                      = {}
