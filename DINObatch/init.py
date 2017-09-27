@@ -134,7 +134,7 @@ def main():
 
     # body vector for SUN, EARTH, MARS
     # CODE RELIES ON SUN BEING INDEXED AS 0
-    extras['bodies'] = ['SUN', '1', '2']
+    extras['bodies'] = ['SUN', '3', '399']
 
     # specify primary and secondary
     extras['primary'] = 0
@@ -162,8 +162,10 @@ def main():
     extras['SNC'] = (2*10**(-4))**3
 
     # Number of batch iterations
-    extras['iterations'] = 2
+    extras['iterations'] = 3
 
+    # Initializing the error
+    extras['x_hat_0'] = 0
 
     ##################################################################################
     #
@@ -181,16 +183,19 @@ def main():
 
     # a priori uncertainty for the ref_states
     P_bar = np.zeros((IC.shape[0], IC.shape[0]))
-    P_bar[0, 0] = 5000**2
-    P_bar[1, 1] = 5000**2
-    P_bar[2, 2] = 5000**2
-    P_bar[3, 3] = .005**2
-    P_bar[4, 4] = .005**2
-    P_bar[5, 5] = .005**2
+    P_bar[0, 0] = 10**2
+    P_bar[1, 1] = 10**2
+    P_bar[2, 2] = 10**2
+    P_bar[3, 3] = .01**2
+    P_bar[4, 4] = .01**2
+    P_bar[5, 5] = .01**2
+
+    position_error = np.zeros(3)
+    velocity_error = np.zeros(3)
 
     # add uncertainty to the IC
-    position_error = 500 * np.divide(IC[0:3], norm(IC[0:3]))
-    velocity_error = .005 * np.divide(IC[3:6], norm(IC[3:6]))
+    position_error = 5 * np.divide(IC[0:3], norm(IC[0:3]))
+    velocity_error = .05 * np.divide(IC[3:6], norm(IC[3:6]))
 
     IC += np.append(position_error, velocity_error)
 
@@ -242,6 +247,9 @@ def main():
     # compare the estimated and true trajectories: estimated state errors
     err_hat = est_state[:, 0:6] - true_ephem['spacecraft'].T
 
+    print 'Estimated x_hat_0 = ', extra_data['x_hat_0']
+    print 'Actual Error = ' , position_error , velocity_error
+
     print 'Last X Pos err = ' + str(err[-1, 0])
     print 'Last Y Pos err = ' + str(err[-1, 1])
     print 'Last Z Pos err = ' + str(err[-1, 2])
@@ -276,14 +284,14 @@ def main():
     plt.ylabel('x (km)')
     plt.xticks([])
     plt.title('Position')
-    plt.ylim((-np.max(x_hat_array[:,0:3]), np.max(x_hat_array[:,0:3])))
+    plt.ylim((-np.max(stand_devs[:, 0]), np.max(stand_devs[:, 0])))
 
     plt.subplot(323)
     plt.plot(t_span, stand_devs[:, 1], 'r--', t_span, -1 * stand_devs[:, 1], 'r--')
     plt.plot(t_span, x_hat_array[:, 1], 'k.')
     plt.ylabel('y (km)')
     plt.xticks([])
-    plt.ylim((-np.max(x_hat_array[:,0:3]), np.max(x_hat_array[:,0:3])))
+    plt.ylim((-np.max(stand_devs[:, 1]), np.max(stand_devs[:, 1])))
 
     plt.subplot(325)
     plt.plot(t_span, stand_devs[:, 2], 'r--', t_span, -1 * stand_devs[:, 2], 'r--')
@@ -292,7 +300,7 @@ def main():
     plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
     ax = plt.gca()
     ax.set_xticklabels(['t_0', 't_f'])
-    plt.ylim((-np.max(x_hat_array[:,0:3]), np.max(x_hat_array[:,0:3])))
+    plt.ylim((-np.max(stand_devs[:, 2]), np.max(stand_devs[:, 2])))
 
     plt.subplot(322)
     plt.plot(t_span, stand_devs[:, 3], 'r--', t_span, -1 * stand_devs[:, 3], 'r--')
@@ -300,7 +308,7 @@ def main():
     plt.ylabel('vx (km/s)')
     plt.xticks([])
     plt.title('Velocity')
-    plt.ylim((-np.max(x_hat_array[:,3:6]), np.max(x_hat_array[:,3:6])))
+    plt.ylim((-np.max(stand_devs[:, 3]), np.max(stand_devs[:, 3])))
 
 
     plt.subplot(324)
@@ -308,7 +316,7 @@ def main():
     plt.plot(t_span, x_hat_array[:, 4], 'k.')
     plt.ylabel('vy (km/s)')
     plt.xticks([])
-    plt.ylim((-np.max(x_hat_array[:,3:6]), np.max(x_hat_array[:,3:6])))
+    plt.ylim((-np.max(stand_devs[:, 4]), np.max(stand_devs[:, 4])))
 
     plt.subplot(326)
     plt.plot(t_span, stand_devs[:, 5], 'r--', t_span, -1 * stand_devs[:, 5], 'r--')
@@ -317,7 +325,7 @@ def main():
     plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
     ax = plt.gca()
     ax.set_xticklabels(['t_0', 't_f'])
-    plt.ylim((-np.max(x_hat_array[:,3:6]), np.max(x_hat_array[:,3:6])))
+    plt.ylim((-np.max(stand_devs[:, 5]), np.max(stand_devs[:, 5])))
 
     plt.suptitle('State Errors and Standard Deviations')
     plt.tight_layout()
@@ -424,8 +432,8 @@ def main():
     plt.figure(4)
     plt.subplot(121)
     plt.plot(t_span, prefits[:, 0], '.')
-    plt.plot(t_span, 3*np.ones(len(t_span))*observation_uncertainty[0,0], 'r--')
-    plt.plot(t_span, -3*np.ones(len(t_span))*observation_uncertainty[0,0], 'r--')
+    plt.plot(t_span, 3*np.ones(len(t_span))*observation_uncertainty[0,0]**2, 'r--')
+    plt.plot(t_span, -3*np.ones(len(t_span))*observation_uncertainty[0,0]**2, 'r--')
     plt.xticks([])
     plt.title('Range (km)')
     plt.ylabel('Residual')
@@ -435,8 +443,8 @@ def main():
 
     plt.subplot(122)
     plt.plot(t_span, prefits[:, 1], '.')
-    plt.plot(t_span, 3*np.ones(len(t_span))*observation_uncertainty[1,1], 'r--')
-    plt.plot(t_span, -3*np.ones(len(t_span))*observation_uncertainty[1,1], 'r--')
+    plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
+    plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
     plt.xticks([])
     plt.title('Range Rate (km/s)')
     plt.xticks(t_span, rotation=90, ha='right')
@@ -451,8 +459,8 @@ def main():
     plt.figure(5)
     plt.subplot(121)
     plt.plot(t_span, postfits[:, 0], '.')
-    plt.plot(t_span, 3*np.ones(len(t_span))*observation_uncertainty[0,0], 'r--')
-    plt.plot(t_span, -3*np.ones(len(t_span))*observation_uncertainty[0,0], 'r--')
+    plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[0,0]), 'r--')
+    plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[0,0]), 'r--')
     plt.xticks([])
     plt.ylabel('Residual')
     plt.title('Range (km)')
@@ -462,8 +470,8 @@ def main():
 
     plt.subplot(122)
     plt.plot(t_span, postfits[:, 1], '.')
-    plt.plot(t_span, 3*np.ones(len(t_span))*observation_uncertainty[1,1], 'r--')
-    plt.plot(t_span, -3*np.ones(len(t_span))*observation_uncertainty[1,1], 'r--')
+    plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
+    plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
     plt.xticks([])
     plt.title('Range Rate (km/s)')
     plt.xticks(t_span, rotation=90, ha='right')
@@ -643,7 +651,7 @@ def main():
     plt.suptitle('Est. State - True Ephem.')
     plt.tight_layout()
     plt.subplots_adjust(top=.9)
-    plt.savefig('Figures/State Deviation Est Truth.png', dpi=300, format='png')
+    plt.savefig('Figures/State Deviation Est - Truth.png', dpi=300, format='png')
     return
 
 
