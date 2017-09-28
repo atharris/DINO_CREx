@@ -162,7 +162,7 @@ def main():
     extras['SNC'] = (2*10**(-4))**3
 
     # Number of batch iterations
-    extras['iterations'] = 3
+    extras['iterations'] = 4
 
     # Initializing the error
     extras['x_hat_0'] = 0
@@ -183,25 +183,25 @@ def main():
 
     # a priori uncertainty for the ref_states
     P_bar = np.zeros((IC.shape[0], IC.shape[0]))
-    P_bar[0, 0] = 10**2
-    P_bar[1, 1] = 10**2
-    P_bar[2, 2] = 10**2
-    P_bar[3, 3] = .01**2
-    P_bar[4, 4] = .01**2
-    P_bar[5, 5] = .01**2
+    P_bar[0, 0] = 10000**2
+    P_bar[1, 1] = 10000**2
+    P_bar[2, 2] = 10000**2
+    P_bar[3, 3] = .1**2
+    P_bar[4, 4] = .1**2
+    P_bar[5, 5] = .1**2
 
     position_error = np.zeros(3)
     velocity_error = np.zeros(3)
 
     # add uncertainty to the IC
-    position_error = 5 * np.divide(IC[0:3], norm(IC[0:3]))
-    velocity_error = .05 * np.divide(IC[3:6], norm(IC[3:6]))
+    position_error = 5000 * np.divide(IC[0:3], norm(IC[0:3]))
+    velocity_error = 0.05 * np.divide(IC[3:6], norm(IC[3:6]))
 
     IC += np.append(position_error, velocity_error)
 
     # uncertainty to be added in the form of noise to the measurables. Takes the form of variance
     observation_uncertainty = np.identity(2)
-    observation_uncertainty[0, 0] = 10 ** 2
+    observation_uncertainty[0, 0] = 0.1 ** 2
     observation_uncertainty[1, 1] = .0005 ** 2
 
     # the initial STM is an identity matrix
