@@ -189,7 +189,7 @@ def run_batch( input ) :
   # initiate an array to hold the filtered covariances
   P_array = np.zeros( (n_samples, n_state, n_state) )
   # cycle through the observations/reference states and build up the filter data
-  for ii in xrange( extras['n_obs'] ) :
+  for ii in xrange(n_samples) :
       # pull out the STM
       phi_t_t0  = np.reshape( ref_state[ii,n_state:], (n_state,n_state) )
       # matrix multiply the H matrix at time tii with that of the contemporary STM
@@ -208,14 +208,14 @@ def run_batch( input ) :
   ##################################################################################
     
   # perform least squares on the info_matrix and observation matrix to compute the residuals
-  x_hat = np.linalg.lstsq( info_matrix, normal_matrix )[0]
+  x_hat = np.reshape(np.linalg.lstsq( info_matrix, normal_matrix )[0], [6])
 
   # initiate a filtered ref_state
   est_state = np.zeros( (ref_state.shape[0],n_state) )
 
   # initiate an array to hold the filtered covariances
   # P_array = np.zeros( (n_samples, n_state, n_state) )
-  
+
   # the first filtered covariance is the inverse of the covariance matrix
   P = aInv( info_matrix )
 
@@ -234,12 +234,14 @@ def run_batch( input ) :
 
   # inputs for Y_est (G) calculation
   G_est_inputs = ( est_state[:,0:n_state], SPICE_data_GH, extras )
-  
+
   # calculate the estimated observables and organize into an array
   Y_est = fncG( G_est_inputs )
 
   # compute the postfits using the updated observables and the measured values
-  postfits = y
+  postfits = np.zeros([np.shape(x_hat_array)[0], np.shape(y)[1]])
+  for ii in range(np.shape(x_hat_array)[0]):
+    postfits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*ii:2+2*ii,:], x_hat_array[ii,:])
 
 
   # store various arrays in a data dictionary
@@ -249,6 +251,8 @@ def run_batch( input ) :
   extra_data['x_hat_array']       = x_hat_array
   extra_data['prefit residuals']  = y
   extra_data['postfit residuals'] = postfits
+  extras['x_hat_0']               += x_hat
+  extra_data['x_hat_0']           = extras['x_hat_0']
 
 
   return ref_state, est_state, extra_data
