@@ -162,7 +162,7 @@ def main():
     extras['SNC'] = (2*10**(-4))**3
 
     # Number of batch iterations
-    extras['iterations'] = 4
+    extras['iterations'] = 5
 
     # Initializing the error
     extras['x_hat_0'] = 0
@@ -201,7 +201,7 @@ def main():
 
     # uncertainty to be added in the form of noise to the measurables. Takes the form of variance
     observation_uncertainty = np.identity(2)
-    observation_uncertainty[0, 0] = 0.1 ** 2
+    observation_uncertainty[0, 0] = 1 ** 2
     observation_uncertainty[1, 1] = .0005 ** 2
 
     # the initial STM is an identity matrix
