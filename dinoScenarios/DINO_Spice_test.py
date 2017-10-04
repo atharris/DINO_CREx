@@ -32,7 +32,7 @@ import BSK_plotting as BSKPlt
 # setup simulation containers
 #########################################################
 
-simulationTime = mc.sec2nano(139643.532)
+simulationTime = mc.sec2nano(2592000.0)
 #   Set the number of data points to be logged, and therefore the sampling frequency
 numDataPoints = 10000
 samplingTime = simulationTime / (numDataPoints - 1)
@@ -172,10 +172,10 @@ spiceObject.loadSpiceKernel(beaconEphemerisName2, spiceObject.SPICEDataPath)
 
 # 1990MF Asteroid used as Target Beacon
 # currently not working ... SpiceName is recognized but "insufficient ephemeris data has been loaded to compute ..."
-#beaconEphemerisName2 = '2008014.bsp'
-#beaconSpiceName2 = '8014'      
-#spicePlanetNames.append(beaconSpiceName2)
-#spiceObject.loadSpiceKernel(beaconEphemerisName2, spiceObject.SPICEDataPath)
+beaconEphemerisName3 = '2008014.bsp'
+beaconSpiceName3 = '8014'
+spicePlanetNames.append(beaconSpiceName3)
+spiceObject.loadSpiceKernel(beaconEphemerisName3, spiceObject.SPICEDataPath)
 
 # 2001 FB44 Asteroid used as Target Beacon
 # currently not working ... SpiceName is recognized but "insufficient ephemeris data has been loaded to compute ..."
@@ -184,8 +184,8 @@ spiceObject.loadSpiceKernel(beaconEphemerisName2, spiceObject.SPICEDataPath)
 #spicePlanetNames.append(beaconSpiceName2)
 #spiceObject.loadSpiceKernel(beaconEphemerisName2, spiceObject.SPICEDataPath)
 
-ephemNames = [beaconEphemerisName, beaconEphemerisName2]
-spiceNames = [beaconSpiceName, beaconSpiceName2]
+ephemNames = [beaconEphemerisName, beaconEphemerisName2, beaconEphemerisName3]
+spiceNames = [beaconSpiceName, beaconSpiceName2, beaconSpiceName3]
 
 # define PlanetNames vector for SpiceInterface ... make sure external spice kernels are loaded as well
 spiceObject.PlanetNames = spice_interface.StringVector(spicePlanetNames)
@@ -205,7 +205,7 @@ print 'Beacon Spice Filepath'
 print spiceObject.SPICEDataPath + ephemNames[0]
 
 # Set zero base of SPICE output as the sun
-spiceObject.zeroBase = 'sun'
+spiceObject.zeroBase = 'solar_system_barycenter'
 print '\nSpice zero base: ',  spiceObject.zeroBase
 
 
