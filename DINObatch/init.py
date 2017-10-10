@@ -46,6 +46,43 @@ def norm(input):
     norm = np.sqrt(sum(np.square(input)))
     return norm
 
+def writingText(itr, ref_state, est_state, true_ephem, extra_data, position_error , velocity_error):
+    # calculate the difference between the perturbed reference and true trajectories: reference state errors
+    err = ref_state[:, 0:6] - true_ephem['spacecraft'].T
+
+    # compare the estimated and true trajectories: estimated state errors
+    err_hat = est_state[:, 0:6] - true_ephem['spacecraft'].T
+
+    ResultString = ''
+
+    ResultString += '---------------------------------------------------' + '\n'
+    ResultString += 'Iteration number '+ str(itr) + '\n'
+    ResultString += '---------------------------------------------------'+ '\n'
+    ResultString += '\n'
+    ResultString += 'Estimated x_hat_0 = ' + str(extra_data['x_hat_0'])+ '\n'
+    ResultString += 'Actual Error = ' + str(position_error) + str(velocity_error) + '\n'
+    ResultString += '\n'
+
+    ResultString += 'Last X Pos err = ' + str(err[-1, 0]) + '\n'
+    ResultString += 'Last Y Pos err = ' + str(err[-1, 1]) + '\n'
+    ResultString += 'Last Z Pos err = ' + str(err[-1, 2]) + '\n'
+    ResultString += 'Last X Vel err = ' + str(err[-1, 3]) + '\n'
+    ResultString += 'Last Y Vel err = ' + str(err[-1, 4]) + '\n'
+    ResultString += 'Last Z Vel err = ' + str(err[-1, 5]) + '\n'
+    ResultString += '\n'
+    ResultString += 'Last X Pos err = ' + str(err_hat[-1, 0]) + '\n'
+    ResultString += 'Last Y Pos err = ' + str(err_hat[-1, 1]) + '\n'
+    ResultString += 'Last Z Pos err = ' + str(err_hat[-1, 2]) + '\n'
+    ResultString += 'Last X Vel err = ' + str(err_hat[-1, 3]) + '\n'
+    ResultString += 'Last Y Vel err = ' + str(err_hat[-1, 4]) + '\n'
+    ResultString += 'Last Z Vel err = ' + str(err_hat[-1, 5]) + '\n'
+    ResultString += '\n'
+
+    print ResultString
+
+    text_file = open('Batch_Iteration' + str(itr) + "/Batch" + str(itr) + ".txt", "w")
+    text_file.write(ResultString)
+    text_file.close()
 
 ################################################################################
 #                    E X P O R T E D     C L A S S E S:
@@ -162,7 +199,7 @@ def main():
     extras['SNC'] = (2*10**(-4))**3
 
     # Number of batch iterations
-    extras['iterations'] = 5
+    extras['iterations'] = 3
 
     # Initializing the error
     extras['x_hat_0'] = 0
@@ -216,8 +253,6 @@ def main():
     # run the filter and output the reference ref_states (including STMs), est states and extra data
     for itr in xrange(extras['iterations']):
 
-        print 'Computing Iteration ' + str(itr + 1)
-
         if itr > 0:
             IC = est_state[0, :]
             x_bar -= extra_data['x_hat_array'][0, :]
@@ -235,423 +270,369 @@ def main():
         filter_outputs[str(itr)]['est_state'] = est_state
         filter_outputs[str(itr)]['extra_data'] = extra_data
 
-    ##################################################################################
-    #
-    # \ BLOCK A page 196
-    #
-    ##################################################################################
+        ##################################################################################
+        #
+        # \ BLOCK A page 196
+        #
+        ##################################################################################
 
-    # calculate the difference between the perturbed reference and true trajectories: reference state errors
-    err = ref_state[:, 0:6] - true_ephem['spacecraft'].T
+        # Iteration Directory
+        dirIt = 'Batch_Iteration' + str(itr+1)
 
-    # compare the estimated and true trajectories: estimated state errors
-    err_hat = est_state[:, 0:6] - true_ephem['spacecraft'].T
+        # Make directory for the iterations
+        if not os.path.exists(dirIt):
+            os.makedirs(dirIt)
 
-    print 'Estimated x_hat_0 = ', extra_data['x_hat_0']
-    print 'Actual Error = ' , position_error , velocity_error
+        # File to write data
+        writingText(itr+1, ref_state, est_state, true_ephem, extra_data, position_error , velocity_error)
 
-    print 'Last X Pos err = ' + str(err[-1, 0])
-    print 'Last Y Pos err = ' + str(err[-1, 1])
-    print 'Last Z Pos err = ' + str(err[-1, 2])
-    print 'Last X Vel err = ' + str(err[-1, 3])
-    print 'Last Y Vel err = ' + str(err[-1, 4])
-    print 'Last Z Vel err = ' + str(err[-1, 5])
-    print ' '
-    print 'Last est X Pos err = ' + str(err_hat[-1, 0])
-    print 'Last est Y Pos err = ' + str(err_hat[-1, 1])
-    print 'Last est Z Pos err = ' + str(err_hat[-1, 2])
-    print 'Last est X Vel err = ' + str(err_hat[-1, 3])
-    print 'Last est Y Vel err = ' + str(err_hat[-1, 4])
-    print 'Last est Z Vel err = ' + str(err_hat[-1, 5])
-    print ' '
+        # calculate the difference between the perturbed reference and true trajectories: reference state errors
+        err = ref_state[:, 0:6] - true_ephem['spacecraft'].T
 
-    x_hat_array = extra_data['x_hat_array']
-    P_array = extra_data['P_array']
-    prefits = extra_data['prefit residuals']
-    postfits = extra_data['postfit residuals']
-    beacon_list = extra_data['Y']['beacons']
-    Y_observed = extra_data['Y']['data']
-    Y_truth = extra_data['Y']['truth']
+        # compare the estimated and true trajectories: estimated state errors
+        err_hat = est_state[:, 0:6] - true_ephem['spacecraft'].T
 
-    # ymax = 10000
+        x_hat_array = extra_data['x_hat_array']
+        P_array = extra_data['P_array']
+        prefits = extra_data['prefit residuals']
+        postfits = extra_data['postfit residuals']
+        beacon_list = extra_data['Y']['beacons']
+        Y_observed = extra_data['Y']['data']
+        Y_truth = extra_data['Y']['truth']
 
-    stand_devs = 3. * np.array([np.sqrt(np.fabs(np.diag(P))) for P in P_array])
+        stand_devs = 3. * np.array([np.sqrt(np.fabs(np.diag(P))) for P in P_array])
 
-    plt.figure(1)
-    plt.subplot(321)
-    plt.plot(t_span, stand_devs[:, 0], 'r--', t_span, -1 * stand_devs[:, 0], 'r--')
-    plt.plot(t_span, x_hat_array[:, 0], 'k.')
-    plt.ylabel('x (km)')
-    plt.xticks([])
-    plt.title('Position')
-    plt.ylim((-np.max(stand_devs[:, 0]), np.max(stand_devs[:, 0])))
+        plt.figure(1)
+        plt.subplot(321)
+        plt.plot(t_span, stand_devs[:, 0], 'r--', t_span, -1 * stand_devs[:, 0], 'r--')
+        plt.plot(t_span, x_hat_array[:, 0], 'k.')
+        plt.ylabel('x (km)')
+        plt.xticks([])
+        plt.title('Position')
+        plt.ylim((-np.max(stand_devs[:, 0]), np.max(stand_devs[:, 0])))
 
-    plt.subplot(323)
-    plt.plot(t_span, stand_devs[:, 1], 'r--', t_span, -1 * stand_devs[:, 1], 'r--')
-    plt.plot(t_span, x_hat_array[:, 1], 'k.')
-    plt.ylabel('y (km)')
-    plt.xticks([])
-    plt.ylim((-np.max(stand_devs[:, 1]), np.max(stand_devs[:, 1])))
+        plt.subplot(323)
+        plt.plot(t_span, stand_devs[:, 1], 'r--', t_span, -1 * stand_devs[:, 1], 'r--')
+        plt.plot(t_span, x_hat_array[:, 1], 'k.')
+        plt.ylabel('y (km)')
+        plt.xticks([])
+        plt.ylim((-np.max(stand_devs[:, 1]), np.max(stand_devs[:, 1])))
 
-    plt.subplot(325)
-    plt.plot(t_span, stand_devs[:, 2], 'r--', t_span, -1 * stand_devs[:, 2], 'r--')
-    plt.plot(t_span, x_hat_array[:, 2], 'k.')
-    plt.ylabel('z (km)')
-    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(['t_0', 't_f'])
-    plt.ylim((-np.max(stand_devs[:, 2]), np.max(stand_devs[:, 2])))
+        plt.subplot(325)
+        plt.plot(t_span, stand_devs[:, 2], 'r--', t_span, -1 * stand_devs[:, 2], 'r--')
+        plt.plot(t_span, x_hat_array[:, 2], 'k.')
+        plt.ylabel('z (km)')
+        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(['t_0', 't_f'])
+        plt.ylim((-np.max(stand_devs[:, 2]), np.max(stand_devs[:, 2])))
 
-    plt.subplot(322)
-    plt.plot(t_span, stand_devs[:, 3], 'r--', t_span, -1 * stand_devs[:, 3], 'r--')
-    plt.plot(t_span, x_hat_array[:, 3], 'k.')
-    plt.ylabel('vx (km/s)')
-    plt.xticks([])
-    plt.title('Velocity')
-    plt.ylim((-np.max(stand_devs[:, 3]), np.max(stand_devs[:, 3])))
+        plt.subplot(322)
+        plt.plot(t_span, stand_devs[:, 3], 'r--', t_span, -1 * stand_devs[:, 3], 'r--')
+        plt.plot(t_span, x_hat_array[:, 3], 'k.')
+        plt.ylabel('vx (km/s)')
+        plt.xticks([])
+        plt.title('Velocity')
+        plt.ylim((-np.max(stand_devs[:, 3]), np.max(stand_devs[:, 3])))
 
 
-    plt.subplot(324)
-    plt.plot(t_span, stand_devs[:, 4], 'r--', t_span, -1 * stand_devs[:, 4], 'r--')
-    plt.plot(t_span, x_hat_array[:, 4], 'k.')
-    plt.ylabel('vy (km/s)')
-    plt.xticks([])
-    plt.ylim((-np.max(stand_devs[:, 4]), np.max(stand_devs[:, 4])))
+        plt.subplot(324)
+        plt.plot(t_span, stand_devs[:, 4], 'r--', t_span, -1 * stand_devs[:, 4], 'r--')
+        plt.plot(t_span, x_hat_array[:, 4], 'k.')
+        plt.ylabel('vy (km/s)')
+        plt.xticks([])
+        plt.ylim((-np.max(stand_devs[:, 4]), np.max(stand_devs[:, 4])))
 
-    plt.subplot(326)
-    plt.plot(t_span, stand_devs[:, 5], 'r--', t_span, -1 * stand_devs[:, 5], 'r--')
-    plt.plot(t_span, x_hat_array[:, 5], 'k.')
-    plt.ylabel('vz (km/s)')
-    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(['t_0', 't_f'])
-    plt.ylim((-np.max(stand_devs[:, 5]), np.max(stand_devs[:, 5])))
+        plt.subplot(326)
+        plt.plot(t_span, stand_devs[:, 5], 'r--', t_span, -1 * stand_devs[:, 5], 'r--')
+        plt.plot(t_span, x_hat_array[:, 5], 'k.')
+        plt.ylabel('vz (km/s)')
+        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(['t_0', 't_f'])
+        plt.ylim((-np.max(stand_devs[:, 5]), np.max(stand_devs[:, 5])))
 
-    plt.suptitle('State Errors and Standard Deviations')
-    plt.tight_layout()
-    plt.subplots_adjust(top=.9)
-    plt.savefig('Figures/State Errors and Covariance.png', dpi=300, format='png')
+        plt.suptitle('State Errors' + ' $\hat{x}$' + ' and Covariance Bounds')
+        plt.tight_layout()
+        plt.subplots_adjust(top=.9)
+        plt.savefig(dirIt+'/State Errors and Covariance Bounds.png', dpi=300, format='png')
 
-    plt.figure(2)
-    plt.subplot(321)
-    plt.plot(t_span, x_hat_array[:, 0])
-    plt.ylabel('x (km)')
-    plt.xticks([])
-    plt.title('Position')
-    # plt.ylim((-ymax, ymax))
+        plt.figure(2)
+        plt.subplot(321)
+        plt.plot(t_span, x_hat_array[:, 0])
+        plt.ylabel('x (km)')
+        plt.xticks([])
+        plt.title('Position')
+        # plt.ylim((-ymax, ymax))
 
-    plt.subplot(323)
-    plt.plot(t_span, x_hat_array[:, 1])
-    plt.ylabel('y (km)')
-    plt.xticks([])
-    # plt.ylim((-ymax, ymax))
+        plt.subplot(323)
+        plt.plot(t_span, x_hat_array[:, 1])
+        plt.ylabel('y (km)')
+        plt.xticks([])
+        # plt.ylim((-ymax, ymax))
 
-    plt.subplot(325)
-    plt.plot(t_span, x_hat_array[:, 2])
-    plt.ylabel('z (km)')
-    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(['t_0', 't_f'])
-    # plt.ylim((-ymax, ymax))
+        plt.subplot(325)
+        plt.plot(t_span, x_hat_array[:, 2])
+        plt.ylabel('z (km)')
+        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(['t_0', 't_f'])
+        # plt.ylim((-ymax, ymax))
 
-    plt.subplot(322)
-    plt.plot(t_span, x_hat_array[:, 3])
-    plt.ylabel('vx (km/s)')
-    plt.xticks([])
-    plt.title('Velocity')
-    # plt.ylim((-ymax, ymax))
+        plt.subplot(322)
+        plt.plot(t_span, x_hat_array[:, 3])
+        plt.ylabel('vx (km/s)')
+        plt.xticks([])
+        plt.title('Velocity')
+        # plt.ylim((-ymax, ymax))
 
-    plt.subplot(324)
-    plt.plot(t_span, x_hat_array[:, 4])
-    plt.ylabel('vy (km/s)')
-    plt.xticks([])
-    # plt.ylim((-ymax, ymax))
+        plt.subplot(324)
+        plt.plot(t_span, x_hat_array[:, 4])
+        plt.ylabel('vy (km/s)')
+        plt.xticks([])
+        # plt.ylim((-ymax, ymax))
 
-    plt.subplot(326)
-    plt.plot(t_span, x_hat_array[:, 5])
-    plt.ylabel('vz (km/s)')
-    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(['t_0', 't_f'])
-    # plt.ylim((-ymax, ymax))
-    plt.suptitle('State Deviation Estimates')
-    plt.tight_layout()
-    plt.subplots_adjust(top=.9)
-    plt.savefig('Figures/State Deviation Estimates.png', dpi=300, format='png')
+        plt.subplot(326)
+        plt.plot(t_span, x_hat_array[:, 5])
+        plt.ylabel('vz (km/s)')
+        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(['t_0', 't_f'])
+        # plt.ylim((-ymax, ymax))
+        plt.suptitle('State Error Estimates ' + '$\hat{x}$')
+        plt.tight_layout()
+        plt.subplots_adjust(top=.9)
+        plt.savefig(dirIt + '/State Error Estimates.png', dpi=300, format='png')
 
-    # plt.subplot(414)
-    # plt.plot(t_span, x_hat_array[:, 6])
-    # plt.ylabel('vz (km/s)')
-    # plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-    # ax=plt.gca()
-    # ax.set_xticklabels(['t_0', 't_f'])
-    # plt.ylim((-ymax, ymax))
-    # plt.suptitle('State Deviation Estimates')
-    # plt.savefig('State Deviation Estimates.png', dpi=300, format='png')
+        plt.figure(3)
+        plt.subplot(321)
+        plt.plot(t_span, err[:, 0])
+        plt.xticks([])
+        plt.ylabel('x (km)')
+        plt.title('Position')
 
-    plt.figure(3)
-    plt.subplot(321)
-    plt.plot(t_span, err[:, 0])
-    plt.xticks([])
-    plt.ylabel('x (km)')
-    plt.title('Position')
+        plt.subplot(323)
+        plt.plot(t_span, err[:, 1])
+        plt.xticks([])
+        plt.ylabel('y (km)')
 
-    plt.subplot(323)
-    plt.plot(t_span, err[:, 1])
-    plt.xticks([])
-    plt.ylabel('y (km)')
+        plt.subplot(325)
+        plt.plot(t_span, err[:, 2])
+        plt.ylabel('z (km)')
+        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(['t_0', 't_f'])
 
-    plt.subplot(325)
-    plt.plot(t_span, err[:, 2])
-    plt.ylabel('z (km)')
-    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(['t_0', 't_f'])
+        plt.subplot(322)
+        plt.plot(t_span, err[:, 3])
+        plt.ylabel('vx (km/s)')
+        plt.xticks([])
+        plt.title('Velocity')
 
-    plt.subplot(322)
-    plt.plot(t_span, err[:, 3])
-    plt.ylabel('vx (km/s)')
-    plt.xticks([])
-    plt.title('Velocity')
+        plt.subplot(324)
+        plt.plot(t_span, err[:, 4])
+        plt.ylabel('vy (km/s)')
+        plt.xticks([])
+        plt.subplot(326)
+        plt.plot(t_span, err[:, 5])
+        plt.ylabel('vz (km/s)')
+        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(['t_0', 't_f'])
+        plt.suptitle('Reference Trajectory Error vs Spice Trajectory: Dynamics Errors')
+        plt.tight_layout()
+        plt.subplots_adjust(top=.9)
+        plt.savefig(dirIt + '/Reference Trajectory Error.png', dpi=300, format='png')
 
-    plt.subplot(324)
-    plt.plot(t_span, err[:, 4])
-    plt.ylabel('vy (km/s)')
-    plt.xticks([])
-    plt.subplot(326)
-    plt.plot(t_span, err[:, 5])
-    plt.ylabel('vz (km/s)')
-    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(['t_0', 't_f'])
-    plt.suptitle('Reference Trajectory Error')
-    plt.tight_layout()
-    plt.subplots_adjust(top=.9)
-    plt.savefig('Figures/Reference Trajectory Error.png', dpi=300, format='png')
+        plt.figure(4)
+        plt.subplot(121)
+        plt.plot(t_span, prefits[:, 0], '.')
+        plt.plot(t_span, 3*np.ones(len(t_span))*observation_uncertainty[0,0]**2, 'r--')
+        plt.plot(t_span, -3*np.ones(len(t_span))*observation_uncertainty[0,0]**2, 'r--')
+        plt.xticks([])
+        plt.title('Range (km)')
+        plt.ylabel('Residual')
+        plt.xticks(t_span, rotation=90, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(beacon_list)
 
-    plt.figure(4)
-    plt.subplot(121)
-    plt.plot(t_span, prefits[:, 0], '.')
-    plt.plot(t_span, 3*np.ones(len(t_span))*observation_uncertainty[0,0]**2, 'r--')
-    plt.plot(t_span, -3*np.ones(len(t_span))*observation_uncertainty[0,0]**2, 'r--')
-    plt.xticks([])
-    plt.title('Range (km)')
-    plt.ylabel('Residual')
-    plt.xticks(t_span, rotation=90, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(beacon_list)
+        plt.subplot(122)
+        plt.plot(t_span, prefits[:, 1], '.')
+        plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
+        plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
+        plt.xticks([])
+        plt.title('Range Rate (km/s)')
+        plt.xticks(t_span, rotation=90, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(beacon_list)
 
-    plt.subplot(122)
-    plt.plot(t_span, prefits[:, 1], '.')
-    plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
-    plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
-    plt.xticks([])
-    plt.title('Range Rate (km/s)')
-    plt.xticks(t_span, rotation=90, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(beacon_list)
+        plt.suptitle('Prefit Observation Residuals')
+        plt.tight_layout()
+        plt.subplots_adjust(top=.9)
+        plt.savefig(dirIt + '/Prefit Observation Residuals.png', dpi=300, format='png')
 
-    plt.suptitle('Prefit Observation Residuals')
-    plt.tight_layout()
-    plt.subplots_adjust(top=.9)
-    plt.savefig('Figures/Prefit Observation Residuals.png', dpi=300, format='png')
+        plt.figure(5)
+        plt.subplot(121)
+        plt.plot(t_span, postfits[:, 0], '.')
+        plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[0,0]), 'r--')
+        plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[0,0]), 'r--')
+        plt.xticks([])
+        plt.ylabel('Residual')
+        plt.title('Range (km)')
+        plt.xticks(t_span, rotation=90, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(beacon_list)
 
-    plt.figure(5)
-    plt.subplot(121)
-    plt.plot(t_span, postfits[:, 0], '.')
-    plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[0,0]), 'r--')
-    plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[0,0]), 'r--')
-    plt.xticks([])
-    plt.ylabel('Residual')
-    plt.title('Range (km)')
-    plt.xticks(t_span, rotation=90, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(beacon_list)
+        plt.subplot(122)
+        plt.plot(t_span, postfits[:, 1], '.')
+        plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
+        plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
+        plt.xticks([])
+        plt.title('Range Rate (km/s)')
+        plt.xticks(t_span, rotation=90, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(beacon_list)
 
-    plt.subplot(122)
-    plt.plot(t_span, postfits[:, 1], '.')
-    plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
-    plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
-    plt.xticks([])
-    plt.title('Range Rate (km/s)')
-    plt.xticks(t_span, rotation=90, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(beacon_list)
 
-    # plt.subplot(427)
-    # plt.plot(t_span, postfits[:, 6])
-    # plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-    # ax=plt.gca()
-    # ax.set_xticklabels(['t_0', 't_f'])
-    # plt.ylabel('Beacon 4')
-    #
-    # plt.subplot(428)
-    # plt.plot(t_span, postfits[:, 7])
-    # plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-    # ax=plt.gca()
-    # ax.set_xticklabels(['t_0', 't_f'])
+        plt.suptitle('Postfit Observation Residuals')
+        plt.tight_layout()
+        plt.subplots_adjust(top=.9)
+        plt.savefig(dirIt + '/Postfit Observation Residuals.png', dpi=300, format='png')
 
-    plt.suptitle('Postfit Observation Residuals')
-    plt.tight_layout()
-    plt.subplots_adjust(top=.9)
-    plt.savefig('Figures/Postfit Observation Residuals.png', dpi=300, format='png')
+        plt.figure(6)
+        plt.scatter(ref_state[:, 1], ref_state[:, 2], color='r')
+        plt.scatter(true_ephem['spacecraft'].T[:, 1], true_ephem['spacecraft'].T[:, 2], color='b')
+        plt.suptitle('Reference Trajectory (r) vs Spice Trajectory (b)')
+        plt.savefig(dirIt + '/Trajectories.png', dpi=300, format='png')
 
-    plt.figure(6)
-    plt.scatter(ref_state[:, 1], ref_state[:, 2], color='r')
-    plt.scatter(true_ephem['spacecraft'].T[:, 1], true_ephem['spacecraft'].T[:, 2], color='b')
-    plt.suptitle('Trajectories')
-    plt.savefig('Figures/Trajectories.png', dpi=300, format='png')
+        jet = plt.get_cmap('jet')
+        colors = iter(jet(np.linspace(0, 1, extras['n_beacons'])))
 
-    jet = plt.get_cmap('jet')
-    colors = iter(jet(np.linspace(0, 1, extras['n_beacons'])))
+        jet = plt.get_cmap('jet')
+        colors = iter(jet(np.linspace(0, 1, extras['n_beacons'])))
 
-    # fig = plt.figure(7)
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.plot(true_ephem['spacecraft'][0, :], true_ephem['spacecraft'][1, :], true_ephem['spacecraft'][2, :], color='k')
-    # for ii in xrange(extras['n_beacons']):
-    #     key = extras['beacons'][ii]
-    #     ax.plot(true_ephem[key][0, :], true_ephem[key][1, :], true_ephem[key][2, :], color=next(colors))
-    #
-    # ax.plot([0, 0], [0, 0], [0, 0], color='y', marker='x')
-    # plt.legend(['SC'] + extras['beacons'])
-    # plt.savefig('Beacon Positions.png', dpi=300, format='png')
+        plt.figure(8)
+        plt.subplot(321)
+        plt.plot(t_span, stand_devs[:, 0], 'r-', t_span, P_array[:, 0, 0], 'b-')
+        plt.ylabel('x (km)')
+        plt.xticks([])
+        ax = plt.gca()
+        ax.set_yscale('log')
+        plt.title('Position')
 
-    jet = plt.get_cmap('jet')
-    colors = iter(jet(np.linspace(0, 1, extras['n_beacons'])))
+        plt.subplot(323)
+        plt.plot(t_span, stand_devs[:, 1], 'r-', t_span, P_array[:, 1, 1], 'b-')
+        plt.ylabel('y (km)')
+        plt.xticks([])
+        ax = plt.gca()
+        ax.set_yscale('log')
 
-    # fig = plt.figure(8)
-    # ax = fig.add_subplot(111, projection='3d')
-    #
-    # for ii in xrange(extras['n_beacons']):
-    #     key = extras['beacons'][ii]
-    #     beacon_rel = np.subtract(true_ephem[key], true_ephem['spacecraft'])
-    #     ax.plot(beacon_rel[0, :], beacon_rel[1, :], beacon_rel[2, :], color=next(colors))
-    #
-    # ax.plot([0, 0], [0, 0], [0, 0], color='k', marker='x')
-    # plt.legend(extras['beacons'] + ['SC'])
-    # plt.axis('equal')
-    # plt.savefig('Relative Beacon Positions.png', dpi=300, format='png')
+        plt.subplot(325)
+        plt.plot(t_span, stand_devs[:, 2], 'r-', t_span, P_array[:, 2, 2], 'b-')
+        plt.ylabel('z (km)')
+        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+        ax = plt.gca()
+        ax.set_yscale('log')
+        ax.set_xticklabels(['t_0', 't_f'])
 
-    plt.figure(8)
-    plt.subplot(321)
-    plt.plot(t_span, stand_devs[:, 0], 'r-', t_span, P_array[:, 0, 0], 'b-')
-    plt.ylabel('x (km)')
-    plt.xticks([])
-    ax = plt.gca()
-    ax.set_yscale('log')
-    plt.title('Position')
+        plt.subplot(322)
+        plt.plot(t_span, stand_devs[:, 3], 'r-', t_span, P_array[:, 3, 3], 'b-')
+        plt.ylabel('vx (km/s)')
+        plt.xticks([])
+        ax = plt.gca()
+        ax.set_yscale('log')
+        plt.title('Velocity')
 
-    plt.subplot(323)
-    plt.plot(t_span, stand_devs[:, 1], 'r-', t_span, P_array[:, 1, 1], 'b-')
-    plt.ylabel('y (km)')
-    plt.xticks([])
-    ax = plt.gca()
-    ax.set_yscale('log')
+        plt.subplot(324)
+        plt.plot(t_span, stand_devs[:, 4], 'r-', t_span, P_array[:, 4, 4], 'b-')
+        plt.ylabel('vy (km/s)')
+        ax = plt.gca()
+        ax.set_yscale('log')
+        plt.xticks([])
 
-    plt.subplot(325)
-    plt.plot(t_span, stand_devs[:, 2], 'r-', t_span, P_array[:, 2, 2], 'b-')
-    plt.ylabel('z (km)')
-    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-    ax = plt.gca()
-    ax.set_yscale('log')
-    ax.set_xticklabels(['t_0', 't_f'])
+        plt.subplot(326)
+        plt.plot(t_span, stand_devs[:, 5], 'r-', t_span, P_array[:, 5, 5], 'b-')
+        plt.ylabel('vz (km/s)')
+        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+        ax = plt.gca()
+        ax.set_yscale('log')
+        ax.set_xticklabels(['t_0', 't_f'])
+        plt.suptitle('Standard Deviation and Covariance')
+        plt.tight_layout()
+        plt.subplots_adjust(top=.9)
+        plt.savefig(dirIt + '/Standard Deviation and Covariance.png', dpi=300, format='png')
 
-    plt.subplot(322)
-    plt.plot(t_span, stand_devs[:, 3], 'r-', t_span, P_array[:, 3, 3], 'b-')
-    plt.ylabel('vx (km/s)')
-    plt.xticks([])
-    ax = plt.gca()
-    ax.set_yscale('log')
-    plt.title('Velocity')
+        plt.figure(9)
+        plt.subplot(121)
+        plt.plot(t_span, Y_observed[:, 0] - Y_truth[:, 0])
+        plt.xticks([])
+        plt.title('Range (km)')
+        plt.ylabel('Added Error')
+        plt.xticks(t_span, rotation=90, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(beacon_list)
 
-    plt.subplot(324)
-    plt.plot(t_span, stand_devs[:, 4], 'r-', t_span, P_array[:, 4, 4], 'b-')
-    plt.ylabel('vy (km/s)')
-    ax = plt.gca()
-    ax.set_yscale('log')
-    plt.xticks([])
+        plt.subplot(122)
+        plt.plot(t_span, Y_observed[:, 1] - Y_truth[:, 1])
+        plt.xticks([])
+        plt.title('Range Rate (km/s)')
+        plt.xticks(t_span, rotation=90, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(beacon_list)
 
-    plt.subplot(326)
-    plt.plot(t_span, stand_devs[:, 5], 'r-', t_span, P_array[:, 5, 5], 'b-')
-    plt.ylabel('vz (km/s)')
-    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-    ax = plt.gca()
-    ax.set_yscale('log')
-    ax.set_xticklabels(['t_0', 't_f'])
-    plt.suptitle('Standard Deviation and')
-    plt.tight_layout()
-    plt.subplots_adjust(top=.9)
-    plt.savefig('Figures/Standard Deviation and Covariance.png', dpi=300, format='png')
+        plt.suptitle('Observation Errors: $Y_{obs} - Y_{true}$')
+        plt.tight_layout()
+        plt.subplots_adjust(top=.9)
+        plt.savefig(dirIt + '/Observation Errors.png', dpi=300, format='png')
 
-    plt.figure(9)
-    plt.subplot(121)
-    plt.plot(t_span, Y_observed[:, 0] - Y_truth[:, 0])
-    plt.xticks([])
-    plt.title('Range (km)')
-    plt.ylabel('Added Error')
-    plt.xticks(t_span, rotation=90, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(beacon_list)
+        plt.figure(10)
+        plt.subplot(321)
+        plt.plot(t_span, err_hat[:, 0])
+        plt.ylabel('x (km)')
+        plt.xticks([])
+        plt.title('Position')
+        # plt.ylim((-ymax, ymax))
 
-    plt.subplot(122)
-    plt.plot(t_span, Y_observed[:, 1] - Y_truth[:, 1])
-    plt.xticks([])
-    plt.title('Range Rate (km/s)')
-    plt.xticks(t_span, rotation=90, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(beacon_list)
+        plt.subplot(323)
+        plt.plot(t_span, err_hat[:, 1])
+        plt.ylabel('y (km)')
+        plt.xticks([])
+        # plt.ylim((-ymax, ymax))
 
-    plt.suptitle('Observation Errors')
-    plt.tight_layout()
-    plt.subplots_adjust(top=.9)
-    plt.savefig('Figures/Observation Errors.png', dpi=300, format='png')
+        plt.subplot(325)
+        plt.plot(t_span, err_hat[:, 2])
+        plt.ylabel('z (km)')
+        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(['t_0', 't_f'])
+        # plt.ylim((-ymax, ymax))
 
-    plt.figure(10)
-    plt.subplot(321)
-    plt.plot(t_span, err_hat[:, 0])
-    plt.ylabel('x (km)')
-    plt.xticks([])
-    plt.title('Position')
-    # plt.ylim((-ymax, ymax))
+        plt.subplot(322)
+        plt.plot(t_span, err_hat[:, 3])
+        plt.ylabel('vx (km/s)')
+        plt.xticks([])
+        plt.title('Velocity')
+        # plt.ylim((-ymax, ymax))
 
-    plt.subplot(323)
-    plt.plot(t_span, err_hat[:, 1])
-    plt.ylabel('y (km)')
-    plt.xticks([])
-    # plt.ylim((-ymax, ymax))
+        plt.subplot(324)
+        plt.plot(t_span, err_hat[:, 4])
+        plt.ylabel('vy (km/s)')
+        plt.xticks([])
+        # plt.ylim((-ymax, ymax))
 
-    plt.subplot(325)
-    plt.plot(t_span, err_hat[:, 2])
-    plt.ylabel('z (km)')
-    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(['t_0', 't_f'])
-    # plt.ylim((-ymax, ymax))
+        plt.subplot(326)
+        plt.plot(t_span, err_hat[:, 5])
+        plt.ylabel('vz (km/s)')
+        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(['t_0', 't_f'])
+        # plt.ylim((-ymax, ymax))
+        plt.suptitle('Estimated State minus Spice Ephemeris')
+        plt.tight_layout()
+        plt.subplots_adjust(top=.9)
+        plt.savefig(dirIt + '/State Deviation Est - Spice.png', dpi=300, format='png')
 
-    plt.subplot(322)
-    plt.plot(t_span, err_hat[:, 3])
-    plt.ylabel('vx (km/s)')
-    plt.xticks([])
-    plt.title('Velocity')
-    # plt.ylim((-ymax, ymax))
-
-    plt.subplot(324)
-    plt.plot(t_span, err_hat[:, 4])
-    plt.ylabel('vy (km/s)')
-    plt.xticks([])
-    # plt.ylim((-ymax, ymax))
-
-    plt.subplot(326)
-    plt.plot(t_span, err_hat[:, 5])
-    plt.ylabel('vz (km/s)')
-    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(['t_0', 't_f'])
-    # plt.ylim((-ymax, ymax))
-    plt.suptitle('Est. State - True Ephem.')
-    plt.tight_layout()
-    plt.subplots_adjust(top=.9)
-    plt.savefig('Figures/State Deviation Est - Truth.png', dpi=300, format='png')
+        plt.close('all')
     return
 
 
