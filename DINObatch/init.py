@@ -148,27 +148,9 @@ def main():
     start_et = pyswice.doubleArray_getitem(start_et, 0)
     end_et = pyswice.doubleArray_getitem(end_et, 0)
 
-    # Get Observation Times and Ephemerides
-    true_ephem, t_span = dg.generate_data(sc_ephem_file=DINO_kernel,
-                                          planet_beacons = ['earth','mars barycenter'],
-                                          beacon_ids=[],
-                                          n_observations=12,
-                                          start_et=start_et,
-                                          end_et=end_et)
-
-    tt_switch = 5
-
 
     # extras dictionary for importing to functions
     extras = {}
-
-    # number and keys of beacons. note that the true ephem is going to have one spot for the
-    # sun, which in NOT a beacon
-    beacon_names = true_ephem.keys()
-    beacon_names.remove('spacecraft')
-    extras['beacons'] = beacon_names
-    extras['n_beacons'] = len(beacon_names)
-
     # body vector for SUN, EARTH, MARS
     # CODE RELIES ON SUN BEING INDEXED AS 0
     extras['bodies'] = ['SUN', '3', '399']
@@ -196,13 +178,36 @@ def main():
     extras['n_obs'] = 1
 
     # SNC coefficient
-    extras['SNC'] = (2*10**(-4))**3
+    extras['SNC'] = (2 * 10 ** (-4)) ** 3
 
     # Number of batch iterations
     extras['iterations'] = 3
 
     # Initializing the error
     extras['x_hat_0'] = 0
+    # Get Observation Times and Ephemerides
+    true_ephem, t_span = dg.generate_data(sc_ephem_file=DINO_kernel,
+                                          planet_beacons = ['earth','mars barycenter'],
+                                          beacon_ids=[],
+                                          n_observations=12,
+                                          start_et=start_et,
+                                          end_et=end_et,
+                                          extras = extras,
+                                          trueData = 'OFF')
+
+    tt_switch = 5
+
+
+
+
+    # number and keys of beacons. note that the true ephem is going to have one spot for the
+    # sun, which in NOT a beacon
+    beacon_names = true_ephem.keys()
+    beacon_names.remove('spacecraft')
+    extras['beacons'] = beacon_names
+    extras['n_beacons'] = len(beacon_names)
+
+
 
     ##################################################################################
     #
@@ -231,8 +236,8 @@ def main():
     velocity_error = np.zeros(3)
 
     # add uncertainty to the IC
-    position_error = 5000 * np.divide(IC[0:3], norm(IC[0:3]))
-    velocity_error = 0.05 * np.divide(IC[3:6], norm(IC[3:6]))
+    # position_error = 5000 * np.divide(IC[0:3], norm(IC[0:3]))
+    # velocity_error = 0.05 * np.divide(IC[3:6], norm(IC[3:6]))
 
     IC += np.append(position_error, velocity_error)
 

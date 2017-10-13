@@ -126,7 +126,7 @@ def run_batch( input ) :
 
   # create observation weight matrix (W)
   W = aInv( observation_uncertainty )
-    
+
   ##################################################################################
   #
   # Integrate Reference Trajectory page 196

@@ -15,11 +15,14 @@ sys.path.append(bskPath + 'PythonModules')
 
 import pyswice
 import numpy as np
+from batchFilter import runRef
+
+
 
 
 def generate_data(sc_ephem_file, planet_beacons,
                   beacon_ids, n_observations=10,
-                  start_et=None, end_et=None, ref='J2000'):
+                  start_et=None, end_et=None, extras = {}, trueData = 'OFF', ref='J2000'):
     # Load Ephemeris Files
     pyswice.furnsh_c(sc_ephem_file)
     pyswice.furnsh_c(bskSpicePath + 'de430.bsp')
@@ -71,6 +74,21 @@ def generate_data(sc_ephem_file, planet_beacons,
             stateArray[i] = pyswice.doubleArray_getitem(state, i)
         sc_states.append(stateArray)
     ephemerides = {'spacecraft': np.array(sc_states).T}
+
+    dyn_ref_state = []
+    if trueData == 'OFF':
+        IC0 = sc_states[0]
+        n_state = IC0.shape[0]
+        phi0 = np.identity(n_state)
+        # input to the propagator takes the ref_state and STM at t0, as well as the list of times
+        prop_input = (IC0, phi0, observation_times, extras)
+
+        # execute propagation
+        state = runRef(prop_input)
+        for jj in range(len(observation_times)):
+            dyn_ref_state.append(state[jj][0:n_state])
+    ephemerides = {'spacecraft': np.array(dyn_ref_state).T}
+
 
     # for planet in planet_beacons:
     #     planet = planet.lower()
