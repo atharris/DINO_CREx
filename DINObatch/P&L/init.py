@@ -187,6 +187,29 @@ def main():
 
     # Initializing the error
     extras['x_hat_0'] = 0
+
+    ##################################################################################
+    #
+    # Camera/P&L Parameters
+    #
+    ##################################################################################
+
+    # Focal Length (mm)
+    extras['FoL'] = 100.
+
+    # Camera resolution (pixels)
+    extras['resolution'] = [1024., 1024.]
+
+    # width and height of pixels in camera
+    extras['pixel_width'] = 5.
+    extras['pixel_height'] = 5.
+
+    # direction coefficient of pixel and line axes
+    extras['pixel_direction'] = 1.
+    extras['line_direction'] = 1.
+
+    ##################################################################################
+
     # Get Observation Times and Ephemerides
     true_ephem, t_span = dg.generate_data(sc_ephem_file=DINO_kernel,
                                           planet_beacons = ['earth','mars barycenter'],
