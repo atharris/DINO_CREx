@@ -1,0 +1,22 @@
+---------------------------------------------------
+Iteration number 1
+---------------------------------------------------
+
+Estimated x_hat_0 = [ -2.74022687e+00   2.84640974e+00   1.24929588e+00   1.59779495e-04
+  -9.68209452e-04   2.49544074e-03]
+Actual Error = [ 0.  0.  0.][ 0.  0.  0.]
+
+Last X Pos err = 0.0
+Last Y Pos err = 0.0
+Last Z Pos err = 0.0
+Last X Vel err = 0.0
+Last Y Vel err = 0.0
+Last Z Vel err = 0.0
+
+Last X Pos err = 93.6455739588
+Last Y Pos err = -581.314513981
+Last Z Pos err = 1506.94617479
+Last X Vel err = 0.000158650588972
+Last Y Vel err = -0.000961374764195
+Last Z Vel err = 0.00247790363937
+
