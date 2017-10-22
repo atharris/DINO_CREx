@@ -185,6 +185,9 @@ def main():
     # Number of batch iterations
     extras['iterations'] = 3
 
+    # Are we using the real dynamics for the ref or the trueData
+    extras['realData']= 'OFF'
+
     # Initializing the error
     extras['x_hat_0'] = 0
     # Get Observation Times and Ephemerides
@@ -195,7 +198,7 @@ def main():
                                           start_et=start_et,
                                           end_et=end_et,
                                           extras = extras,
-                                          trueData = 'OFF')
+                                          realData = extras['realData'])
 
     tt_switch = 5
 

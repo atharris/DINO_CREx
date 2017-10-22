@@ -19,7 +19,7 @@ __date__ = '$Date$'[7:26]
 
 import numpy as np
 from numpy.random import normal as rndNrm
-
+from pixelLineBatch import fncG
 
 ################################################################################
 #                  E X P O R T E D     F U N C T I O N S:
@@ -31,6 +31,7 @@ def getObs(input):
     # pull out the inputs for the generation of observation data
     SPICE_data = input[0]
     observation_uncertainty = input[1]
+    ref_states = input[2]
     extras = input[-1]
     n_beacons = extras['n_beacons']
     # number of observations in a mini observation set per beacon
@@ -44,7 +45,7 @@ def getObs(input):
 
     # create noise for the estimated observations
     np.random.seed(42)
-    observation_noise = rndNrm(0, 1, (2, n_samples, n_beacons))
+    observation_noise = rndNrm(0, 0.02, (2, n_samples, n_beacons))
 
 
 
@@ -94,25 +95,15 @@ def getObs(input):
 
             # store the beacon data in an array to be used for the calculation
             # of H matrices and estimated observations.
+
             obs['SPICE'][start_idx : end_idx, 0:3 ] = r_beacon.T
             obs['SPICE'][start_idx : end_idx, 3:6 ] = v_beacon.T
 
-            r_diff = r_spacecraft[0:3, start_idx : end_idx ] - \
-                     r_beacon #+ np.dot(np.linalg.cholesky(observation_uncertainty[0:3,0:3]), \
-                     #observation_noise[0:3, start_idx : end_idx, ii])
+            # inputs for Y_refs (G) calculation
+            G_ref_inputs = (r_spacecraft[0:3, start_idx : end_idx ], r_beacon, extras)
 
-            v_diff = r_spacecraft[3:6, start_idx : end_idx ] - \
-                     v_beacon #+ np.dot(np.linalg.cholesky(observation_uncertainty[3:6,3:6]), \
-                     #observation_noise[3:6, start_idx : end_idx, ii])
-
-            # calculate the range 
-
-            rng = np.array(np.sqrt(np.sum(np.square(r_diff), axis=0)))
-            obs['data'][start_idx : end_idx, 0] = rng
-
-            # calculate the range rate
-            rng_rate = np.divide(np.sum(np.multiply(r_diff, v_diff), axis=0), rng)
-            obs['data'][start_idx : end_idx, 1] = rng_rate
+            # calculate the estimated observables and organize into an array
+            obs['data'][start_idx: end_idx, :] = fncG(G_ref_inputs)
 
             # store these in the observation array
             obs['truth'][start_idx : end_idx, 0:2] = np.copy( obs['data'][start_idx : end_idx, 0:2] )
@@ -143,24 +134,16 @@ def getObs(input):
             # store the beacon data in an array to be used for the calculation
             # of H matrices and estimated observations.
 
+            # store the beacon data in an array to be used for the calculation
+            # of H matrices and estimated observations.
             obs['SPICE'][start_idx : end_idx, 0:3 ] = r_beacon.T
             obs['SPICE'][start_idx : end_idx, 3:6 ] = v_beacon.T
 
-            r_diff = r_spacecraft[0:3, start_idx : end_idx ] - \
-                     r_beacon #+ np.dot(np.linalg.cholesky(observation_uncertainty[0:3,0:3]), \
-                     #observation_noise[0:3, start_idx : end_idx, ii])
+            # inputs for Y_refs (G) calculation
+            G_ref_inputs = (r_spacecraft[0:3, start_idx : end_idx ], r_beacon, extras)
 
-            v_diff = r_spacecraft[3:6, start_idx : end_idx ] - \
-                     v_beacon #+ np.dot(np.linalg.cholesky(observation_uncertainty[3:6,3:6]), \
-                     #observation_noise[3:6, start_idx : end_idx, ii])
-
-            # calculate the range  
-            rng = np.array(np.sqrt(np.sum(np.square(r_diff), axis=0)))
-            obs['data'][start_idx : end_idx, 0] = rng
-
-            # calculate the range rate
-            rng_rate = np.divide(np.sum(np.multiply(r_diff, v_diff), axis=0), rng)
-            obs['data'][start_idx : end_idx, 1] = rng_rate
+            # calculate the estimated observables and organize into an array
+            obs['data'][start_idx: end_idx, :] = fncG(G_ref_inputs)
 
             # store these in the observation array
             obs['truth'][start_idx : end_idx, 0:2] = np.copy( obs['data'][start_idx : end_idx, 0:2] )
@@ -178,9 +161,9 @@ def putObs( input ) :
    data   = input[0]
    extras = input[-1]
 
-   n_samples = extra_data['Y']['data'].shape[0]
+   n_samples = extras['Y']['data'].shape[0]
 
-   n_obs     = extra_data['Y']['data']
+   n_obs     = extras['Y']['data']
 
    obs_data = {}
 

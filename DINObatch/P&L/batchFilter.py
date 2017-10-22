@@ -19,8 +19,8 @@ __date__ = '$Date$'[7:26]
 import scipy.integrate as integ
 import numpy as np
 
-from rngRngRtBatch import fncH
-from rngRngRtBatch import fncG
+from pixelLineBatch import fncH
+from pixelLineBatch import fncG
 
 from posVel import EOM
 from posVel import matrixA
@@ -111,21 +111,6 @@ def run_batch( input ) :
 
   IC0  = np.copy( IC )
 
-  # get the observations
-  #
-  # observation inputs
-  obs_inputs = (SPICE_data, observation_uncertainty, extras)
-  # get observations and the associated beacon ket
-  Y_obs = getObs(obs_inputs)
-
-  # collect the list of beacons (in observational order) into an extras list
-  extras['obs_beacons'] = list(Y_obs['beacons'])
-
-  # copy the SPICE data pulled from the observation generation function
-  SPICE_data_GH = Y_obs['SPICE']
-
-  # create observation weight matrix (W)
-  W = aInv( observation_uncertainty )
 
   ##################################################################################
   #
@@ -152,11 +137,28 @@ def run_batch( input ) :
   state      = runRef( prop_input )
   ref_state  = np.copy( state )
 
+
   ##################################################################################
-  #
-  # \ Integrate Reference Trajectory page 196
+  #Get the noisy observations
   #
   ##################################################################################
+
+  # get the observations
+  #
+  # observation inputs
+  obs_inputs = (SPICE_data, observation_uncertainty, ref_state, extras)
+  # get observations and the associated beacon ket
+  # inputs for Y_refs (G) calculation
+  Y_obs = getObs(obs_inputs)
+
+  # collect the list of beacons (in observational order) into an extras list
+  extras['obs_beacons'] = list(Y_obs['beacons'])
+
+  # copy the SPICE data pulled from the observation generation function
+  SPICE_data_GH = Y_obs['SPICE']
+
+  # create observation weight matrix (W)
+  W = aInv( observation_uncertainty )
 
   
     #######################################################################
@@ -178,6 +180,7 @@ def run_batch( input ) :
 
   # calculate the estimated observables and organize into an array
   Y_refs = fncG( G_ref_inputs )
+
 
   # using the inputs of G, calculate the H matrix
   H_inputs = ( ref_state[:,0:n_state], SPICE_data_GH, extras )

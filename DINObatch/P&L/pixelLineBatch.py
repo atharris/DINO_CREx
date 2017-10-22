@@ -21,6 +21,42 @@ import pdb
 from numpy import cos as cos
 from numpy import sin as sin
 
+
+################################################################################
+#                  I N T E R N A L    F U N C T I O N S:
+################################################################################
+
+def I_to_TV(input):
+	# pull out the angles from the input (RA, dec, twist) in that order
+    #pdb.set_trace()
+    angles = input
+    I_to_TV_matrix = np.dot( rot3( angles[0] ), \
+                     np.dot( rot2( angles[1] ), rot1( angles[2] ) ) )
+
+    return I_to_TV_matrix
+
+def rot1(input):
+    # rotation matrix about axis 1
+    angle = input
+    rot1_matrix = np.array( [ [ 1., 0., 0. ], [ 0., cos( angle ), -sin( angle ) ],\
+                                              [ 0., sin( angle ),  cos( angle ) ] ] )
+    return rot1_matrix
+
+def rot2(input):
+    # rotation matrix about axis 2
+    angle = input
+    rot2_matrix = np.array( [ [ cos( angle ), 0., -sin( angle ) ], [ 0., 1., 0. ],\
+                              [ sin( angle ), 0.,  cos( angle ) ] ] )
+    return rot2_matrix
+
+def rot3(input):
+    # rotation matrix about axis 3
+    angle = input
+    rot3_matrix = np.array( [ [  cos( angle ), sin( angle ), 0. ],\
+                              [ -sin( angle ), cos( angle ), 0. ],\
+                                                     [ 0., 0., 1. ] ] )
+    return rot3_matrix
+
 ################################################################################
 #                  E X P O R T     F U N C T I O N S:
 ################################################################################
@@ -36,7 +72,7 @@ def fncH(input):
     n_beacons  = len(extras['obs_beacons'])
 
     # focal length
-    FoL = extras['focal_length']
+    FoL = extras['FoL']
 
     # camera and P&L parameters
     resolution = extras['resolution']
@@ -79,14 +115,15 @@ def fncH(input):
                             r_diff[2]**2 / rho**3 - 1. / rho ])
 
         # partials of A_hat_TV with respect to position components
-        I_to_TV_rot = I_to_TV( angles[ii,:] )
+        # Compute DCM from the Inertia frame to camera frame:
+        DCM_TVI = np.dot(extras['DCM_TVB'], extras['DCM_BI'])
         
-        dA_TVdX = np.dot( I_to_TV_rot, dA_IdX )
-        dA_TVdY = np.dot( I_to_TV_rot, dA_IdY )
-        dA_TVdZ = np.dot( I_to_TV_rot, dA_IdZ )
+        dA_TVdX = np.dot( DCM_TVI, dA_IdX )
+        dA_TVdY = np.dot( DCM_TVI, dA_IdY )
+        dA_TVdZ = np.dot( DCM_TVI, dA_IdZ )
 
         # calculate camera frame unit pointing vector (A_hat_TV)
-        A_hat_TV = np.dot( I_to_TV_rot, A_hat_I )
+        A_hat_TV = np.dot( DCM_TVI, A_hat_I )
 
         # partials of millimeter frame with respect to state
         dMMdX = FoL * np.array( [ -1. / A_hat_TV[2]**2 * dA_TVdX[2] * A_hat_TV[0] +\
@@ -116,14 +153,13 @@ def fncG(input):
     # pull out the inputs for the generation of estimated observation data
     state      = input[0]
     SPICE_data = input[1]
-    angles     = input[2]
     extras     = input[-1]
 
     # number of beacon observations
-    n_beacons  = len(extras['obs_beacons'])
+    n_beacons  = len(extras['beacons'])
 
     # focal length
-    FoL = extras['focal_length']
+    FoL = extras['FoL']
 
     # camera and P&L parameters
     resolution = extras['resolution']
@@ -136,23 +172,25 @@ def fncG(input):
 
     # create array to be twice the size of the number of beacons. this is because there are
     # two data types: pixel and line
-    G = np.zeros((n_beacons,2))
-    for ii in xrange(n_beacons):
+    G = np.zeros([n_beacons,2])
+    for ii in range(n_beacons):
 
         beacon_state = SPICE_data[ii,:]
-       
         # calculate the difference between the positions of the beacon and state
         r_diff = beacon_state[0:3] - state[ii, 0:3]
 
         # create inertial unit pointing vector (A_hat)
-        A_hat_I = r_diff / np.linalg.norm( r_diff )
+        Ahat_I = r_diff / np.linalg.norm( r_diff )
+
+        # Compute DCM from the Inertia frame to camera frame:
+        DCM_TVI = np.dot(extras['DCM_TVB'], extras['DCM_BI'])
 
         # rotate inertial pointing vector to camera (TV) frame
-        A_hat_TV = np.dot( I_to_TV( angles[ii,:] ), A_hat_I )
+        Ahat_TV = np.dot( DCM_TVI, Ahat_I )
 
         # convert TV frame to millimeter units
-        x_mm = FoL / A_hat_TV[2] * A_hat_TV[0]
-        y_mm = FoL / A_hat_TV[2] * A_hat_TV[1]
+        x_mm = FoL / Ahat_TV[2] * Ahat_TV[0]
+        y_mm = FoL / Ahat_TV[2] * Ahat_TV[1]
 
         # convert millimeter to P&L
         pixel = Kx * Dx * x_mm + p0
@@ -161,39 +199,8 @@ def fncG(input):
         # add pixel and line to output array
         G[ii,0] = pixel
         G[ii,1] = line
-
     return G
 
-def I_to_TV(input):
-	# pull out the angles from the input (RA, dec, twist) in that order
-    #pdb.set_trace()
-    angles = input
-    I_to_TV_matrix = np.dot( rot3( angles[0] ), \
-                     np.dot( rot2( angles[1] ), rot1( angles[2] ) ) )
-
-    return I_to_TV_matrix
-
-def rot1(input):
-    # rotation matrix about axis 1
-    angle = input
-    rot1_matrix = np.array( [ [ 1., 0., 0. ], [ 0., cos( angle ), -sin( angle ) ],\
-                                              [ 0., sin( angle ),  cos( angle ) ] ] )
-    return rot1_matrix
-
-def rot2(input):
-    # rotation matrix about axis 2
-    angle = input
-    rot2_matrix = np.array( [ [ cos( angle ), 0., -sin( angle ) ], [ 0., 1., 0. ],\
-                              [ sin( angle ), 0.,  cos( angle ) ] ] )
-    return rot2_matrix
-
-def rot3(input):
-    # rotation matrix about axis 3
-    angle = input
-    rot3_matrix = np.array( [ [  cos( angle ), sin( angle ), 0. ],\
-                              [ -sin( angle ), cos( angle ), 0. ],\
-                                                     [ 0., 0., 1. ] ] )
-    return rot3_matrix
 
 ###############################################################################
 #                       M A I N     F U N C T I O N:

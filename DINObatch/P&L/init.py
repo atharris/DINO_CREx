@@ -188,6 +188,7 @@ def main():
     # Initializing the error
     extras['x_hat_0'] = 0
 
+
     ##################################################################################
     #
     # Camera/P&L Parameters
@@ -196,6 +197,8 @@ def main():
 
     # Focal Length (mm)
     extras['FoL'] = 100.
+    extras['DCM_BI'] = np.eye(3)
+    extras['DCM_TVB'] = np.eye(3)
 
     # Camera resolution (pixels)
     extras['resolution'] = [1024., 1024.]
@@ -208,6 +211,9 @@ def main():
     extras['pixel_direction'] = 1.
     extras['line_direction'] = 1.
 
+    # Are we using the real dynamics for the ref or the trueData
+    extras['trueData']= 'OFF'
+
     ##################################################################################
 
     # Get Observation Times and Ephemerides
@@ -218,10 +224,9 @@ def main():
                                           start_et=start_et,
                                           end_et=end_et,
                                           extras = extras,
-                                          trueData = 'OFF')
+                                          trueData = extras['trueData'])
 
     tt_switch = 5
-
 
 
 
