@@ -36,10 +36,10 @@ def main():
 
     G = G_function( args )
 
-    print 'G', G[0,0], G[0,1]
+    print 'G', G[0,0], G[0,1], G[0,2]
 
     H = H_function( args )
-    pdb.set_trace()
+
     print 'H', H[0,0], H[0,1]
 
     return
