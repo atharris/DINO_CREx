@@ -15,7 +15,9 @@ T_TV_I = rot3( RA ) * rot2( dec ) * rot1( twist );
 % create inertial unit vector and rotate to camera
 A_hat_I  = spacecraft_to_object / norm( spacecraft_to_object );
 
-A_hat_I_deriv_input = diff(A_hat_I, x_sc);
+A_hat_I_deriv_x_input = diff(A_hat_I, x_sc);
+A_hat_I_deriv_y_input = diff(A_hat_I, y_sc);
+A_hat_I_deriv_z_input = diff(A_hat_I, z_sc);
 
 A_hat_TV = T_TV_I * A_hat_I;
 
@@ -26,13 +28,27 @@ y = Ky * Dy * FoL / A_hat_TV( 3 ) * A_hat_TV(2) + l0;
 
 x_y = [x;y];
 
-x_y_deriv_input = diff( x_y, x_sc );
+x_deriv_x_input = diff( x_y, x_sc );
+x_deriv_y_input = diff( x_y, y_sc );
+x_deriv_z_input = diff( x_y, z_sc );
 
-A_hat_I_deriv = matlabFunction( A_hat_I_deriv_input,...
-                               'file','A_hat_I_deriv');
+A_hat_I_deriv_x = matlabFunction( A_hat_I_deriv_x_input,...
+                               'file','A_hat_I_deriv_x');
 
-x_y_deriv     = matlabFunction( x_y_deriv_input,...
-                               'file','x_y_deriv');
+A_hat_I_deriv_y = matlabFunction( A_hat_I_deriv_y_input,...
+                                'file','A_hat_I_deriv_y');
+
+A_hat_I_deriv_z = matlabFunction( A_hat_I_deriv_z_input,...
+                                'file','A_hat_I_deriv_z');
+                           
+x_deriv_x     = matlabFunction( x_deriv_x_input,...
+                               'file','x_deriv_x');
+                           
+x_deriv_y     = matlabFunction( x_deriv_y_input,...
+                               'file','x_deriv_y');
+                           
+x_deriv_z     = matlabFunction( x_deriv_z_input,...
+                               'file','x_deriv_z');
 
 %% numerical stuff
 
@@ -106,7 +122,7 @@ A_hat_TV = T_TV_I * A_hat_I;
 
 dAdX_sym   = A_hat_I_deriv(x_ob,x_sc,y_ob,y_sc,z_ob,z_sc);
 
-dx_ydX_sym = x_y_deriv(Dx,Dy,FoL,Kx,Ky,RA,dec,twist,x_ob,x_sc,y_ob,y_sc,z_ob,z_sc);
+dx_dX_sym = x_deriv_x(Dx,Dy,FoL,Kx,Ky,RA,dec,twist,x_ob,x_sc,y_ob,y_sc,z_ob,z_sc);
 
 A_hat_norm = sqrt( (x_ob-x_sc)^2 + (y_ob-y_sc)^2 + (z_ob-z_sc)^2 );
 
@@ -118,12 +134,28 @@ dA_TVdX_alg =  [ T_TV_I(1,1) * dAdX_alg(1) + T_TV_I(1,2) * dAdX_alg(2) + T_TV_I(
                  T_TV_I(2,1) * dAdX_alg(1) + T_TV_I(2,2) * dAdX_alg(2) + T_TV_I(2,3) * dAdX_alg(3);...
                  T_TV_I(3,1) * dAdX_alg(1) + T_TV_I(3,2) * dAdX_alg(2) + T_TV_I(3,3) * dAdX_alg(3) ];
 
-dx_ydX_alg  =   FoL * [Kx * Dx; Ky*Dy].*...
-             [ -1 / A_hat_TV(3)^2 * dA_TVdX_alg(3) * A_hat_TV(1) + ...
+dx_dX_alg  =   FoL * [Kx * Dx; Ky * Dy].*...
+               [ -1 / A_hat_TV(3)^2 * dA_TVdX_alg(3) * A_hat_TV(1) + ...
                                 dA_TVdX_alg(1) / A_hat_TV(3);...
                -1 / A_hat_TV(3)^2 * dA_TVdX_alg(3) * A_hat_TV(2) + ...
                                 dA_TVdX_alg(2) / A_hat_TV(3);
                        ];
+                   
+dMMdX = FoL * [ -1. / A_hat_TV(3)^2 * dA_TVdX_alg(3) * A_hat_TV(1) +...
+                           dA_TVdX_alg(1) / A_hat_TV(3),...
+    -1. / A_hat_TV(3)^2 * dA_TVdX_alg(3) * A_hat_TV(2) +...
+                           dA_TVdX_alg(2) / A_hat_TV(3)  ];
 
-dx_ydX_sym - dx_ydX_alg 
-dx_ydX_alg
+dMMdY = FoL * [ -1. / A_hat_TV(3)^2 * dA_TVdY_alg_alg(3) * A_hat_TV(1) +...
+                           dA_TVdY_alg(1) / A_hat_TV(3),...
+    -1. / A_hat_TV(3)^2 * dA_TVdY_alg(3) * A_hat_TV(2) +...
+                           dA_TVdY_alg(2) / A_hat_TV(3)  ];
+
+% dMMdZ = FoL * np.array( [ -1. / A_hat_TV(3)^2 * dA_TVdZ_alg(3) * A_hat_TV(1) +...
+%                            dA_TVdZ_alg(1) / A_hat_TV(3),...
+%     -1. / A_hat_TV(3)^2 * dA_TVdZ_alg(3) * A_hat_TV(2) +...
+%                            dA_TVdZ_alg(2) / A_hat_TV(3)  ] )  
+
+
+disp( dx_dX_sym - dx_dX_alg )
+disp( dx_dX_alg )
