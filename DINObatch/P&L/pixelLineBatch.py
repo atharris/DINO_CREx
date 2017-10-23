@@ -156,7 +156,7 @@ def fncG(input):
     extras     = input[-1]
 
     # number of beacon observations
-    n_beacons  = len(extras['beacons'])
+    n_beacons  = len(extras['obs_beacons'])
 
     # focal length
     FoL = extras['FoL']

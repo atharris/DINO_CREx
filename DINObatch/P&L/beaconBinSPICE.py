@@ -19,7 +19,7 @@ __date__ = '$Date$'[7:26]
 
 import numpy as np
 from numpy.random import normal as rndNrm
-from pixelLineBatch import fncG
+from rngRngRtBatch import fncG
 
 ################################################################################
 #                  E X P O R T E D     F U N C T I O N S:
@@ -31,7 +31,6 @@ def getObs(input):
     # pull out the inputs for the generation of observation data
     SPICE_data = input[0]
     observation_uncertainty = input[1]
-    ref_states = input[2]
     extras = input[-1]
     n_beacons = extras['n_beacons']
     # number of observations in a mini observation set per beacon
@@ -44,10 +43,10 @@ def getObs(input):
     n_samples = r_spacecraft.shape[1]
 
     # create noise for the estimated observations
-    np.random.seed(42)
-    observation_noise = rndNrm(0, 0.02, (2, n_samples, n_beacons))
-
-
+    # np.random.seed(42)
+    observation_noise = np.zeros([n_samples, 2])
+    observation_noise[:,0] = rndNrm(0., observation_uncertainty[0,0] , n_samples)
+    observation_noise[:,1] = rndNrm(0., observation_uncertainty[1,1] , n_samples)
 
     # the size of an observation "bin". A "bin" is a super set of 
     # observations for each beacon. Each beacon is observed
@@ -68,14 +67,16 @@ def getObs(input):
     obs['data']    = np.zeros((n_samples, 2))
     obs['truth']   = np.zeros((n_samples, 2))
     obs['SPICE']   = np.zeros((n_samples, 6))
+
+    ref_state = np.zeros([n_samples, 6])
     # loop through all the bins. make sure to go max bin + 1 so that the rest of the 
     # arrays get filled even after the last whole bin
-    for bb in xrange( int(n_bins + 1) ) :    
-
+    for bb in xrange( int(n_bins ) ) :
       # while in a bin, loop through beacon keys
       for ii in xrange(n_beacons):
          # if the indices for the beacon mini bin are not outside the last whole bin, add the data
-         if bb * bin_size + n_obs + n_obs * ii < n_samples :
+         indice =  bb * bin_size + n_obs * ii
+         if indice < n_samples :
             # create beacon mini bin indices for readability
             start_idx = bb * bin_size + n_obs * ii
             end_idx   = bb * bin_size + n_obs + n_obs * ii
@@ -95,21 +96,32 @@ def getObs(input):
 
             # store the beacon data in an array to be used for the calculation
             # of H matrices and estimated observations.
-
             obs['SPICE'][start_idx : end_idx, 0:3 ] = r_beacon.T
             obs['SPICE'][start_idx : end_idx, 3:6 ] = v_beacon.T
 
-            # inputs for Y_refs (G) calculation
-            G_ref_inputs = (r_spacecraft[0:3, start_idx : end_idx ], r_beacon, extras)
-
-            # calculate the estimated observables and organize into an array
-            obs['data'][start_idx: end_idx, :] = fncG(G_ref_inputs)
-
-            # store these in the observation array
-            obs['truth'][start_idx : end_idx, 0:2] = np.copy( obs['data'][start_idx : end_idx, 0:2] )
-            obs['data'][start_idx : end_idx, 0:2] += \
-                np.dot(np.linalg.cholesky(observation_uncertainty), \
-                observation_noise[:, start_idx : end_idx, ii]).T
+            r_sc = np.copy(r_spacecraft[:, start_idx : end_idx])
+            ref_state[indice ,:] = r_sc.T
+            #          r_beacon #+ np.dot(np.linalg.cholesky(observation_uncertainty[0:3,0:3]), \
+            #          #observation_noise[0:3, start_idx : end_idx, ii])
+            #
+            # v_diff = r_spacecraft[3:6, start_idx : end_idx ] - \
+            #          v_beacon #+ np.dot(np.linalg.cholesky(observation_uncertainty[3:6,3:6]), \
+            #          #observation_noise[3:6, start_idx : end_idx, ii])
+            #
+            # # calculate the range
+            #
+            # rng = np.array(np.sqrt(np.sum(np.square(r_diff), axis=0)))
+            # obs['data'][start_idx : end_idx, 0] = rng
+            #
+            # # calculate the range rate
+            # rng_rate = np.divide(np.sum(np.multiply(r_diff, v_diff), axis=0), rng)
+            # obs['data'][start_idx : end_idx, 1] = rng_rate
+            #
+            # # store these in the observation array
+            # obs['truth'][start_idx : end_idx, 0:2] = np.copy( obs['data'][start_idx : end_idx, 0:2] )
+            # obs['data'][start_idx : end_idx, 0:2] += \
+            #     np.dot(np.linalg.cholesky(observation_uncertainty), \
+            #     observation_noise[:, start_idx : end_idx, ii]).T
 
          # if the indices are outside a whole bin, do a special data fill
          else :
@@ -134,26 +146,42 @@ def getObs(input):
             # store the beacon data in an array to be used for the calculation
             # of H matrices and estimated observations.
 
-            # store the beacon data in an array to be used for the calculation
-            # of H matrices and estimated observations.
             obs['SPICE'][start_idx : end_idx, 0:3 ] = r_beacon.T
             obs['SPICE'][start_idx : end_idx, 3:6 ] = v_beacon.T
 
-            # inputs for Y_refs (G) calculation
-            G_ref_inputs = (r_spacecraft[0:3, start_idx : end_idx ], r_beacon, extras)
-
-            # calculate the estimated observables and organize into an array
-            obs['data'][start_idx: end_idx, :] = fncG(G_ref_inputs)
-
-            # store these in the observation array
-            obs['truth'][start_idx : end_idx, 0:2] = np.copy( obs['data'][start_idx : end_idx, 0:2] )
-            obs['data'][start_idx : end_idx, 0:2] += \
-                np.dot(np.linalg.cholesky(observation_uncertainty), \
-                observation_noise[:, start_idx : end_idx, ii]).T
-
-            # after this last data gets pulled, break the bin loop
+            r_sc = np.copy(r_spacecraft[:, start_idx : end_idx])
+            # print bb * bin_size  + n_obs * ii
+            ref_state[indice,:] = r_sc.T
+            #
+            # r_diff = r_spacecraft[0:3, start_idx : end_idx ] - \
+            #          r_beacon #+ np.dot(np.linalg.cholesky(observation_uncertainty[0:3,0:3]), \
+            #          #observation_noise[0:3, start_idx : end_idx, ii])
+            #
+            # v_diff = r_spacecraft[3:6, start_idx : end_idx ] - \
+            #          v_beacon #+ np.dot(np.linalg.cholesky(observation_uncertainty[3:6,3:6]), \
+            #          #observation_noise[3:6, start_idx : end_idx, ii])
+            #
+            # # calculate the range
+            # rng = np.array(np.sqrt(np.sum(np.square(r_diff), axis=0)))
+            # obs['data'][start_idx : end_idx, 0] = rng
+            #
+            # # calculate the range rate
+            # rng_rate = np.divide(np.sum(np.multiply(r_diff, v_diff), axis=0), rng)
+            # obs['data'][start_idx : end_idx, 1] = rng_rate
+            #
+            # # store these in the observation array
+            # obs['truth'][start_idx : end_idx, 0:2] = np.copy( obs['data'][start_idx : end_idx, 0:2] )
+            # obs['data'][start_idx : end_idx, 0:2] += \
+            #     np.dot(np.linalg.cholesky(observation_uncertainty), \
+            #     observation_noise[:, start_idx : end_idx, ii]).T
+            #
+            # # after this last data gets pulled, break the bin loop
             break
-
+    extras['obs_beacons'] = list(obs['beacons'])
+    G_ref_inputs = (ref_state, obs['SPICE'], extras)
+    # calculate the estimated observables and organize into an array
+    obs['truth'] = np.copy(fncG(G_ref_inputs))
+    obs['data'] = np.copy(fncG(G_ref_inputs)) + observation_noise
     return obs
 
 def putObs( input ) :
@@ -161,9 +189,9 @@ def putObs( input ) :
    data   = input[0]
    extras = input[-1]
 
-   n_samples = extras['Y']['data'].shape[0]
+   n_samples = extra_data['Y']['data'].shape[0]
 
-   n_obs     = extras['Y']['data']
+   n_obs     = extra_data['Y']['data']
 
    obs_data = {}
 

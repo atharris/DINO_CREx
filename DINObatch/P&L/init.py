@@ -212,7 +212,7 @@ def main():
     extras['line_direction'] = 1.
 
     # Are we using the real dynamics for the ref or the trueData
-    extras['trueData']= 'OFF'
+    extras['realData']= 'OFF'
 
     ##################################################################################
 
@@ -224,7 +224,7 @@ def main():
                                           start_et=start_et,
                                           end_et=end_et,
                                           extras = extras,
-                                          trueData = extras['trueData'])
+                                          realData = extras['realData'])
 
     tt_switch = 5
 
@@ -273,8 +273,8 @@ def main():
 
     # uncertainty to be added in the form of noise to the measurables. Takes the form of variance
     observation_uncertainty = np.identity(2)
-    observation_uncertainty[0, 0] = 1 ** 2
-    observation_uncertainty[1, 1] = .0005 ** 2
+    observation_uncertainty[0, 0] = 0.02 ** 2
+    observation_uncertainty[1, 1] = 0.02 ** 2
 
     # the initial STM is an identity matrix
     phi0 = np.identity(IC.shape[0])

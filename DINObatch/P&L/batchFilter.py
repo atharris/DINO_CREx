@@ -146,7 +146,7 @@ def run_batch( input ) :
   # get the observations
   #
   # observation inputs
-  obs_inputs = (SPICE_data, observation_uncertainty, ref_state, extras)
+  obs_inputs = (SPICE_data, observation_uncertainty, extras)
   # get observations and the associated beacon ket
   # inputs for Y_refs (G) calculation
   Y_obs = getObs(obs_inputs)
@@ -246,13 +246,17 @@ def run_batch( input ) :
   for ii in range(np.shape(x_hat_array)[0]):
     postfits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*ii:2+2*ii,:], x_hat_array[ii,:])
 
+  prefits = np.zeros([np.shape(x_hat_array)[0], np.shape(y)[1]])
+  for ii in range(1,np.shape(x_hat_array)[0]):
+    prefits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*(ii):2+2*(ii),:], x_hat_array[ii-1,:])
+
 
   # store various arrays in a data dictionary
   extra_data                      = {}
   extra_data['Y']                 = Y_obs
   extra_data['P_array']           = P_array
   extra_data['x_hat_array']       = x_hat_array
-  extra_data['prefit residuals']  = y
+  extra_data['prefit residuals']  = prefits
   extra_data['postfit residuals'] = postfits
   extras['x_hat_0']               += x_hat
   extra_data['x_hat_0']           = extras['x_hat_0']

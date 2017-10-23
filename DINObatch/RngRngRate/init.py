@@ -32,7 +32,6 @@ sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 sys.path.append(dinoSpicePath)
 
-print bskPath
 
 import pyswice
 import numpy as np
@@ -237,19 +236,19 @@ def main():
     P_bar[4, 4] = .1**2
     P_bar[5, 5] = .1**2
 
-    position_error = np.zeros(3)
-    velocity_error = np.zeros(3)
+    # position_error = np.zeros(3)
+    # velocity_error = np.zeros(3)
 
     # add uncertainty to the IC
-    # position_error = 5000 * np.divide(IC[0:3], norm(IC[0:3]))
-    # velocity_error = 0.05 * np.divide(IC[3:6], norm(IC[3:6]))
+    position_error = 5000 * np.divide(IC[0:3], norm(IC[0:3]))
+    velocity_error = 0.05 * np.divide(IC[3:6], norm(IC[3:6]))
 
     IC += np.append(position_error, velocity_error)
 
     # uncertainty to be added in the form of noise to the measurables. Takes the form of variance
     observation_uncertainty = np.identity(2)
-    observation_uncertainty[0, 0] = 1 ** 2
-    observation_uncertainty[1, 1] = .0005 ** 2
+    observation_uncertainty[0, 0] = 0.1**2.
+    observation_uncertainty[1, 1] = .0001**2.
 
     # the initial STM is an identity matrix
     phi0 = np.identity(IC.shape[0])
@@ -468,8 +467,8 @@ def main():
 
         plt.subplot(122)
         plt.plot(t_span, prefits[:, 1], '.')
-        plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
-        plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
+        plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2.), 'r--')
+        plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2.), 'r--')
         plt.xticks([])
         plt.title('Range Rate (km/s)')
         plt.xticks(t_span, rotation=90, ha='right')
@@ -484,8 +483,8 @@ def main():
         plt.figure(5)
         plt.subplot(121)
         plt.plot(t_span, postfits[:, 0], '.')
-        plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[0,0]), 'r--')
-        plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[0,0]), 'r--')
+        plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[0,0]**2.), 'r--')
+        plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[0,0]**2.), 'r--')
         plt.xticks([])
         plt.ylabel('Residual')
         plt.title('Range (km)')
@@ -495,8 +494,8 @@ def main():
 
         plt.subplot(122)
         plt.plot(t_span, postfits[:, 1], '.')
-        plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
-        plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]), 'r--')
+        plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2.), 'r--')
+        plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2.), 'r--')
         plt.xticks([])
         plt.title('Range Rate (km/s)')
         plt.xticks(t_span, rotation=90, ha='right')

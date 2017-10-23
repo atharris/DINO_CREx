@@ -24,7 +24,7 @@ from batchFilter import runRef
 
 def generate_data(sc_ephem_file, planet_beacons,
                   beacon_ids, n_observations=10,
-                  start_et=None, end_et=None, extras = {}, trueData = 'OFF', ref='J2000'):
+                  start_et=None, end_et=None, extras = {}, realData = 'OFF', ref='J2000'):
     # Load Ephemeris Files
     pyswice.furnsh_c(sc_ephem_file)
     pyswice.furnsh_c(bskSpicePath + 'de430.bsp')
@@ -77,7 +77,7 @@ def generate_data(sc_ephem_file, planet_beacons,
     ephemerides = {'spacecraft': np.array(sc_states).T}
 
     dyn_ref_state = []
-    if trueData == 'OFF':
+    if realData == 'OFF':
         IC0 = sc_states[0]
         n_state = IC0.shape[0]
         phi0 = np.identity(n_state)
