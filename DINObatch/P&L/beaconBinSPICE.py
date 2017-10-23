@@ -19,7 +19,7 @@ __date__ = '$Date$'[7:26]
 
 import numpy as np
 from numpy.random import normal as rndNrm
-from rngRngRtBatch import fncG
+from pixelLineBatch import fncG
 
 ################################################################################
 #                  E X P O R T E D     F U N C T I O N S:
