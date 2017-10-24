@@ -182,7 +182,7 @@ def main():
     extras['SNC'] = (2 * 10 ** (-4)) ** 3
 
     # Number of batch iterations
-    extras['iterations'] = 3
+    extras['iterations'] = 5
 
     # Are we using the real dynamics for the ref or the trueData
     extras['realData']= 'OFF'
@@ -247,8 +247,8 @@ def main():
 
     # uncertainty to be added in the form of noise to the measurables. Takes the form of variance
     observation_uncertainty = np.identity(2)
-    observation_uncertainty[0, 0] = 0.1**2.
-    observation_uncertainty[1, 1] = .0001**2.
+    observation_uncertainty[0, 0] = 1**2.
+    observation_uncertainty[1, 1] = .005**2.
 
     # the initial STM is an identity matrix
     phi0 = np.identity(IC.shape[0])

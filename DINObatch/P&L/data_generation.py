@@ -88,7 +88,7 @@ def generate_data(sc_ephem_file, planet_beacons,
         state = runRef(prop_input)
         for jj in range(len(observation_times)):
             dyn_ref_state.append(state[jj][0:n_state])
-    ephemerides = {'spacecraft': np.array(dyn_ref_state).T}
+        ephemerides = {'spacecraft': np.array(dyn_ref_state).T}
 
 
     # for planet in planet_beacons:
