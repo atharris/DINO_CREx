@@ -1,4 +1,7 @@
 syms x_sc y_sc z_sc x_ob y_ob z_ob FoL RA dec twist Kx Ky Dx Dy p0 l0
+
+save_path = '/home/marco/DINO_CREx/DINObatch/P&L/P&L Matlab/';
+
 % inertial position vectors of spacecraft and object
 state_spacecraft = [x_sc, y_sc, z_sc]';
 state_object     = [x_ob, y_ob, z_ob]';
@@ -23,37 +26,37 @@ A_hat_TV = T_TV_I * A_hat_I;
 
 % equation 5.14
 % convert from camera unit vector to field of view millimeters
-x = Kx * Dx * FoL / A_hat_TV( 3 ) * A_hat_TV(1) + p0;
-y = Ky * Dy * FoL / A_hat_TV( 3 ) * A_hat_TV(2) + l0;
+p = Kx * Dx * FoL / A_hat_TV( 3 ) * A_hat_TV(1) + p0;
+l = Ky * Dy * FoL / A_hat_TV( 3 ) * A_hat_TV(2) + l0;
 
-x_y = [x;y];
+p_l = [p;l];
 
-MM_deriv_x_input = diff( x_y, x_sc );
-MM_deriv_y_input = diff( x_y, y_sc );
-MM_deriv_z_input = diff( x_y, z_sc );
+pl_deriv_x_input = diff( p_l, x_sc );
+pl_deriv_y_input = diff( p_l, y_sc );
+pl_deriv_z_input = diff( p_l, z_sc );
 
 A_hat_I_deriv_x = matlabFunction( A_hat_I_deriv_x_input,...
-                               'file','A_hat_I_deriv_x');
+                               'file',[save_path,'A_hat_I_deriv_x.m']);
 
 A_hat_I_deriv_y = matlabFunction( A_hat_I_deriv_y_input,...
-                                'file','A_hat_I_deriv_y');
+                                'file',[save_path,'A_hat_I_deriv_y.m']);
 
 A_hat_I_deriv_z = matlabFunction( A_hat_I_deriv_z_input,...
-                                'file','A_hat_I_deriv_z');
+                                'file',[save_path,'A_hat_I_deriv_z.m']);
                            
-MM_deriv_x     = matlabFunction( MM_deriv_x_input,...
-                               'file','MM_deriv_x');
+pl_deriv_x     = matlabFunction( pl_deriv_x_input,...
+                               'file',[save_path,'pl_deriv_x.m']);
                            
-MM_deriv_y     = matlabFunction( MM_deriv_y_input,...
-                               'file','MM_deriv_y');
+pl_deriv_y     = matlabFunction( pl_deriv_y_input,...
+                               'file',[save_path,'pl_deriv_y.m']);
                            
-MM_deriv_z     = matlabFunction( MM_deriv_z_input,...
-                               'file','MM_deriv_z');
+pl_deriv_z     = matlabFunction( pl_deriv_z_input,...
+                               'file',[save_path,'pl_deriv_z.m']);
 
 %% numerical stuff
 
 state_spacecraft = [1000,0,0]';
-state_object     = [1200,1000,400]';
+state_object     = [1200,1000,450]';
 
 x_sc = state_spacecraft(1);
 y_sc = state_spacecraft(2);
@@ -99,7 +102,7 @@ Dy = 1;
 RA = 0;
 
 % define declination (dec)
-dec = pi/4;
+dec = 0;
 
 % define camera twist (twist)
 twist = pi/2;
@@ -119,12 +122,9 @@ A_hat_I  = spacecraft_to_object / norm( spacecraft_to_object );
 A_hat_TV = T_TV_I * A_hat_I;
 
 %% derivatives
-
-dAdX_sym   = A_hat_I_deriv(x_ob,x_sc,y_ob,y_sc,z_ob,z_sc);
-
-dMM_dX_sym = MM_deriv_x(Dx,Dy,FoL,Kx,Ky,RA,dec,twist,x_ob,x_sc,y_ob,y_sc,z_ob,z_sc);
-dMM_dY_sym = MM_deriv_y(Dx,Dy,FoL,Kx,Ky,RA,dec,twist,x_ob,x_sc,y_ob,y_sc,z_ob,z_sc);
-dMM_dZ_sym = MM_deriv_z(Dx,Dy,FoL,Kx,Ky,RA,dec,twist,x_ob,x_sc,y_ob,y_sc,z_ob,z_sc);
+dpl_dX_sym = pl_deriv_x(Dx,Dy,FoL,Kx,Ky,RA,dec,twist,x_ob,x_sc,y_ob,y_sc,z_ob,z_sc);
+dpl_dY_sym = pl_deriv_y(Dx,Dy,FoL,Kx,Ky,RA,dec,twist,x_ob,x_sc,y_ob,y_sc,z_ob,z_sc);
+dpl_dZ_sym = pl_deriv_z(Dx,Dy,FoL,Kx,Ky,RA,dec,twist,x_ob,x_sc,y_ob,y_sc,z_ob,z_sc);
 
 A_hat_norm = sqrt( (x_ob-x_sc)^2 + (y_ob-y_sc)^2 + (z_ob-z_sc)^2 );
 
@@ -152,33 +152,38 @@ dA_TVdZ_alg =  [ T_TV_I(1,1) * dAdZ_alg(1) + T_TV_I(1,2) * dAdZ_alg(2) + T_TV_I(
                  T_TV_I(2,1) * dAdZ_alg(1) + T_TV_I(2,2) * dAdZ_alg(2) + T_TV_I(2,3) * dAdZ_alg(3);...
                  T_TV_I(3,1) * dAdZ_alg(1) + T_TV_I(3,2) * dAdZ_alg(2) + T_TV_I(3,3) * dAdZ_alg(3) ];
                    
-dMM_dX_alg = FoL * [Kx * Dx; Ky * Dy].*...
+dpl_dX_alg = FoL * [Kx * Dx; Ky * Dy].*...
              [ -1 / A_hat_TV(3)^2 * dA_TVdX_alg(3) * A_hat_TV(1) + ...
                      dA_TVdX_alg(1) / A_hat_TV(3);...
                      -1 / A_hat_TV(3)^2 * dA_TVdX_alg(3) * ...
                      A_hat_TV(2) + dA_TVdX_alg(2) / A_hat_TV(3)  ];
 
-dMM_dY_alg = FoL * [Kx * Dx; Ky * Dy].*...
+dpl_dY_alg = FoL * [Kx * Dx; Ky * Dy].*...
              [ -1. / A_hat_TV(3)^2 * dA_TVdY_alg(3) * A_hat_TV(1) + ...
                      dA_TVdY_alg(1) / A_hat_TV(3);...
                      -1. / A_hat_TV(3)^2 * dA_TVdY_alg(3) * ...
                      A_hat_TV(2) + dA_TVdY_alg(2) / A_hat_TV(3)  ];
 
-dMM_dZ_alg = FoL * [Kx * Dx; Ky * Dy].*...
+dpl_dZ_alg = FoL * [Kx * Dx; Ky * Dy].*...
              [-1 / A_hat_TV(3)^2 * dA_TVdZ_alg(3) * ...
-             A_hat_TV(1) + dA_TVdZ_alg(1) / A_hat_TV(3); ...
-             -1 / A_hat_TV(3)^2 *...
-             dA_TVdZ_alg(3) * A_hat_TV(2) + dA_TVdZ_alg(2) /...
-             A_hat_TV(3) ];  
+                    A_hat_TV(1) + dA_TVdZ_alg(1) / A_hat_TV(3); ...
+                    -1 / A_hat_TV(3)^2 *...
+                    dA_TVdZ_alg(3) * A_hat_TV(2) + dA_TVdZ_alg(2) /...
+                    A_hat_TV(3) ];  
 
 disp('Absolute Differences:')
-disp( dMM_dX_sym - dMM_dX_alg )
-disp( dMM_dY_sym - dMM_dY_alg )
-disp( dMM_dZ_sym - dMM_dZ_alg )
+disp( dpl_dX_sym - dpl_dX_alg )
+disp( dpl_dY_sym - dpl_dY_alg )
+disp( dpl_dZ_sym - dpl_dZ_alg )
 disp('Values:')
-disp( dMM_dX_sym )
-disp( dMM_dY_sym )
-disp( dMM_dZ_sym )
+disp('-pixel derivatives' )
+disp( dpl_dX_sym(1) )
+disp( dpl_dY_sym(1) )
+disp( dpl_dZ_sym(1) )
+disp('-line derivatives' )
+disp( dpl_dX_sym(2) )
+disp( dpl_dY_sym(2) )
+disp( dpl_dZ_sym(2) )
 
 
 % disp( dx_dX_alg )

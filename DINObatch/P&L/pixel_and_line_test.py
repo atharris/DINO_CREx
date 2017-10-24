@@ -5,7 +5,7 @@ from pixelLineBatch import fncG as G_function
 
 def main():
     spacecraft = np.array([[1000.,0.,0.,0.,0.,0.]])
-    beacon     = np.array([[1200,1000,400]])
+    beacon     = np.array([[1200,1000,450]])
 
     ##################################################################################
     #
@@ -31,16 +31,18 @@ def main():
     extras['obs_beacons'] = [1.]
 
     angles = np.array([[0,np.pi / 4,np.pi / 2.]])
+    angles = np.array([[0,        0,np.pi / 2.]])
 
     args = ( spacecraft, beacon, angles, extras )
 
     G = G_function( args )
 
-    print 'G', G[0,0], G[0,1], G[0,2]
+    print 'G', G[0,0], G[0,1]
 
     H = H_function( args )
 
-    print 'H', H[0,0], H[0,1]
+    print 'H_p', H[0,0], H[0,1], H[0,2]
+    print 'H_l', H[1,0], H[1,1], H[1,2]
 
     return
 
