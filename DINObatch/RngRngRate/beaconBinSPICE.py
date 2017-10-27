@@ -101,27 +101,6 @@ def getObs(input):
 
             r_sc = np.copy(r_spacecraft[:, start_idx : end_idx])
             ref_state[indice ,:] = r_sc.T
-            #          r_beacon #+ np.dot(np.linalg.cholesky(observation_uncertainty[0:3,0:3]), \
-            #          #observation_noise[0:3, start_idx : end_idx, ii])
-            #
-            # v_diff = r_spacecraft[3:6, start_idx : end_idx ] - \
-            #          v_beacon #+ np.dot(np.linalg.cholesky(observation_uncertainty[3:6,3:6]), \
-            #          #observation_noise[3:6, start_idx : end_idx, ii])
-            #
-            # # calculate the range
-            #
-            # rng = np.array(np.sqrt(np.sum(np.square(r_diff), axis=0)))
-            # obs['data'][start_idx : end_idx, 0] = rng
-            #
-            # # calculate the range rate
-            # rng_rate = np.divide(np.sum(np.multiply(r_diff, v_diff), axis=0), rng)
-            # obs['data'][start_idx : end_idx, 1] = rng_rate
-            #
-            # # store these in the observation array
-            # obs['truth'][start_idx : end_idx, 0:2] = np.copy( obs['data'][start_idx : end_idx, 0:2] )
-            # obs['data'][start_idx : end_idx, 0:2] += \
-            #     np.dot(np.linalg.cholesky(observation_uncertainty), \
-            #     observation_noise[:, start_idx : end_idx, ii]).T
 
          # if the indices are outside a whole bin, do a special data fill
          else :
@@ -152,30 +131,7 @@ def getObs(input):
             r_sc = np.copy(r_spacecraft[:, start_idx : end_idx])
             # print bb * bin_size  + n_obs * ii
             ref_state[indice,:] = r_sc.T
-            #
-            # r_diff = r_spacecraft[0:3, start_idx : end_idx ] - \
-            #          r_beacon #+ np.dot(np.linalg.cholesky(observation_uncertainty[0:3,0:3]), \
-            #          #observation_noise[0:3, start_idx : end_idx, ii])
-            #
-            # v_diff = r_spacecraft[3:6, start_idx : end_idx ] - \
-            #          v_beacon #+ np.dot(np.linalg.cholesky(observation_uncertainty[3:6,3:6]), \
-            #          #observation_noise[3:6, start_idx : end_idx, ii])
-            #
-            # # calculate the range
-            # rng = np.array(np.sqrt(np.sum(np.square(r_diff), axis=0)))
-            # obs['data'][start_idx : end_idx, 0] = rng
-            #
-            # # calculate the range rate
-            # rng_rate = np.divide(np.sum(np.multiply(r_diff, v_diff), axis=0), rng)
-            # obs['data'][start_idx : end_idx, 1] = rng_rate
-            #
-            # # store these in the observation array
-            # obs['truth'][start_idx : end_idx, 0:2] = np.copy( obs['data'][start_idx : end_idx, 0:2] )
-            # obs['data'][start_idx : end_idx, 0:2] += \
-            #     np.dot(np.linalg.cholesky(observation_uncertainty), \
-            #     observation_noise[:, start_idx : end_idx, ii]).T
-            #
-            # # after this last data gets pulled, break the bin loop
+
             break
     extras['obs_beacons'] = list(obs['beacons'])
     G_ref_inputs = (ref_state, obs['SPICE'], extras)

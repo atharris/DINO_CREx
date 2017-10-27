@@ -46,6 +46,9 @@ import macros
 import matplotlib.pyplot as plt
 # @endcond
 
+
+
+
 # Class in order to plot using data accross the different paramatrized scenarios
 class DataStore:
     def __init__(self):
