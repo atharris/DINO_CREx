@@ -15,6 +15,7 @@ sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 sys.path.append(dinoSpicePath)
 
+
 import pyswice
 import numpy as np
 from batchFilter import runRef
