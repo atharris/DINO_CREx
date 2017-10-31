@@ -462,7 +462,7 @@ def create_EKF_estimate(X0_ground, X_est, k_f, dt, k_meas, omega_true):
         params_NL = (omega_obs, w_samp[k, :])
         # Propagate Ground Truth
         X_GT = kf.RK4(X0_GT, propagate_dynNL, params_NL, dt)
-        X_GT[0:3] = rbk.MRPSwitch(X_GT[0:3],1.0)
+        X_GT[0:3] = rbk.sigmaUnitSwitchCheck(X_GT[0:3])
         # Update Current Ground Truth
         X0_GT = X_GT
         B0 = B
@@ -493,7 +493,7 @@ def create_EKF_estimate(X0_ground, X_est, k_f, dt, k_meas, omega_true):
         k_counter += 1
 
         # COMPUTE ERROR
-        sigma_error = rbk.MRPSwitch(X_GT[0:3] - X0_KF[0:3],1.0)
+        sigma_error = rbk.sigmaUnitSwitchCheck(X_GT[0:3] - X0_KF[0:3])
         bias_error = X_GT[3:6] - X0_KF[3:6]
         e_x = np.append(sigma_error, bias_error)
         X_error_vec[:,k] = e_x
