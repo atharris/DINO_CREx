@@ -105,16 +105,20 @@ class camera:
 		resolution_width,
 		body2cameraDCM,
 		max_mag,
+		min_mag,
 		qe,
 		tc,
 		lambda_bin_size,
+		effective_area,
+		dark_current,
+		read_sigma,
 		sc,
 		msg,
 		**kwargs
 		):
 
 		from em import planck
-		from numpy import pi
+		from numpy import pi, array
 
 		try:
 			verbose = kwargs['verbose']
@@ -126,49 +130,65 @@ class camera:
 		except:
 			db = 'db/tycho.db'
 		
-		self.detector_height = detector_height
-		self.detector_width = detector_width
-		self.focal_length = focal_length
-		self.sc = sc
 		FOV = self.calculate_FOV(
-			self.focal_length,
-			self.detector_height, 
-			self.detector_width,
+			focal_length,
+			detector_height, 
+			detector_width,
 			verbose=verbose
 			)
-		
-		self.angular_height = FOV['alpha']
-		self.angular_width = FOV['beta']
-		self.angular_diagonal = FOV['gamma']
+
+		if msg['add_stars']:
+			allstars = self.load_all_stars(db, max_mag, min_mag, verbose=verbose)
+		lambda_set = self.find_lambda_set(qe, tc, lambda_bin_size)
+		qe = self.interpolate_lambda_dependent(qe,lambda_set)
+		tc = self.interpolate_lambda_dependent(tc,lambda_set) 
+		sensitivity_curve = qe['throughput']*tc['throughput']
+		lambda_set = lambda_set[sensitivity_curve != 0]
+
+		if msg['add_stars']:
+			self.RA = allstars['RA']
+			self.DE = allstars['DE']
+			self.n1 = allstars['n1']
+			self.n2 = allstars['n2']
+			self.n3 = allstars['n3']
+			self.VT = allstars['VT']
+			self.BVT = allstars['BVT']
+			self.star_id = allstars['star_id']
+			self.T = allstars['T']
+			self.reduction_term = allstars['reduction_term']
+		else:
+			self.RA = array([])
+			self.DE = array([])
+			self.n1 = array([])
+			self.n2 = array([])
+			self.n3 = array([])
+			self.VT = array([])
+			self.BVT = array([])
+			self.star_id = array([])
+			self.T = array([])
+			self.reduction_term = array([])
+
+		self.solar_bb = planck(5778,lambda_set*1e-9)
+		self.lambda_set = lambda_set
+		self.sensitivity_curve = sensitivity_curve[sensitivity_curve != 0]
+		self.qe = qe
+		self.tc = tc
+		self.lambda_bin_size = lambda_bin_size
 		self.resolution_height = resolution_height
 		self.resolution_width = resolution_width		
 		self.body2cameraDCM = body2cameraDCM
 		self.max_mag = max_mag
-
-		lambda_set = self.find_lambda_set(qe, tc, lambda_bin_size)
-		self.solar_bb = planck(5778,lambda_set*1e-9)*pi*lambda_bin_size
-
-		self.qe = self.interpolate_lambda_dependent(qe,lambda_set)
-		self.tc = self.interpolate_lambda_dependent(tc,lambda_set) 
-		sensitivity_curve = self.qe['throughput']*self.tc['throughput']
-
-		self.lambda_set = lambda_set[sensitivity_curve != 0]
-		self.sensitivity_curve = sensitivity_curve[sensitivity_curve != 0]
-		self.lambda_bin_size = lambda_bin_size
-
-
-		allstars = self.load_all_stars(db, verbose=verbose)
-
-		self.RA = allstars['RA']
-		self.DE = allstars['DE']
-		self.n1 = allstars['n1']
-		self.n2 = allstars['n2']
-		self.n3 = allstars['n3']
-		self.VT = allstars['VT']
-		self.BVT = allstars['BVT']
-		self.star_id = allstars['star_id']
-		self.T = allstars['T']
-		self.reduction_term = allstars['reduction_term']
+		self.min_mag = min_mag
+		self.angular_height = FOV['alpha']
+		self.angular_width = FOV['beta']
+		self.angular_diagonal = FOV['gamma']
+		self.detector_height = detector_height
+		self.detector_width = detector_width
+		self.focal_length = focal_length
+		self.read_sigma = read_sigma
+		self.sc = sc
+		self.effective_area = effective_area
+		self.dark_current = dark_current
 		self.blackbody = {}
 		self.images = {}
 		self.msg = msg
@@ -191,9 +211,9 @@ class camera:
 	#				the user with timings for the database call
 	#
 	###########################################################################
-	def load_all_stars(self,db, **kwargs):
+	def load_all_stars(self,db, max_mag, min_mag, **kwargs):
 		import sqlite3
-		from numpy import array, sin, cos, deg2rad
+		from numpy import array, sin, cos, deg2rad, logical_and
 
 		try: 
 			verbose = kwargs['verbose']
@@ -263,7 +283,8 @@ class camera:
 		reduction_term = array(reduction_term)
 		T = array(T)
 
-		ind = VT < self.max_mag
+		ind = VT < max_mag
+		ind = logical_and(ind, VT > min_mag)
 		RA = RA[ind]
 		DE = DE[ind]
 		VT = VT[ind]
@@ -314,7 +335,6 @@ class camera:
 
 	def calculate_FOV(self, focal_length, detector_height, detector_width, **kwargs):
 		from numpy import sqrt, arctan2, rad2deg
-		#This script is based on the calculations at the back of Matt's 5010 notebook.
 		f = focal_length
 		a = detector_height
 		b = detector_width
@@ -322,8 +342,8 @@ class camera:
 
 		#angular distance of diagonal of FOV
 		gamma = 2*arctan2(c/2,f)
-		alpha = gamma*a/c
-		beta = gamma*b/c
+		alpha = 2*arctan2(a/2,f)
+		beta = 2*arctan2(b/2,f)
 
 		return {
 			'alpha':rad2deg(alpha),\
@@ -372,6 +392,26 @@ class camera:
 
 	###############################################################################
 	#
+	# hot_dark() 
+	#
+	#	Inputs:
+	#		
+	#	Outputs:
+	#
+	#	Notes: 
+	#
+	###############################################################################
+
+	# def calculate_hot_dark(self):
+	# 	resolution_height = self.resolution_height
+	# 	resolution_width = self.resolution_width
+	# 	current_hot_dark = self.hot_dark
+	# 	#do your thing here
+		
+	# 	self.hot_dark_arr = hot_dark_array
+
+	###############################################################################
+	#
 	# update_state() 
 	#
 	#	Inputs:
@@ -383,6 +423,8 @@ class camera:
 	###############################################################################
 
 	def update_state(self):
+
+		# self.hot_dark = self.calculate_hot_dark(dt)
 
 		#initialize a counter so we can check if we have open images
 		open_images = 0
@@ -514,51 +556,86 @@ class image:
 		self.c1 = 0
 		self.c2 = 0
 		self.c3 = 0
-		self.color = 0
 		self.DCM = []
 		self.scenes = []
 		self.frames = []
 		self.detector_array = []
 		self.star_id = []
 
+	###############################################################################
+	#
+	# update_state() 
+	#
+	#	Inputs:
+	#		
+	#	Outputs:
+	#
+	#	Notes: 
+	#
+	###############################################################################
+
 	def update_state(self):
 
 		if self.camera.msg['take_image'] == 1:
+			#if the image is still actively being taken, all we do is save
+			#off a DCM for that scene. The image will only be created once
+			#self.camera.msg['take_image'] is set to zero and
+			#image.update_state() is run.
 			self.DCM.append(self.camera.sc.attitudeDCM)
 		else:
 			from scipy.linalg import inv
-			from numpy import arctan2, arcsin, array
+			from numpy import arctan2, arcsin, array, zeros, pi
+			from em import planck
 			import pdb
 
+			#this finds a subset of stars that are in the FOV at some point
+			#during the exposure. Some functionality of find_stars_in_FOV()
+			#is not needed in this step (like converting to pixel/line), 
+			#but it is done anyway so we can reuse the function.
+
+		
+			#use the first attitude of the exposure as the central attitude
+			#for calculating subset of stars.
 			DCM_0 = self.DCM[0]
 			DCM_0_inv = inv(DCM_0)
 			alpha_0 = arctan2(DCM_0[0,1],DCM_0[0,0])
 			beta_0 = arcsin(DCM_0[0,2])
 			gamma_0 = arctan2(DCM_0[1,2],DCM_0[2,2])
 
+			#All of the other DCMs at this point are transformations from
+			#the intertial reference frame to the camera frame at the time
+			#this scene was recorded. This loop converts them to be
+			#transformations from camera frame at the beginning of the exposure
+			#(i.e. DCM_0) to the camera frame at the time of this exposure.
 			for i in range(0,len(self.DCM)):
 				self.DCM[i] = self.DCM[i].dot(DCM_0_inv)
 				self.alpha.append(arctan2(self.DCM[i][0,1],self.DCM[i][0,0]))
 				self.beta.append(arcsin(self.DCM[i][0,2]))
 				self.gamma.append(arctan2(self.DCM[i][1,2],self.DCM[i][2,2]))
 
-			from numpy import zeros 
-			from em import planck
-
-			#this finds a subset of stars that are in the FOV at some point
-			#during the exposure. There's still a bunch of stuff that it does
-			#that it should no longer do since it used to house a lot more
-			#image processes, like handling pixel/line conversion. Those are all now handled later.
+			#this is getting sloppy... When we call find_stars_in_FOV()
+			#to find all the stars in the exposure at any time, we want
+			#to find all physical objects. This way we only render bodies
+			#once per exposure. All the rest is just filtering them out
+			#per scene and adding psf/noise characteristics of the image.
+			full_exposure_msg = dict(self.camera.msg)
+			full_exposure_msg['psf'] = 0
+			full_exposure_msg['raster'] = 0
+			full_exposure_msg['photon'] = 0
+			full_exposure_msg['dark'] = 0
+			full_exposure_msg['read'] = 0
 
 			FOV = self.find_stars_in_FOV(
-				alpha_0, 
-				beta_0, 
-				gamma_0, 
-				max(self.alpha),
-				max(self.beta),
-				min(self.alpha),
-				min(self.beta),
-				#should call this with half_diagonal twice
+				alpha_0, #center Euler angle of First FOV of exposure
+				beta_0,  #center Euler angle of First FOV of exposure
+				gamma_0, #center Euler angle of First FOV of exposure
+				max(self.alpha), #extreme euler angle of exposure
+				max(self.beta),  #extreme euler angle of exposure
+				min(self.alpha), #extreme euler angle of exposure
+				min(self.beta),  #extreme euler angle of exposure
+				#Don't know what twist (gamma) angle will be for
+				#any given exposure, so assume worst case scenario
+				#for bounding stars
 				self.camera.angular_diagonal/2,
 				self.camera.angular_diagonal/2,
 				self.camera.resolution_height,
@@ -566,14 +643,11 @@ class image:
 				self.camera.RA, self.camera.DE, 
 				self.camera.n1, self.camera.n2, self.camera.n3,
 				self.camera.VT, self.camera.BVT, self.camera.T,
-				self.camera.T, #spoof I so the fcn won't break :-(
+				self.camera.T, #spoof so the fcn won't break :-(
 				self.camera.reduction_term,
 				self.camera.max_mag, 
 				self.camera.star_id,
-				#spoof this so the function only finds stars
-				{ 'bodies': [], 
-				'rm_occ': 0, 'add_bod': 0, 'psf': 0, 'raster': 0, 
-				'photon': 0, 'dark': 0, 'read': 0}
+				full_exposure_msg
 				)
 
 			self.RA = FOV['RA']
@@ -581,36 +655,55 @@ class image:
 			self.n1 = FOV['n1']
 			self.n2 = FOV['n2']
 			self.n3 = FOV['n3']
-			self.VT = FOV['VT']
-			self.BVT = FOV['BVT']
 			self.c1 = FOV['c1']
 			self.c2 = FOV['c2']
 			self.c3 = FOV['c3']
-			self.n1 = FOV['n1']
-			self.n2 = FOV['n2']
-			self.n3 = FOV['n3']
 			self.T = FOV['T']
+			self.star_id = FOV['star_id']
 			self.reduction_term = FOV['reduction_term']
 			I = []
-			print('sdf')
-			import pdb
-			pdb.set_trace()
-			for i in range(0,len(self.T)): 
-				T = self.T[i]
-				reduction_term = self.reduction_term[i]
-				I.append(sum(planck(T,self.camera.lambda_set*1e-9)*\
-					self.camera.sensitivity_curve)*\
-					self.camera.lambda_bin_size*reduction_term)
+			import matplotlib.pyplot as plt
 
+			#stars have real temperatures. Body facets have temperature
+			#set to 0
+			for i in range(0,len(self.T)): 
+
+				T = self.T[i]
+				if T == 5778: 
+					flux_per_m2_per_nm_per_sr_at_star = self.camera.solar_bb
+				else:
+					flux_per_m2_per_nm_per_sr_at_star = planck(T,self.camera.lambda_set*1e-9)
+				reduction_term = self.reduction_term[i]
+				
+				flux_per_m2_per_nm_per_sr_at_obs = flux_per_m2_per_nm_per_sr_at_star*reduction_term
+				flux_per_m2_per_nm = pi*flux_per_m2_per_nm_per_sr_at_obs
+				flux_per_m2 = flux_per_m2_per_nm*self.camera.lambda_bin_size
+				flux = flux_per_m2*self.camera.effective_area
+				photons_per_sec = flux/self.photon_energy(self.camera.lambda_set*1e-9)
+				electrons_per_sec = photons_per_sec*self.camera.sensitivity_curve
+				I.append(sum(electrons_per_sec))
+
+				# plt.plot(photons_per_sec)
+				# I.append(sum(planck(T,self.camera.lambda_set*1e-9)*\
+				# 	self.camera.sensitivity_curve)*\
+				# 	self.camera.lambda_bin_size*reduction_term)
+			
 			self.I = array(I)
-			self.star_id = FOV['star_ids']
-			self.color = FOV['I']
+			self.star_id = FOV['star_id']
 
 			import matplotlib.pyplot as plt
 			from mpl_toolkits.mplot3d import Axes3D
-			plt.figure()
-			plt.plot(FOV['RA'],FOV['DE'],'.')
-			plt.axis('equal')
+			# plt.figure()
+			# plt.plot(FOV['RA'],FOV['DE'],'.')
+			# plt.axis('equal')
+
+			#since the camera object removes occulted objects
+			#and adds body renderings, we don't need to do that
+			#all again here, so we force those parts of the msg
+			# to be zero.
+			scene_msg = dict(self.camera.msg) 
+			scene_msg['rm_occ'] = 0
+			scene_msg['add_bod'] = 0
 			#create one scene per DCM we collected above
 			for i in range(0,len(self.DCM)):
 				FOV = self.find_stars_in_FOV(
@@ -632,7 +725,7 @@ class image:
 					self.reduction_term,
 					self.camera.max_mag, 
 					self.star_id,
-					self.camera.msg 
+					scene_msg
 					)
 				self.scenes.append(
 					scene(
@@ -647,15 +740,13 @@ class image:
 						FOV['I'],
 						FOV['pixel'],
 						FOV['line'],
-						FOV['star_ids']
+						FOV['star_id']
 						)
 					)
-			# plt.figure()
-			# plt.gca().invert_xaxis()
+			i = 0
 			for each_scene in self.scenes:
-				# plt.plot(each_scene.pixel,each_scene.line,'g.',markersize='2')
-				# plt.axis('equal')
-
+				print(i)
+				i+=1
 				if self.camera.msg['psf']:
 					psf = self.psf(1)
 
@@ -663,19 +754,13 @@ class image:
 					line = psf['y'].reshape(len(psf['y']),1) + each_scene.line
 					I = psf['I'].reshape(len(psf['I']),1)*each_scene.I
 
-					color = zeros((len(psf['x']),1)) + each_scene.I
-
 					each_scene.psf_pixel = pixel.reshape(len(each_scene.pixel)*len(psf['x']))
 					each_scene.psf_line = line.reshape(len(each_scene.line)*len(psf['y']))
-					each_scene.psf_color = color.reshape(len(psf['x'])*len(each_scene.I))
 
 					each_scene.psf_I = I.reshape(len(psf['I'])*len(each_scene.I))
 
 
 				if self.camera.msg['photon']:
-					#the *10 here is a cheat so I can illustrate that photon noise
-					#is working until I convert to real photon counts.
-					each_scene.psf_I = 10*each_scene.psf_I
 					each_scene.psf_I = self.add_poisson_noise(each_scene.psf_I)
 
 				if self.camera.msg['raster']:
@@ -690,20 +775,26 @@ class image:
 
 					if self.camera.msg['dark']:
 						each_scene.detector_array = \
-							each_scene.detector_array + 2
-						each_scene.detector_array = \
-							self.add_poisson_noise(each_scene.detector_array)
-
-
+							each_scene.detector_array + \
+							self.add_poisson_noise(
+								zeros(len(each_scene.detector_array)) + \
+								self.camera.dark_current
+								)
 
 			self.detector_array = 0
 			for each_scene in self.scenes:
 				self.detector_array += each_scene.detector_array
 
 			if self.camera.msg['read']:
-				sigma = 2
-				self.detector_array = self.add_read_noise(self.detector_array,sigma)
+				self.detector_array = self.add_read_noise(
+						self.detector_array,
+						self.camera.read_sigma
+						)
 
+			self.detector_array[self.detector_array < 0] = 0
+
+			# if self.camera.msg['hot_dark']:
+			# 	self.detector_array = self.detector_array*self.camera.hot_dark
 				# if 	self.camera.msg['raster'] + self.camera.msg['photon'] + \
 				# 	self.camera.msg['read']:
 				# 	self.detector_array = detector_array*hot_dark
@@ -730,7 +821,6 @@ class image:
 	# 			c1:
 	# 			c2:
 	# 			c3:
-	# 			color: 
 	#
 	#	Notes:
 	#
@@ -759,21 +849,11 @@ class image:
 
 		from numpy import deg2rad, sin, cos, append, sqrt, zeros, ones, logical_and
 		from numpy.linalg import norm
-		#I cheated a bit here for the purposes of demoing this module. This
-		#needs to be reexamined.
 
-		#also need to reexamine where this code should go. Is this the best place?
 		if len(msg['bodies']) != 0:
-			sc_state = self.camera.sc.state
-			sun_state = -msg['bodies'][1].state
-			moon_state  = msg['bodies'][2].state - msg['bodies'][1].state
 
-			n = 1
-			color = ones(len(n1))*n
-
-			
-			bodies = [msg['bodies'][0],msg['bodies'][2],msg['bodies'][1]]
-
+			n = 1	
+			bodies = msg['bodies']
 
 			for body in bodies:
 				n+=1
@@ -785,50 +865,56 @@ class image:
 					n3 = n3[occ_check]
 					RA = RA[occ_check]
 					DE = DE[occ_check]
-					VT = VT[occ_check]
-					BVT = BVT[occ_check]
 					star_ids = star_ids[occ_check]
-					color = color[occ_check]
+					T = T[occ_check]
+					reduction_term = reduction_term[occ_check]
+					I = I[occ_check]
+
 
 				if msg['add_bod']:
-					#in HCI for calculating which points to keep and which
-					#to remove
-					surf_n1 = body.surface['n1'] + body.state[0]
-					surf_n2 = body.surface['n2'] + body.state[1]
-					surf_n3 = body.surface['n3'] + body.state[2]
-					surf_r = surf_n1**2 + surf_n2**2 + surf_n3**2
+					print(body.name)
+					from lightSimFunctions import lightSim
+					DCM = self.camera.body2cameraDCM.dot(self.camera.sc.attitudeDCM)
+					facets = lightSim(
+						DCM,
+						self.camera.sc.state[0:3],
+						body.state[0:3],
+						(
+							self.camera.angular_height,
+							self.camera.angular_width
+							),
+						300,
+						300,
+						False,
+						body.albedo,
+						body.r_eq,
+						body.name
+						)
+					if facets == -1: continue #if true, then lightSim FOV check failed
+					#position from center of body to facet
+					surf_n1 = facets['bodypos'][:,0].astype(float)
+					surf_n2 = facets['bodypos'][:,1].astype(float)
+					surf_n3 = facets['bodypos'][:,2].astype(float)
 
-					if body.name != 'Sun':
-						surf_dot_sun = \
-							body.surface['n1']*body.state[0] + \
-							body.surface['n2']*body.state[1] + \
-							body.surface['n3']*body.state[2]
-						surf_dot_sc = \
-							(body.state[0]-sc_state[0])*body.surface['n1'] + \
-							(body.state[1]-sc_state[1])*body.surface['n2'] + \
-							(body.state[2]-sc_state[2])*body.surface['n3']
-						ind = logical_and(surf_dot_sun < 0,surf_dot_sc < 0)
-					else:
-						surf_dot_sc = \
-							(body.state[0]-sc_state[0])*body.surface['n1'] + \
-							(body.state[1]-sc_state[1])*body.surface['n2'] + \
-							(body.state[2]-sc_state[2])*body.surface['n3']
-						ind = surf_dot_sc < 0
+					surf_n1_tmp = surf_n1	
+					surf_n2_tmp = surf_n2	
+					surf_n3_tmp = surf_n3	
+					#position from [0,0,0] HCI to facet
+					surf_n1 += body.state[0]
+					surf_n2 += body.state[1]
+					surf_n3 += body.state[2]
 
-					surf_n1 = surf_n1[ind]
-					surf_n2 = surf_n2[ind]
-					surf_n3 = surf_n3[ind]
-					#move to sc-centered frame
-					surf_n1 = surf_n1 - sc_state[0]
-					surf_n2 = surf_n2 - sc_state[1]
-					surf_n3 = surf_n3 - sc_state[2]
+					#camera to facet vectors
+					surf_n1 -= self.camera.sc.state[0]
+					surf_n2 -= self.camera.sc.state[1]
+					surf_n3 -= self.camera.sc.state[2]
+
 					surf_r = surf_n1**2 + surf_n2**2 + surf_n3**2
 					#turn to unit vectors
 					surf_n1 = surf_n1/sqrt(surf_r)
 					surf_n2 = surf_n2/sqrt(surf_r)
 					surf_n3 = surf_n3/sqrt(surf_r)
 
-					# print(surf_n1**2 + surf_n2**2 + surf_n3**2)
 					n1 = append(n1, surf_n1)
 					n2 = append(n2, surf_n2)
 					n3 = append(n3, surf_n3)
@@ -836,11 +922,28 @@ class image:
 					DE = append(DE, zeros(len(surf_n1)))
 					VT = append(VT, zeros(len(surf_n1)))
 					BVT = append(BVT, zeros(len(surf_n1)))
+					T = append(T, zeros(len(surf_n1)) + 5778)
 					star_ids = append(star_ids, zeros(len(surf_n1)))
-					color = append(color, ones(len(surf_n1))*n)
-		else:
-			color = -1
 
+					if len(surf_n1) > 1:
+						print('>1')
+						reduction_term = append(
+							reduction_term,
+							facets['netAlbedo']*\
+							facets['facetArea'])
+						I = append(I,
+							facets['netAlbedo']*\
+							facets['facetArea'])
+					else:
+						print('1')
+						reduction_term = append(
+							reduction_term,
+							sum(facets['netAlbedo']*\
+							facets['facetArea']))
+						I = append(I,
+							sum(facets['netAlbedo']*\
+							facets['facetArea']))
+						print('2')
 
 		c2_max = alpha_max + sin(deg2rad(half_alpha))
 		c2_min = alpha_min - sin(deg2rad(half_alpha))
@@ -848,6 +951,8 @@ class image:
 		c3_min = beta_min - sin(deg2rad(half_beta))
 
 		#rotate all stars into camera frame coordinates
+		#this can be done far more efficiently with a DCM
+		#but I'm not really ready to test it yet
 		c1 = \
 		 n1*cos(beta)*cos(alpha) \
 		+n2*cos(beta)*sin(alpha) \
@@ -876,57 +981,18 @@ class image:
 		+n3*cos(gamma)*cos(beta)
 
 		#Remove stars outside the FOV in the c2 direction
-		ind = c2 < c2_max
-
-		RA = RA[ind]
-		DE = DE[ind]
-		n1 = n1[ind]
-		n2 = n2[ind]
-		n3 = n3[ind]
-		VT = VT[ind]
-		BVT = BVT[ind]
-		c1 = c1[ind]
-		c2 = c2[ind]
-		c3 = c3[ind]
-		star_ids = star_ids[ind]
-		T = T[ind]
-		reduction_term = reduction_term[ind]
-		I = I[ind]
-		try: 
-			color = color[ind]
-		except:
-			pass
-
-
-		ind = c2 > c2_min
-		RA = RA[ind]
-		DE = DE[ind]
-		n1 = n1[ind]
-		n2 = n2[ind]
-		n3 = n3[ind]
-		VT = VT[ind]
-		BVT = BVT[ind]
-		c1 = c1[ind]
-		c2 = c2[ind]
-		c3 = c3[ind]
-		star_ids = star_ids[ind]
-		T = T[ind]
-		reduction_term = reduction_term[ind]
-		I = I[ind]
-		try: 
-			color = color[ind]
-		except:
-			pass
-
+		ind = abs(c2/c1*self.camera.focal_length) < self.camera.detector_width/2
 		#Remove stars outside the FOV in the c3 direction
-		ind = c3 < c3_max
+		ind = logical_and(ind,abs(c3/c1*self.camera.focal_length) < self.camera.detector_height/2)
+		#remove stars in the anti-boresight direction
+		ind = logical_and(ind,c1 > 0)
+
+		#apply logic from above
 		RA = RA[ind]
 		DE = DE[ind]
 		n1 = n1[ind]
 		n2 = n2[ind]
 		n3 = n3[ind]
-		VT = VT[ind]
-		BVT = BVT[ind]
 		c1 = c1[ind]
 		c2 = c2[ind]
 		c3 = c3[ind]
@@ -934,53 +1000,15 @@ class image:
 		T = T[ind]
 		reduction_term = reduction_term[ind]
 		I = I[ind]
-		try: 
-			color = color[ind]
-		except:
-			pass
 
-		ind = c3 > c3_min
-		RA = RA[ind]
-		DE = DE[ind]
-		n1 = n1[ind]
-		n2 = n2[ind]
-		n3 = n3[ind]
-		VT = VT[ind]
-		BVT = BVT[ind]
-		c1 = c1[ind]
-		c2 = c2[ind]
-		c3 = c3[ind]
-		star_ids = star_ids[ind]
-		T = T[ind]
-		reduction_term = reduction_term[ind]
-		I = I[ind]
-		try: 
-			color = color[ind]
-		except:
-			pass
+		#using similar triangles
+		pixel = -self.camera.focal_length*c2/c1*\
+			beta_resolution/self.camera.detector_width + \
+			beta_resolution/2
 
-		ind = c1 > 0
-		RA = RA[ind]
-		DE = DE[ind]
-		n1 = n1[ind]
-		n2 = n2[ind]
-		n3 = n3[ind]
-		VT = VT[ind]
-		BVT = BVT[ind]
-		c1 = c1[ind]
-		c2 = c2[ind]
-		c3 = c3[ind]
-		star_ids = star_ids[ind]
-		T = T[ind]
-		reduction_term = reduction_term[ind]
-		I = I[ind]
-		try: 
-			color = color[ind]
-		except:
-			pass
-
-		line = alpha_resolution*(c3 + sin(deg2rad(half_alpha)))/(2*sin(deg2rad(half_alpha)))
-		pixel = -beta_resolution*(c2 - sin(deg2rad(half_beta)))/(2*sin(deg2rad(half_beta)))
+		line = -self.camera.focal_length*c3/c1*\
+			alpha_resolution/self.camera.detector_height + \
+			alpha_resolution/2
 
 		return {
 			'pixel': pixel,
@@ -990,12 +1018,10 @@ class image:
 			'n1': n1,
 			'n2': n2,
 			'n3': n3,
-			'VT': VT,
-			'BVT': BVT,
 			'c1': c1,
 			'c2': c2,
 			'c3': c3,
-			'star_ids' : star_ids,
+			'star_id' : star_ids,
 			'I': I,
 			'T': T,
 			'reduction_term': reduction_term
@@ -1030,12 +1056,12 @@ class image:
 			[0,body.r_eq**-2,0],
 			[0,0,body.r_pole**-2]
 			])
+
 		v = stack([n1,n2,n3])
 
 		#agnostic to coordinate frame origin. Just needs same axis
 		#directions as v.
 		y_0 = self.camera.sc.state[0:3] - body.state[0:3]
-
 		#1xn
 		vTAy_0 = (v.T.dot(A).dot(y_0)).T
 		#1xn
@@ -1215,6 +1241,24 @@ class image:
 	def stefan_boltzmann(self, T):
 		from constants import sigma
 		return sigma*T**4
+
+	###########################################################################
+	#	photon_energy() 
+	#
+	#	Inputs:
+	#
+	#	Outputs:
+	#
+	#	Notes:
+	#
+	###########################################################################
+
+	def photon_energy(self, lam):
+		from em import photon_energy
+		return photon_energy(lam)
+		from constants import h, c
+		return h*c/lam
+
 
 ###############################################################################
 #	scene is a class for collecting each integration step during an exposure.

@@ -92,7 +92,7 @@ print("Initialize Camera: " + str(datetime.now() - start_time))
 
 msg = { 'bodies': [bod.sun,bod.earth,bod.luna, sc], 
 	'rm_occ': 1, 'add_bod': 0, 'psf': 0, 'raster': 0, 
-	'photon': 0, 'dark': 0, 'read': 0}
+	'photon': 0, 'dark': 0, 'read': 0, 'hot_dark': 0}
 
 states = coe_2body(msg['bodies'],0)
 bod.earth.M_at_epoch += 90

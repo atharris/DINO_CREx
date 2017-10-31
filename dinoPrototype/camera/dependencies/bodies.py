@@ -75,7 +75,8 @@ class body:
 		h,
 		p_rot,
 		state,
-		nu
+		nu,
+		albedo
 		):
 		self.name = name
 		self.central_body = central_body
@@ -93,6 +94,7 @@ class body:
 		self.p_rot = p_rot
 		self.state = state
 		self.nu = nu
+		self.albedo = albedo
 		self.surface = self.create_surface(r_eq,r_pole)
 
 	def create_surface(self, r_eq, r_pole):
@@ -131,7 +133,8 @@ sun = body(
 	np.nan, #scale height in km
 	np.nan, #sidereal rotation period in s
 	np.array([]), #state vector in HCI frame. [x,y,z,v_x,v_y,v_z] 
-	np.nan #true anomaly measured at same time as state vector
+	np.nan, #true anomaly measured at same time as state vector
+	1
 	)
 ###############################################################################
 #
@@ -150,12 +153,13 @@ mercury = body(
 	77.45611904, #omega in deg
 	48.33089304, #OMEGA in deg
 	252.25090551, #Mean Anomaly at epoch in deg
-	2439.0, #equitorial radius in km
+	2439.7, #equitorial radius in km
 	np.nan, #polar radius in km
 	np.nan, #scale height in km
 	np.nan, #sidereal rotation period in s
 	np.array([]), #state vector in HCI frame. [x,y,z,v_x,v_y,v_z] 
-	np.array([]) #true anomaly measured at same time as state vector
+	np.array([]), #true anomaly measured at same time as state vector
+	0.142
 	)
 ###############################################################################
 #
@@ -174,12 +178,13 @@ venus = body(
 	131.56370724, #omega in deg
 	76.67992019, #OMEGA in deg
 	181.97980084, #Mean Anomaly at epoch in deg
-	6052.0, #equitorial radius in km
+	6051.8, #equitorial radius in km
 	np.nan, #polar radius in km
 	np.nan, #scale height in km
 	np.nan, #sidereal rotation period in s
 	np.array([]), #state vector in HCI frame. [x,y,z,v_x,v_y,v_z] 
-	np.array([]) #true anomaly measured at same time as state vector
+	np.array([]), #true anomaly measured at same time as state vector
+	0.689
 	)
 
 ###############################################################################
@@ -204,7 +209,8 @@ earth = body(
 	8.5, #scale height in km
 	23.9345*3600,  #sidereal rotation period in s
 	np.array([]), #state vector in HCI frame. [x,y,z,v_x,v_y,v_z] 
-	np.array([]) #true anomaly measured at same time as state vector
+	np.array([]), #true anomaly measured at same time as state vector
+	0.434
 	)
 
 ###############################################################################
@@ -229,7 +235,8 @@ luna = body(
 	np.nan, #scale height in km
 	np.nan, #sidereal rotation period in s
 	np.array([]), #state vector in HCI frame. [x,y,z,v_x,v_y,v_z] 
-	np.array([]) #true anomaly measured at same time as state vector
+	np.array([]), #true anomaly measured at same time as state vector
+	0.12
 	)
 
 ###############################################################################
@@ -249,12 +256,64 @@ mars = body(
 	336.04084, #omega in deg
 	49.57854, #OMEGA in deg
 	355.45332, #Mean Anomaly at epoch in deg
-	3397.2, #equitorial radius in km
-	np.nan, #polar radius in km
+	3396.2, #equitorial radius in km
+	3397.2, #polar radius in km
 	np.nan, #scale height in km
 	np.nan, #sidereal rotation period in s
 	np.array([]), #state vector in HCI frame. [x,y,z,v_x,v_y,v_z] 
-	np.array([]) #true anomaly measured at same time as state vector
+	np.array([]), #true anomaly measured at same time as state vector
+	0.17
+	)
+###############################################################################
+#
+#	Phobos
+#
+###############################################################################
+
+phobos = body(
+	"Phobos", #name of this body
+	"Mars", #central body
+	np.nan, #mu in km^3/s^2
+	2451545.0, #Epoch of coe presented here, in JD
+	9378, #a in km
+	0.0151, # e
+	1.85061, #inclination in deg
+	np.nan, #omega in deg
+	np.nan, #OMEGA in deg
+	np.nan, #Mean Anomaly at epoch in deg
+	13, #equitorial radius in km
+	12, #polar radius in km
+	np.nan, #scale height in km
+	np.nan, #sidereal rotation period in s
+	np.array([]), #state vector in HCI frame. [x,y,z,v_x,v_y,v_z] 
+	np.array([]), #true anomaly measured at same time as state vector
+	0.07
+	)
+
+###############################################################################
+#
+#	Deimos
+#
+###############################################################################
+
+deimos = body(
+	"Deimos", #name of this body
+	"Mars", #central body
+	np.nan, #mu in km^3/s^2
+	2451545.0, #Epoch of coe presented here, in JD
+	23459, #a in km
+	0.0005, # e
+	1.79, #inclination in deg
+	np.nan, #omega in deg
+	np.nan, #OMEGA in deg
+	np.nan, #Mean Anomaly at epoch in deg
+	8, #equitorial radius in km
+	6, #polar radius in km
+	np.nan, #scale height in km
+	np.nan, #sidereal rotation period in s
+	np.array([]), #state vector in HCI frame. [x,y,z,v_x,v_y,v_z] 
+	np.array([]), #true anomaly measured at same time as state vector
+	0.08
 	)
 
 ###############################################################################
@@ -279,33 +338,34 @@ jupiter = body(
 	np.nan, #scale height in km
 	np.nan, #sidereal rotation period in s
 	np.array([]), #state vector in HCI frame. [x,y,z,v_x,v_y,v_z] 
-	np.array([]) #true anomaly measured at same time as state vector
+	np.array([]), #true anomaly measured at same time as state vector
+	0.538
 	)
 
-###############################################################################
-#
-#	Saturn
-#
-###############################################################################
+# ###############################################################################
+# #
+# #	Saturn
+# #
+# ###############################################################################
 
-saturn = body(
-	"Saturn", #name of this body
-	"Sun", #central body
-	3.794e7, #mu in km^3/s^2
-	2451545.0, #Epoch of coe presented here, in JD
-	1429394133, #a in km
-	0.055508622, # e
-	2.48887810, #inclination in deg
-	93.05678728, #omega in deg
-	113.66442370, #OMEGA in deg
-	50.07747138, #Mean Anomaly at epoch in deg
-	60268.0, #equitorial radius in km
-	np.nan, #polar radius in km
-	np.nan, #scale height in km
-	np.nan, #sidereal rotation period in s
-	np.array([]), #state vector in HCI frame. [x,y,z,v_x,v_y,v_z] 
-	np.array([]) #true anomaly measured at same time as state vector
-	)
+# saturn = body(
+# 	"Saturn", #name of this body
+# 	"Sun", #central body
+# 	3.794e7, #mu in km^3/s^2
+# 	2451545.0, #Epoch of coe presented here, in JD
+# 	1429394133, #a in km
+# 	0.055508622, # e
+# 	2.48887810, #inclination in deg
+# 	93.05678728, #omega in deg
+# 	113.66442370, #OMEGA in deg
+# 	50.07747138, #Mean Anomaly at epoch in deg
+# 	60268.0, #equitorial radius in km
+# 	np.nan, #polar radius in km
+# 	np.nan, #scale height in km
+# 	np.nan, #sidereal rotation period in s
+# 	np.array([]), #state vector in HCI frame. [x,y,z,v_x,v_y,v_z] 
+# 	np.array([]) #true anomaly measured at same time as state vector
+# 	)
 
 # ###############################################################################
 # #

@@ -45,7 +45,7 @@ d = conn.cursor()
 
 
 select_string = "SELECT name, computed_temperature, published_temperature, VTmag, BTmag, id from tycho_data" + \
-	" WHERE computed_temperature != ''"
+	" WHERE VTmag != ''"
 c.execute(select_string)
 
 comp = []

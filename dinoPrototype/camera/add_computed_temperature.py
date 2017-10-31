@@ -189,11 +189,23 @@ d = conn.cursor()
 
 #COMMENT OUT THE UPDATE SINCE IT'S BEEN DONE ALREADY
 if 1:
-	select_string = "SELECT id, BTmag, VTmag from tycho_data"
+	select_string = "SELECT id, BTmag, VTmag, published_temperature from tycho_data"
 	c.execute(select_string)
 	for row in c:
 		if row[1] != None and row[2] != None:
 			BVT = row[1] - row[2]
+			T = T_model(BVT,a_T,b_T,c_T,f_T)
+			update_string = "UPDATE tycho_data SET computed_temperature=\'" + \
+			str(T) + "\' where id=\'" + str(row[0]) + "'"
+			d.execute(update_string)
+			print(update_string)
+		elif row[3] != None:
+			update_string = "UPDATE tycho_data SET computed_temperature=\'" + \
+			str(row[3]) + "\' where id=\'" + str(row[0]) + "'"
+			d.execute(update_string)
+			print(update_string)
+		else:
+			BVT = 0
 			T = T_model(BVT,a_T,b_T,c_T,f_T)
 			update_string = "UPDATE tycho_data SET computed_temperature=\'" + \
 			str(T) + "\' where id=\'" + str(row[0]) + "'"

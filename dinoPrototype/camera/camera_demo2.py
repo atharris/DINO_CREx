@@ -34,11 +34,13 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.colors import LogNorm
+import matplotlib.colors as colors
 import bodies as bod
 import camera
 from propagator import coe_2body
 import numpy.linalg as la
 from matplotlib.animation import FuncAnimation
+from constants import au
 import adcs
 
 start_time = datetime.now()
@@ -56,6 +58,10 @@ sc = bod.sc(
 	np.nan, #true anomaly measured at same time as state vector
 	np.nan
 	)
+
+bod.earth.state = np.array([au/1000,0,0,0,0,0])
+sc.state = bod.earth.state - np.array([100000,0,0,0,0,0])
+
 print("Initialize SC: " + str(datetime.now() - start_time))
 
 start_time = datetime.now()
@@ -75,21 +81,22 @@ tc['throughput'] = (1000*4-(tc['lambda']-545)**4) - \
 	min(1000*4-(tc['lambda']-545)**4)
 tc['throughput'] = 0.6*tc['throughput']/max(tc['throughput'])
 
-msg = { 'bodies': [bod.sun,bod.earth,bod.luna, sc], 
-	'rm_occ': 0, 'add_bod': 0, 'psf': 1, 'raster': 1, 
+msg = { 'bodies': [bod.earth, sc], 'add_stars': 1,
+	'rm_occ': 1, 'add_bod': 0, 'psf': 1, 'raster': 1, 
 	'photon': 0, 'dark': 0, 'read': 0}
 
 cam = camera.camera(
-	5, 				#detector_height
-	5, 				#detector_width
-	5.0, 				#focal_length
-	512, 				#resolution_height
-	512,					#resolution_width
-	np.identity(3),  	#body2cameraDCM
-	7,			    #maximum magnitude
+	2, 				#detector_height
+	2, 				#detector_width
+	5.0, 			#focal_length
+	512, 			#resolution_height
+	512,			#resolution_width
+	np.identity(3), #body2cameraDCM
+	1000,		    #maximum magnitude
 	qe,
 	tc,
 	1.7,
+	0.01, #effective area in m^2
 	sc,
 	msg
 	)
@@ -102,40 +109,48 @@ print("Initialize Camera: " + str(datetime.now() - start_time))
 #one scene per ms, 500 scenes = 0.5s exposure
 take_image = np.arange(100)
 take_image[take_image < 1] = 0
-take_image[take_image > 50] = 0
+take_image[take_image > 1] = 0
 take_image = take_image/take_image
 take_image[np.isnan(take_image)] = 0
 
-psi = np.pi
-theta = 0
-phi = 0
+psi = np.deg2rad(0)
+theta = np.deg2rad(0)
+phi = np.deg2rad(0)
+
+# from numpy.random import uniform
+# psi = np.deg2rad(uniform(360))
+# theta = np.deg2rad(uniform(-90,90))
+# phi = np.deg2rad(uniform(360))
 
 for i in range(0,len(take_image)):
 	msg['take_image'] = take_image[i]
 	attitudeDCM = adcs.Euler321_2DCM(psi,theta,phi)
 	sc.attitudeDCM = attitudeDCM
 	cam.update_state()
-	theta = theta - np.deg2rad(360/10000)
-	phi = phi - np.deg2rad(360/1000)
+	# theta = theta - np.deg2rad(360/10000)
+	# phi = phi - np.deg2rad(360/1000)
 	# psi = psi - np.deg2rad(360/1000)
 	print(i)
 	print(phi)
 
 pdb.set_trace()
-plt.figure()
-plt.gca().invert_yaxis()
-for each_scene in cam.images[0].scenes:
-	plt.plot(each_scene.pixel,each_scene.line,'.')
+# plt.figure()
+# plt.gca().invert_yaxis()
+# for each_scene in cam.images[0].scenes:
+# 	plt.plot(each_scene.pixel,each_scene.line,'.')
 
-plt.figure()
-plt.gca().invert_yaxis()
-for each_scene in cam.images[0].scenes:
-	plt.plot(each_scene.psf_pixel,each_scene.psf_line,'.')
+# plt.figure()
+# plt.gca().invert_yaxis()
+# for each_scene in cam.images[0].scenes:
+# 	plt.plot(each_scene.psf_pixel,each_scene.psf_line,'.')
 
 plt.figure()
 nonzero = cam.images[0].detector_array[cam.images[0].detector_array !=0]
+
+
 plt.imshow(cam.images[0].detector_array.reshape(
-	cam.resolution_height,cam.resolution_width))#,
+	cam.resolution_height,cam.resolution_width))
+# 	colors.PowerNorm(gamma=1./2.),cmap='PuBu_r')#,
 #	norm=LogNorm(vmin=min(nonzero), vmax=max(nonzero)))
 
 pdb.set_trace()

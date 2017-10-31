@@ -51,7 +51,11 @@ ly = 9.4605284e15
 
 #Solar Radius, m
 r_sun = 6.95700e8
+#Earth Radius, m
+r_earth = 6.371e6
 
+#Solar Temperature, K
+T_sun = 5778
 
 #Stefan-Boltzmann Constant, w/m^2/K^4
 sigma = 5.6704e-8
