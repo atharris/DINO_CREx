@@ -68,25 +68,25 @@ def stefan_boltzmann(T):
 	from constants import sigma
 	return sigma*T**4
 
-
-#debugging stuff. Removed this once I had to import it into camera.py
+###############################################################################
+#	photon_energy() calculates the energy for a photon of wavelength lambda.
 #
-# from numpy import arange, pi
-# from constants import au, r_sun, sigma
+#	Inputs:
+#		lam: wavelength (in meters!) of photon in question. May be scalar or numpy 
+#			array of wavelength values
+#
+#	Outputs:
+#		E: energy of a single photon at wavelength lam in Joules. Will be 
+#			same data type as lam (i.e. scalar if lam is scalar, numpy array if
+#			lam is numpy array)
+#
+#	Notes:
+#
+###############################################################################
 
-# from datetime import datetime
-# start_time = datetime.now()
+def photon_energy(lam):
+	from constants import h, c
+	return h*c/lam
 
-# T = 5778
-# lam = arange(0.1,10,10/250)*1e-6
-
-# for i in range(0,300000):
-# 	I = planck(T,lam)
-# print(datetime.now() - start_time)
-# print("Integrated Planck Function")
-# #1/10 nm bin size, 1/pi accounts for sr^-1 in the planck function output.
-# print(sum(I)*r_sun**2/au**2/pi/10) 
-# print("Stephan-Boltzmann Flux")
-# print(stefan_boltzmann(T)*r_sun**2/au**2)
 
 
