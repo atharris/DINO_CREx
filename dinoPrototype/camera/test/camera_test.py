@@ -33,7 +33,7 @@ import bodies as bod
 import camera
 import numpy as np
 import matplotlib.pyplot as plt
-
+import pdb
 #create a spacecraft object to be shared across tests
 #a lot of the details of the spacecraft don't matter because
 #they aren't used in the camera model. The really important one is 
@@ -124,22 +124,10 @@ StarCam = camera.camera(
 	msg,
 	db='../db/tycho.db'
 	)
+pdb.set_trace()
 sc.attitudeDCM = np.identity(3)
 
-def test_planck_eq_TSI():
-	lambda_set = arange(1,10001,1) #in nm
-	lambda_set = lambda_set*1e-9 #convert to m
-	bb_curve = planck(T_sun,lambda_set)
-	TSI = sum(pi*r_sun**2/au**2*bb_curve)
-	assert( abs((TSI - 1367)/1367) <0.001 )
 
-def test_planck_eq_stefan_boltzmann():
-	sb = stefan_boltzmann(T_sun)*r_sun**2/au**2
-	lambda_set = arange(1,10001,1) #in nm
-	lambda_set = lambda_set*1e-9 #convert to m
-	bb_curve = planck(T_sun,lambda_set)
-	TSI = sum(pi*r_sun**2/au**2*bb_curve)
-	assert( abs((TSI - sb)/sb) <0.001 )
 
 def test_4_7_camera_update_state():
 	msg['take_image'] = 1
@@ -157,6 +145,24 @@ def test_4_7_camera_update_state():
 	msg['take_image'] = 0
 	noStarCam.update_state()
 	assert(len(noStarCam.images[1].scenes) == 2)
+
+
+
+def test_4_17_planck_eq_stefan_boltzmann():
+	sb = stefan_boltzmann(T_sun)*r_sun**2/au**2
+	lambda_set = arange(1,10001,1) #in nm
+	lambda_set = lambda_set*1e-9 #convert to m
+	bb_curve = planck(T_sun,lambda_set)
+	TSI = sum(pi*r_sun**2/au**2*bb_curve)
+	assert( abs((TSI - sb)/sb) <0.001 )
+
+
+def test_4_18_planck_eq_TSI():
+	lambda_set = arange(1,10001,1) #in nm
+	lambda_set = lambda_set*1e-9 #convert to m
+	bb_curve = planck(T_sun,lambda_set)
+	TSI = sum(pi*r_sun**2/au**2*bb_curve)
+	assert( abs((TSI - 1367)/1367) <0.001 )
 
 def test_extended_body_lightSim():
 	a = 1
