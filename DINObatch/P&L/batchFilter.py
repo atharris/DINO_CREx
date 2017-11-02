@@ -230,6 +230,7 @@ def run_batch( input ) :
     phi_t_t0  = np.reshape( ref_state[ii,n_state:], (n_state,n_state) )
     # linearly transform deviation and at it to the ref_state and save
     x_hat_array[ii,:] = np.dot( phi_t_t0, x_hat ).T
+    P_array[ii,:,:] = np.dot(np.dot( phi_t_t0, P ),  phi_t_t0.T)
     # add the deviation to the reference state 
     est_state[ii,:]   = ref_state[ii,0:n_state] + x_hat_array[ii,:]
     # store the transformed covariance matrix

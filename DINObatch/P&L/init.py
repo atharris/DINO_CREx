@@ -262,12 +262,12 @@ def main():
     P_bar[4, 4] = .1**2
     P_bar[5, 5] = .1**2
 
-    position_error = np.zeros(3)
-    velocity_error = np.zeros(3)
+    # position_error = np.zeros(3)
+    # velocity_error = np.zeros(3)
 
     # add uncertainty to the IC
-    # position_error = 5000 * np.divide(IC[0:3], norm(IC[0:3]))
-    # velocity_error = 0.05 * np.divide(IC[3:6], norm(IC[3:6]))
+    position_error = 5000 * np.divide(IC[0:3], norm(IC[0:3]))
+    velocity_error = 0.05 * np.divide(IC[3:6], norm(IC[3:6]))
 
     IC += np.append(position_error, velocity_error)
 
@@ -485,7 +485,7 @@ def main():
         plt.plot(t_span, 3*np.ones(len(t_span))*observation_uncertainty[0,0]**2, 'r--')
         plt.plot(t_span, -3*np.ones(len(t_span))*observation_uncertainty[0,0]**2, 'r--')
         plt.xticks([])
-        plt.title('Range (km)')
+        plt.title('Pixel (-)')
         plt.ylabel('Residual')
         plt.xticks(t_span, rotation=90, ha='right')
         ax = plt.gca()
@@ -496,7 +496,7 @@ def main():
         plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2), 'r--')
         plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2), 'r--')
         plt.xticks([])
-        plt.title('Range Rate (km/s)')
+        plt.title('Line (-)')
         plt.xticks(t_span, rotation=90, ha='right')
         ax = plt.gca()
         ax.set_xticklabels(beacon_list)
@@ -513,7 +513,7 @@ def main():
         plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[0,0]**2), 'r--')
         plt.xticks([])
         plt.ylabel('Residual')
-        plt.title('Range (km)')
+        plt.title('Pixel (-)')
         plt.xticks(t_span, rotation=90, ha='right')
         ax = plt.gca()
         ax.set_xticklabels(beacon_list)
@@ -523,7 +523,7 @@ def main():
         plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2), 'r--')
         plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2), 'r--')
         plt.xticks([])
-        plt.title('Range Rate (km/s)')
+        plt.title('Line (-)')
         plt.xticks(t_span, rotation=90, ha='right')
         ax = plt.gca()
         ax.set_xticklabels(beacon_list)
