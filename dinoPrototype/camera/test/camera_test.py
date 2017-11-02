@@ -101,7 +101,7 @@ noStarCam = camera.camera(
 	msg,
 	db='../db/tycho.db'
 	)
-
+pdb.set_trace()
 #now create a camera with stars in it for use in the tests that
 #actually need them.
 msg['add_stars'] = 1
@@ -143,6 +143,26 @@ def test_4_1_load_all_stars():
 
 	pdb.set_trace()
 	assert(1 == 1)
+
+# def test_4_2_calculate_FOV():
+# 	cam1 = camera.camera(
+# 		1,2,2)
+# 	cam2= camera.camera(
+# 		3,4,5)
+# 	cam3 = camera.camera(
+# 		6,4,2)
+
+# 	assert(cam1.angular_height == 15)
+# 	assert(cam1.angular_width == 16)
+# 	assert(cam1.angular_diagonal == 18)
+
+# 	assert(cam2.angular_height == 54)
+# 	assert(cam2.angular_width == 45)
+# 	assert(cam2.angular_diagonal == 25)
+
+# 	assert(cam2.angular_height == 13)
+# 	assert(cam2.angular_width == 17)
+# 	assert(cam2.angular_diagonal == 18)
 
 def test_4_7_camera_update_state():
 	msg['take_image'] = 1
