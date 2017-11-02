@@ -142,10 +142,10 @@ def fncH(input):
                                                dA_TVdZ[1] / A_hat_TV[2]  ] )  
   
         # partials of pixel with respect to state
-        H[2*ii, :]     = Kx * Dx * np.array([ dMMdX[0], dMMdY[0], dMMdZ[0], 0, 0, 0])
+        H[2*ii, 0:3]     = Kx * Dx * np.array([ dMMdX[0], dMMdY[0], dMMdZ[0] ])
         
         # partials of line with respect to state
-        H[2*ii + 1, :] = Ky * Dy * np.array([ dMMdX[1], dMMdY[1], dMMdZ[1], 0, 0, 0])
+        H[2*ii + 1, 0:3] = Ky * Dy * np.array([ dMMdX[1], dMMdY[1], dMMdZ[1] ])
 
     return H
 

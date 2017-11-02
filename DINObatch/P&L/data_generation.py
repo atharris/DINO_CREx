@@ -84,7 +84,6 @@ def generate_data(sc_ephem_file, planet_beacons,
         phi0 = np.identity(n_state)
         # input to the propagator takes the ref_state and STM at t0, as well as the list of times
         prop_input = (IC0, phi0, observation_times, extras)
-
         # execute propagation
         state = runRef(prop_input)
         for jj in range(len(observation_times)):

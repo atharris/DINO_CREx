@@ -37,8 +37,9 @@ print bskPath
 import pyswice
 import numpy as np
 import matplotlib.pyplot as plt
-from batchFilter import run_batch
+from batchFilterAcc import run_batch
 import data_generation as dg
+import pdb
 ################################################################################
 #                  S E C O N D A R Y     F U N C T I O N S:
 ################################################################################
@@ -253,6 +254,7 @@ def main():
     # ALPHA IMPLEMENTATION
     # CURRENTLY TOO MUCH HARD CODING
     ######################################
+    IC = np.append( IC, np.array( [0, 0, 0] ) )
 
     print 'IC', IC
     spice_derived_state = pyswice.new_doubleArray(6)
@@ -268,6 +270,9 @@ def main():
     P_bar[3, 3] = .1**2
     P_bar[4, 4] = .1**2
     P_bar[5, 5] = .1**2
+    P_bar[6, 6] = (10**(-3))**2
+    P_bar[7, 7] = (10**(-3))**2
+    P_bar[8, 8] = (10**(-3))**2
 
     # position_error = np.zeros(3)
     # velocity_error = np.zeros(3)
@@ -400,20 +405,20 @@ def main():
         plt.savefig(dirIt+'/State Errors and Covariance Bounds.png', dpi=300, format='png')
 
         plt.figure(2)
-        plt.subplot(321)
+        plt.subplot(331)
         plt.plot(t_span, x_hat_array[:, 0])
         plt.ylabel('x (km)')
         plt.xticks([])
         plt.title('Position')
         # plt.ylim((-ymax, ymax))
 
-        plt.subplot(323)
+        plt.subplot(334)
         plt.plot(t_span, x_hat_array[:, 1])
         plt.ylabel('y (km)')
         plt.xticks([])
         # plt.ylim((-ymax, ymax))
 
-        plt.subplot(325)
+        plt.subplot(337)
         plt.plot(t_span, x_hat_array[:, 2])
         plt.ylabel('z (km)')
         plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
@@ -421,22 +426,42 @@ def main():
         ax.set_xticklabels(['t_0', 't_f'])
         # plt.ylim((-ymax, ymax))
 
-        plt.subplot(322)
+        plt.subplot(332)
         plt.plot(t_span, x_hat_array[:, 3])
         plt.ylabel('vx (km/s)')
         plt.xticks([])
         plt.title('Velocity')
         # plt.ylim((-ymax, ymax))
 
-        plt.subplot(324)
+        plt.subplot(335)
         plt.plot(t_span, x_hat_array[:, 4])
         plt.ylabel('vy (km/s)')
         plt.xticks([])
         # plt.ylim((-ymax, ymax))
 
-        plt.subplot(326)
+        plt.subplot(338)
         plt.plot(t_span, x_hat_array[:, 5])
         plt.ylabel('vz (km/s)')
+        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(['t_0', 't_f'])
+
+        plt.subplot(333)
+        plt.plot(t_span, x_hat_array[:, 6])
+        plt.ylabel('ax (km/s)')
+        plt.xticks([])
+        plt.title('Accelerations')
+        # plt.ylim((-ymax, ymax))
+
+        plt.subplot(336)
+        plt.plot(t_span, x_hat_array[:, 7])
+        plt.ylabel('ay (km/s)')
+        plt.xticks([])
+        # plt.ylim((-ymax, ymax))
+
+        plt.subplot(339)
+        plt.plot(t_span, x_hat_array[:, 8])
+        plt.ylabel('az (km/s)')
         plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
         ax = plt.gca()
         ax.set_xticklabels(['t_0', 't_f'])
