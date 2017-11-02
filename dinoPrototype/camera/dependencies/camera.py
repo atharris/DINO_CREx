@@ -664,8 +664,7 @@ class image:
 			I = []
 			import matplotlib.pyplot as plt
 
-			#stars have real temperatures. Body facets have temperature
-			#set to 0
+
 			for i in range(0,len(self.T)): 
 
 				T = self.T[i]
@@ -682,20 +681,10 @@ class image:
 				photons_per_sec = flux/self.photon_energy(self.camera.lambda_set*1e-9)
 				electrons_per_sec = photons_per_sec*self.camera.sensitivity_curve
 				I.append(sum(electrons_per_sec))
-
-				# plt.plot(photons_per_sec)
-				# I.append(sum(planck(T,self.camera.lambda_set*1e-9)*\
-				# 	self.camera.sensitivity_curve)*\
-				# 	self.camera.lambda_bin_size*reduction_term)
 			
 			self.I = array(I)
 			self.star_id = FOV['star_id']
 
-			import matplotlib.pyplot as plt
-			from mpl_toolkits.mplot3d import Axes3D
-			# plt.figure()
-			# plt.plot(FOV['RA'],FOV['DE'],'.')
-			# plt.axis('equal')
 
 			#since the camera object removes occulted objects
 			#and adds body renderings, we don't need to do that
@@ -883,8 +872,8 @@ class image:
 							self.camera.angular_height,
 							self.camera.angular_width
 							),
-						300,
-						300,
+						100,
+						100,
 						False,
 						body.albedo,
 						body.r_eq,
@@ -1058,7 +1047,6 @@ class image:
 			])
 
 		v = stack([n1,n2,n3])
-
 		#agnostic to coordinate frame origin. Just needs same axis
 		#directions as v.
 		y_0 = self.camera.sc.state[0:3] - body.state[0:3]
