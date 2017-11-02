@@ -53,6 +53,79 @@ sc = bod.sc(
 	np.nan
 	)
 
+qe = {}
+qe['lambda'] = np.arange(420,721,2.)
+#the throughput definition here is a cheat to make something
+#somewhat realistic while not spending time on researching that
+#realism just yet.
+qe['throughput'] = (100000-(qe['lambda']-570)**2) - \
+	min(100000-(qe['lambda']-570)**2)
+qe['throughput'] = 0.8*qe['throughput']/max(qe['throughput'])
+
+tc = {}
+tc['lambda'] = np.arange(390,721,1.7)
+tc['throughput'] = (1000*4-(tc['lambda']-545)**4) - \
+	min(1000*4-(tc['lambda']-545)**4)
+tc['throughput'] = 0.6*tc['throughput']/max(tc['throughput'])
+
+bod.earth.state = np.array([au,0,0,0,0,0])
+bod.luna.state = bod.earth.state + 250000*np.array([0,1,0,0,0,0])
+sc.state = bod.earth.state - 250000*np.array([1,0,0,0,0,0])
+
+msg = { 'bodies': [
+	bod.earth,
+	bod.luna,
+	sc
+	], 
+	'add_stars': 0,'rm_occ': 0, 'add_bod': 0, 'psf': 1, 
+	'raster': 1, 'photon': 0, 'dark': 0, 'read': 0}
+
+#create camera with no stars in it for tests that don't need them
+#They will run significantly faster without them.
+noStarCam = camera.camera(
+	2, 				#detector_height
+	2, 				#detector_width
+	5.0, 			#focal_length
+	512, 			#resolution_height
+	512,			#resolution_width
+	np.identity(3), #body2cameraDCM
+	1000,		    #maximum magnitude
+	-1000,			#minimum magnitude (for debugging)
+	qe,
+	tc,
+	1,
+	0.01**2, #effective area in m^2
+	100, #dark current in electrons per second
+	100, #std for read noise in electrons
+	sc,
+	msg,
+	db='../db/tycho.db'
+	)
+
+#now create a camera with stars in it for use in the tests that
+#actually need them.
+msg['add_stars'] = 1
+StarCam = camera.camera(
+	2, 				#detector_height
+	2, 				#detector_width
+	5.0, 			#focal_length
+	512, 			#resolution_height
+	512,			#resolution_width
+	np.identity(3), #body2cameraDCM
+	1000,		    #maximum magnitude
+	-1000,			#minimum magnitude (for debugging)
+	qe,
+	tc,
+	1,
+	0.01**2, #effective area in m^2
+	100, #dark current in electrons per second
+	100, #std for read noise in electrons
+	sc,
+	msg,
+	db='../db/tycho.db'
+	)
+sc.attitudeDCM = np.identity(3)
+
 def test_planck_eq_TSI():
 	lambda_set = arange(1,10001,1) #in nm
 	lambda_set = lambda_set*1e-9 #convert to m
@@ -68,11 +141,30 @@ def test_planck_eq_stefan_boltzmann():
 	TSI = sum(pi*r_sun**2/au**2*bb_curve)
 	assert( abs((TSI - sb)/sb) <0.001 )
 
-def test_extended_body_lightSim():
+def test_4_7_camera_update_state():
+	msg['take_image'] = 1
+	noStarCam.update_state()
+	noStarCam.update_state()
+	noStarCam.update_state()
+	msg['take_image'] = 0
+	noStarCam.update_state()
+	assert(len(noStarCam.images) == 1)
+	assert(len(noStarCam.images[0].scenes) == 3)
+	msg['take_image'] = 1
+	noStarCam.update_state()
+	assert(len(noStarCam.images) == 2)
+	noStarCam.update_state()
+	msg['take_image'] = 0
+	noStarCam.update_state()
+	assert(len(noStarCam.images[1].scenes) == 2)
 
-	assert (1==1)
-	assert (2==2)
-	assert (3==3)
+def test_extended_body_lightSim():
+	a = 1
+	assert (a==1)
+	b = 2
+	assert (b==2)
+	c = 3
+	assert (c==3)
 
 
 # from lightSimFunctions import lightSim
