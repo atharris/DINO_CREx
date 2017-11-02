@@ -105,7 +105,7 @@ noStarCam = camera.camera(
 #now create a camera with stars in it for use in the tests that
 #actually need them.
 msg['add_stars'] = 1
-StarCam = camera.camera(
+starCam = camera.camera(
 	2, 				#detector_height
 	2, 				#detector_width
 	5.0, 			#focal_length
@@ -124,10 +124,22 @@ StarCam = camera.camera(
 	msg,
 	db='../db/tycho.db'
 	)
-pdb.set_trace()
 sc.attitudeDCM = np.identity(3)
 
+def test_4_1_load_all_stars():
+	test_4_1_support_dict = np.load('camera_test_support_files/4.1.test_support.npy')[0]
+	
+	assert(sum(starCam.T) == test_4_1_support_dict['Tsum'])
+	assert(sum(starCam.n1) == test_4_1_support_dict['n1sum'])
+	assert(sum(starCam.n2) == test_4_1_support_dict['n2sum'])
+	assert(sum(starCam.n3) == test_4_1_support_dict['n3sum'])
+	assert(sum(starCam.RA) == test_4_1_support_dict['RAsum'])
+	assert(sum(starCam.DE) == test_4_1_support_dict['DEsum'])
+	assert(sum(starCam.VT) == test_4_1_support_dict['VTsum'])
+	assert(sum(starCam.BVT) == test_4_1_support_dict['BVTsum'])
 
+	pdb.set_trace()
+	assert(1 == 1)
 
 def test_4_7_camera_update_state():
 	msg['take_image'] = 1
