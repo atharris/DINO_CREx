@@ -127,8 +127,11 @@ starCam = camera.camera(
 sc.attitudeDCM = np.identity(3)
 
 def test_4_1_load_all_stars():
+	#load support dict that was calculated offline
 	test_4_1_support_dict = np.load('camera_test_support_files/4.1.test_support.npy')[0]
 	
+	#check that all sums of arrays loaded into the camera at run time
+	#match what they were when the support dict was made.
 	assert(sum(starCam.T) == test_4_1_support_dict['Tsum'])
 	assert(sum(starCam.n1) == test_4_1_support_dict['n1sum'])
 	assert(sum(starCam.n2) == test_4_1_support_dict['n2sum'])
