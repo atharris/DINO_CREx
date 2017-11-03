@@ -126,7 +126,7 @@ starCam = camera.camera(
 	)
 sc.attitudeDCM = np.identity(3)
 
-def test_4_1_load_all_stars():
+def test_4_1_loadAllStars():
 	#load support dict that was calculated offline
 	test_4_1_support_dict = np.load('camera_test_support_files/4.1.test_support.npy')[0]
 	
@@ -161,11 +161,13 @@ def test_4_1_load_all_stars():
 # 	assert(cam2.angular_width == 17)
 # 	assert(cam2.angular_diagonal == 18)
 
-def test_4_7_camera_update_state():
+def test_4_7_cameraUpdateState():
 	msg['take_image'] = 1
 	noStarCam.update_state()
 	noStarCam.update_state()
 	noStarCam.update_state()
+	assert(len(noStarCam.images) == 1)
+	assert(len(noStarCam.images[0].scenes) == 0)
 	msg['take_image'] = 0
 	noStarCam.update_state()
 	assert(len(noStarCam.images) == 1)
@@ -173,13 +175,15 @@ def test_4_7_camera_update_state():
 	msg['take_image'] = 1
 	noStarCam.update_state()
 	assert(len(noStarCam.images) == 2)
+	assert(len(noStarCam.images[0].scenes) == 3)
+	assert(len(noStarCam.images[1].scenes) == 0)
 	noStarCam.update_state()
 	msg['take_image'] = 0
 	noStarCam.update_state()
 	assert(len(noStarCam.images[1].scenes) == 2)
 
 
-def test_4_9_image_remove_occultations():
+def test_4_9_imageRemoveOccultations():
 	#enforce position of earth and location of sc.
 	#this way, earth is in the exact center of the FOV
 	bod.earth.state = np.array([au,0,0,0,0,0])
@@ -301,69 +305,5 @@ def test_4_18_PlanckEqTSI():
 	TSI = sum(pi*r_sun**2/au**2*bb_curve)
 	assert( abs((TSI - 1367)/1367) <0.001 )
 
-def test_extended_body_lightSim():
-	a = 1
-	assert (a==1)
-	b = 2
-	assert (b==2)
-	c = 3
-	assert (c==3)
 
 
-# from lightSimFunctions import lightSim
-# from numpy import identity, array
-# from bodies import earth
-# from constants import au
-# facets = lightSim(
-# 	np.identity(3), 
-# 	array([0,0,0]), 
-# 	array([au,0,0]), 
-# 	(3,3), 
-# 	200, 
-# 	200, 
-# 	0,
-# 	earth.albedo, 
-# 	earth.r_eq, 
-# 	earth.name)
-
-
-# bod.earth.state = np.array([au,0,0,0,0,0])
-# sc.state = bod.earth.state - np.array([0,0,0,0,0,0])
-# qe = {
-# 	'lambda': np.arange(1,10001,1.), 
-# 	'throughput': np.ones(10000)
-# 	}
-# tc = qe
-# msg = { 'bodies': [bod.earth, sc], 'add_stars': 0,
-# 'rm_occ': 1, 'add_bod': 1, 'psf': 1, 'raster': 1, 
-# 'photon': 0, 'dark': 0, 'read': 0}
-# print('camera init')
-# cam = camera.camera(
-# 	2, 				#detector_height
-# 	2, 				#detector_width
-# 	5.0, 			#focal_length
-# 	512, 			#resolution_height
-# 	512,			#resolution_width
-# 	np.identity(3), #body2cameraDCM
-# 	1000,		    #maximum magnitude
-# 	qe,
-# 	tc,
-# 	10.,
-# 	1., #effective area in m^2
-# 	sc,
-# 	msg
-# )
-# print('camera init')
-# sc.attitudeDCM = np.identity(3)
-# msg['take_image'] = 1
-# cam.update_state()
-# msg['take_image'] = 0
-# cam.update_state()
-# TSI = sum(
-# 	planck(T_sun,cam.lambda_set*1e-9)*10
-# 	)*pi*r_sun**2/au**2
-
-# import pdb
-# pdb.set_trace()
-# assert(np.array_equal(cam.lambda_set,qe['lambda']))
-# assert(np.array_equal(cam.lambda_set,tc['lambda']))
