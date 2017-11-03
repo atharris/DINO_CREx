@@ -101,7 +101,7 @@ noStarCam = camera.camera(
 	msg,
 	db='../db/tycho.db'
 	)
-pdb.set_trace()
+
 #now create a camera with stars in it for use in the tests that
 #actually need them.
 msg['add_stars'] = 1
@@ -141,9 +141,6 @@ def test_4_1_load_all_stars():
 	assert(sum(starCam.VT) == test_4_1_support_dict['VTsum'])
 	assert(sum(starCam.BVT) == test_4_1_support_dict['BVTsum'])
 
-	pdb.set_trace()
-	assert(1 == 1)
-
 # def test_4_2_calculate_FOV():
 # 	cam1 = camera.camera(
 # 		1,2,2)
@@ -182,8 +179,113 @@ def test_4_7_camera_update_state():
 	assert(len(noStarCam.images[1].scenes) == 2)
 
 
+def test_4_9_image_remove_occultations():
+	#enforce position of earth and location of sc.
+	#this way, earth is in the exact center of the FOV
+	bod.earth.state = np.array([au,0,0,0,0,0])
+	sc.state = bod.earth.state - 250000*np.array([1,0,0,0,0,0])
+	sc.attitudeDCM = np.identity(3)
 
-def test_4_17_planck_eq_stefan_boltzmann():
+	#take an image pointed at the earth
+	#remove the stars occulted by the earth
+	#but don't add the earth back in
+	msg['rm_occ'] = 1
+	msg['add_bod'] = 0
+	msg['take_image'] = 1
+	starCam.update_state()
+	msg['take_image'] = 0
+	starCam.update_state()
+	
+	#take another image, pointed in the same place, but don't
+	#remove occulted stars
+	msg['rm_occ'] = 0
+	msg['take_image'] = 1
+	starCam.update_state()
+	msg['take_image'] = 0
+	starCam.update_state()
+
+	#find distance between center of FOV and each star in p/l coords.
+	pixPos = starCam.images[0].scenes[0].pixel - starCam.resolution_width/2
+	linePos = starCam.images[0].scenes[0].line - starCam.resolution_height/2
+
+	#physical size of each pixel in the p/l directions
+	pixSize = float(starCam.detector_width)/\
+		float(starCam.resolution_width)
+	lineSize = float(starCam.detector_height)/\
+		float(starCam.resolution_height)
+
+	#physical distance between center of FOV and each star in p/l coords
+	pixDist = pixPos*pixSize
+	lineDist = linePos*lineSize
+
+	#physical distance between center of FOV and each star
+	diagDist = np.sqrt(pixDist**2 + lineDist**2)
+
+	#angular distance between each star and FOV center
+	angDist = np.arctan2(diagDist,starCam.focal_length)
+
+	#angular distance between center of Earth and limp
+	sc2earthDist = np.linalg.norm((sc.state - bod.earth.state)[0:3])
+	center2limbAng = np.arctan2(bod.earth.r_eq,sc2earthDist)
+
+	#now find use the second image to find all the stars that were
+	#removed from the first
+	removedStars = starCam.images[1].scenes[0].star_ids
+	ind = removedStars > -1
+	for star_id in starCam.images[0].scenes[0].star_ids:
+		ind = np.logical_and(ind,removedStars != star_id)
+
+	rmPix = starCam.images[1].scenes[0].pixel[ind] - starCam.resolution_width/2
+	rmLine = starCam.images[1].scenes[0].line[ind] - starCam.resolution_height/2
+	rmPixDist = rmPix*pixSize
+	rmLineDist = rmLine*lineSize
+	rmDiagDist = np.sqrt(rmPixDist**2 + rmLineDist**2)
+	rmAngDist = np.arctan2(rmDiagDist,starCam.focal_length)
+
+	#assert that the number of stars in the image with stars removed
+	#plus the number of stars removed from it equal the number of
+	#stars in the image where none were removed
+	assert(len((starCam.images[0].scenes[0].star_ids)) + sum(ind) \
+		== len((starCam.images[1].scenes[0].star_ids)))
+	#assert that star closest to the center of the FOV in the image
+	#with stars removed is farther from the center than the limb of
+	#the earth
+	assert( min(angDist) > center2limbAng )
+	#assert that the removed star farthest from the center of the FOV
+	#is closer than the limb of the earth.
+	assert( max(rmAngDist) < center2limbAng )
+
+
+def test_4_16_pixelLineConversion():
+	#find distance between center of FOV and each star in p/l coords.
+	pixPos = starCam.images[1].scenes[0].pixel - starCam.resolution_width/2
+	linePos = starCam.images[1].scenes[0].line - starCam.resolution_height/2
+
+	#physical size of each pixel in the p/l directions
+	pixSize = float(starCam.detector_width)/\
+		float(starCam.resolution_width)
+	lineSize = float(starCam.detector_height)/\
+		float(starCam.resolution_height)
+
+	pixDist = pixPos*pixSize
+	lineDist = linePos*lineSize
+
+	diagDist = np.sqrt(pixDist**2 + lineDist**2)
+
+	#angualr distance computed by projecting physical distance
+	#on focal plane through lens
+	angDist = np.arctan2(diagDist,starCam.focal_length)
+
+	#angular distance computed by dotting the camera boresight
+	#vector with the unit vector to the star
+	trueAngDist = np.arccos(starCam.images[1].scenes[0].c1)
+
+	#assert that the worst error between the two angular distances
+	#is still within machine precision
+	assert( max(abs(angDist - trueAngDist)) < 1e-13 )
+
+
+def test_4_17_planckEqStefanBoltzmann():
 	sb = stefan_boltzmann(T_sun)*r_sun**2/au**2
 	lambda_set = arange(1,10001,1) #in nm
 	lambda_set = lambda_set*1e-9 #convert to m
@@ -192,7 +294,7 @@ def test_4_17_planck_eq_stefan_boltzmann():
 	assert( abs((TSI - sb)/sb) <0.001 )
 
 
-def test_4_18_planck_eq_TSI():
+def test_4_18_PlanckEqTSI():
 	lambda_set = arange(1,10001,1) #in nm
 	lambda_set = lambda_set*1e-9 #convert to m
 	bb_curve = planck(T_sun,lambda_set)
