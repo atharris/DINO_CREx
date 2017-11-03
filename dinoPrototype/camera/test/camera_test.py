@@ -305,5 +305,23 @@ def test_4_18_PlanckEqTSI():
 	TSI = sum(pi*r_sun**2/au**2*bb_curve)
 	assert( abs((TSI - 1367)/1367) <0.001 )
 
+def test_4_21_mapSphere():
+	import lightSimFunctions
+	earthSurfaceArea = 4*np.pi*bod.earth.r_eq**2
 
+	map100x100 = lightSimFunctions.mapSphere(100,100,bod.earth.r_eq)
+	map250x250 = lightSimFunctions.mapSphere(250,250,bod.earth.r_eq)
+	map500x500 = lightSimFunctions.mapSphere(500,500,bod.earth.r_eq)
+	
+	map100x100surfaceArea = len(map100x100[0])*map100x100[1]
+	map250x250surfaceArea = len(map250x250[0])*map250x250[1]
+	map500x500surfaceArea = len(map500x500[0])*map500x500[1]
+	pdb.set_trace()
+	assert ( (map100x100surfaceArea - earthSurfaceArea/2)/(earthSurfaceArea/2) < 1e-15 )
+	assert ( (map250x250surfaceArea - earthSurfaceArea/2)/(earthSurfaceArea/2) < 1e-15 )
+	assert ( (map500x500surfaceArea - earthSurfaceArea/2)/(earthSurfaceArea/2) < 1e-15 )
 
+def test_4_23_lumos():
+	import lightSimFunctions
+	pdb.set_trace()
+	assert ( 1 == 1 )
