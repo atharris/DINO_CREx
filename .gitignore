@@ -3,3 +3,5 @@ dinoBuild/dinoModels/modules/
 *.pyc
 *.xml
 *.idea
+*.png
+*.txt
