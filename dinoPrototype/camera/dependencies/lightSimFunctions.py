@@ -47,7 +47,6 @@ def mapSphere(lat_res, long_res, rad_cb):
     :param rad_cb: radius of celestial body [m]
     :return N x 2 array of latitude and longitude coordinate for semi-spherical mapping [degrees]
             2D Surface area of a single rectangular facet [m^2]"""
-    import pdb
     from numpy import zeros, cos, deg2rad, rad2deg
     from datetime import datetime
     start_ms = datetime.now()
@@ -124,7 +123,6 @@ def mapSphere(lat_res, long_res, rad_cb):
     pts_latlong_c = pts_latlong
     pts_latlong_c[:,0] -= .5 * delt_lat
 
-    print("mapSphere: " + str(datetime.now() - start_ms))
     # assume each facet has equal areas totaling seim-sphere
     npts_latlong_c = pts_latlong_c.shape[0]
     facet_area = (4.*math.pi*rad_cb**2) / npts_latlong_c
@@ -139,7 +137,6 @@ def mapSphere(lat_res, long_res, rad_cb):
         ax.set_ylabel('Longitude (deg)')
         plt.grid(True)
         plt.show()
-    print("mapSphere: " + str(datetime.now() - start_ms))
     return pts_latlong_c, facet_area
 
 ###################################################
@@ -512,10 +509,10 @@ def lightSim(attde_cam, pos_cam, pos_cb, fov, lat_res, long_res, do_pt_source,
 
     # check if CB is in field of view
     fov_chk = checkFoV(pos_cb, pos_cam, attde_cam, fov, radius_cb)
+    current_CB_dict = -1
+
     # compute lighting simulation
     if fov_chk:
-
-        current_CB_dict = {}
 
         # illuminate sphere
         pts_pos_helio, pts_albedo_helio, facet_area = lumos(
@@ -528,7 +525,7 @@ def lightSim(attde_cam, pos_cam, pos_cb, fov, lat_res, long_res, do_pt_source,
         # check to see if there are any illuminated points visible for the celestial body
         # (celestial body may be in field of view with no illuminated points (observer on dark side of body)
         if pts_albedo_cam.shape[0] > 0:
-
+            current_CB_dict = {}
             if do_pt_source:
 
                 # compute position of CB center in camera view
@@ -559,11 +556,6 @@ def lightSim(attde_cam, pos_cam, pos_cb, fov, lat_res, long_res, do_pt_source,
                 current_CB_dict['facetDec'] = ra_dec[1]
                 current_CB_dict['netAlbedo'] = pts_albedo_cam
                 current_CB_dict['facetArea'] = facet_area_cam
-
-
-        import matplotlib.pyplot as plt
-    else: 
-        current_CB_dict = -1
 
     return current_CB_dict
 
