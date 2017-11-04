@@ -84,9 +84,9 @@ def matrixA(input):
     # total r_spacecraft derivatives of forces
     dFdR = dFdR_p + dFdR_s + dFdR_SRP
 
-    # populate the A matrix, where each row (D) is a time derivative of a QoI
-    # and each column (E) is a derivative taken with respect to each QoI
-    # unmodeled acceleration terms (ax, ay, az) are constant wrt time
+    # populate the A matrix, where each row (D) is a time derivative of a QoI.
+    # and each column (E) is the QoI that the A matrix derivative is taken wrt.
+    # unmodeled acceleration terms (ax, ay, az) are constant wrt time.
     # [D,E]
     #       X | Y | Z | dX | dY | dZ | ax | ay | az |
     # dX
@@ -166,7 +166,7 @@ def EOM(state, et, primary_index, secondary_indices, n_secondaries, mu_primary, 
 
     # SRP force
     f_SRP = cR * kSRP * (state[0:3] - r_sun) / np.linalg.norm(state[0:3] - r_sun) ** 3
-    
+
     # total force (acceleration) vector
     f = f_primary + f_3rd_bodies + f_SRP
 

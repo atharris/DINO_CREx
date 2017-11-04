@@ -18,6 +18,7 @@ __date__ = '$Date$'[7:26]
 
 import scipy.integrate as integ
 import numpy as np
+import pdb
 
 from pixelLineBatch import fncH
 from pixelLineBatch import fncG
@@ -184,7 +185,7 @@ def run_batch( input ) :
 
   # using the inputs of G, calculate the H matrix
   H_inputs = ( ref_state[:,0:n_state], SPICE_data_GH, extras )
-  H_tilde   = fncH( H_inputs )
+  H_tilde  = fncH( H_inputs )
 
   # calculate the deviation of the observables ( Y - G )
   y    = Y_obs['data'] - Y_refs
@@ -199,8 +200,8 @@ def run_batch( input ) :
       # RANGE AND RANGE RATE BATCH - hard coded 2 for observation type size
       H    = np.dot( H_tilde[0+2*ii:2+2*ii,:], phi_t_t0 )
       # add the new H^T H result to the information matrix
-      info_matrix   += np.dot( H.T, np.dot( W, H ) )
-      P_array[ii,:,:]   = aInv( info_matrix )
+      info_matrix    += np.dot( H.T, np.dot( W, H ) )
+      P_array[ii,:,:] = aInv( info_matrix )
       # add the H^T Y result to the observation information matrix
       normal_matrix += np.dot( H.T, np.dot( W, np.expand_dims(y[ii,:],axis=1) ) )
 

@@ -66,19 +66,19 @@ def writingText(itr, ref_state, est_state, true_ephem, extra_data, position_erro
     ResultString += 'Actual Error = ' + str(position_error) + str(velocity_error) + '\n'
     ResultString += '\n'
 
-    ResultString += 'Last X Pos err = ' + str(err[-1, 0]) + '\n'
-    ResultString += 'Last Y Pos err = ' + str(err[-1, 1]) + '\n'
-    ResultString += 'Last Z Pos err = ' + str(err[-1, 2]) + '\n'
-    ResultString += 'Last X Vel err = ' + str(err[-1, 3]) + '\n'
-    ResultString += 'Last Y Vel err = ' + str(err[-1, 4]) + '\n'
-    ResultString += 'Last Z Vel err = ' + str(err[-1, 5]) + '\n'
+    ResultString += 'Ref X Pos err = ' + str(err[-1, 0]) + '\n'
+    ResultString += 'Ref Y Pos err = ' + str(err[-1, 1]) + '\n'
+    ResultString += 'Ref Z Pos err = ' + str(err[-1, 2]) + '\n'
+    ResultString += 'Ref X Vel err = ' + str(err[-1, 3]) + '\n'
+    ResultString += 'Ref Y Vel err = ' + str(err[-1, 4]) + '\n'
+    ResultString += 'Ref Z Vel err = ' + str(err[-1, 5]) + '\n'
     ResultString += '\n'
-    ResultString += 'Last X Pos err = ' + str(err_hat[-1, 0]) + '\n'
-    ResultString += 'Last Y Pos err = ' + str(err_hat[-1, 1]) + '\n'
-    ResultString += 'Last Z Pos err = ' + str(err_hat[-1, 2]) + '\n'
-    ResultString += 'Last X Vel err = ' + str(err_hat[-1, 3]) + '\n'
-    ResultString += 'Last Y Vel err = ' + str(err_hat[-1, 4]) + '\n'
-    ResultString += 'Last Z Vel err = ' + str(err_hat[-1, 5]) + '\n'
+    ResultString += 'Est X Pos err = ' + str(err_hat[-1, 0]) + '\n'
+    ResultString += 'Est Y Pos err = ' + str(err_hat[-1, 1]) + '\n'
+    ResultString += 'Est Z Pos err = ' + str(err_hat[-1, 2]) + '\n'
+    ResultString += 'Est X Vel err = ' + str(err_hat[-1, 3]) + '\n'
+    ResultString += 'Est Y Vel err = ' + str(err_hat[-1, 4]) + '\n'
+    ResultString += 'Est Z Vel err = ' + str(err_hat[-1, 5]) + '\n'
     ResultString += '\n'
 
     print ResultString
@@ -172,7 +172,9 @@ def main():
     extras['ref_frame'] = 'J2000'
 
     # SRP parameter
-    extras['SRP'] = -20 * 4.57 * 10 ** (-6)
+    # extras['SRP'] = -4.57 * 10 ** (-6) # N/m**2 -> kg m / (s**2 m**2) -> kg / (m s**2)
+    # A/M ratio multiplied by solar pressure constant at 1 AU with adjustments
+    extras['SRP'] = 0.3**2/14. * 149597870.**2 * 1358. / 299792458. / 1000. # turboprop document Eq (64)
 
     # coefficient of reflectivity
     extras['cR'] = 1
@@ -213,7 +215,7 @@ def main():
     extras['line_direction'] = 1.
 
     # Are we using the real dynamics for the ref or the trueData
-    extras['realData']= 'ON'
+    extras['realData']= 'OFF'
 
     ##################################################################################
 
@@ -270,9 +272,9 @@ def main():
     P_bar[3, 3] = .1**2
     P_bar[4, 4] = .1**2
     P_bar[5, 5] = .1**2
-    P_bar[6, 6] = (10**(-3))**2
-    P_bar[7, 7] = (10**(-3))**2
-    P_bar[8, 8] = (10**(-3))**2
+    P_bar[6, 6] = (10**(-8))**2
+    P_bar[7, 7] = (10**(-8))**2
+    P_bar[8, 8] = (10**(-8))**2
 
     # position_error = np.zeros(3)
     # velocity_error = np.zeros(3)
@@ -340,17 +342,17 @@ def main():
         err_hat = est_state[:, 0:6] - true_ephem['spacecraft'].T
 
         x_hat_array = extra_data['x_hat_array']
-        P_array = extra_data['P_array']
-        prefits = extra_data['prefit residuals']
-        postfits = extra_data['postfit residuals']
+        P_array     = extra_data['P_array']
+        prefits     = extra_data['prefit residuals']
+        postfits    = extra_data['postfit residuals']
         beacon_list = extra_data['Y']['beacons']
-        Y_observed = extra_data['Y']['data']
-        Y_truth = extra_data['Y']['truth']
+        Y_observed  = extra_data['Y']['data']
+        Y_truth     = extra_data['Y']['truth']
 
-        stand_devs = 3. * np.array([np.sqrt(np.fabs(np.diag(P))) for P in P_array])
+        stand_devs  = 3. * np.array([np.sqrt(np.fabs(np.diag(P))) for P in P_array])
 
         plt.figure(1)
-        plt.subplot(321)
+        plt.subplot(331)
         plt.plot(t_span, stand_devs[:, 0], 'r--', t_span, -1 * stand_devs[:, 0], 'r--')
         plt.plot(t_span, x_hat_array[:, 0], 'k.')
         plt.ylabel('x (km)')
@@ -358,14 +360,14 @@ def main():
         plt.title('Position')
         plt.ylim((-np.max(stand_devs[:, 0]), np.max(stand_devs[:, 0])))
 
-        plt.subplot(323)
+        plt.subplot(334)
         plt.plot(t_span, stand_devs[:, 1], 'r--', t_span, -1 * stand_devs[:, 1], 'r--')
         plt.plot(t_span, x_hat_array[:, 1], 'k.')
         plt.ylabel('y (km)')
         plt.xticks([])
         plt.ylim((-np.max(stand_devs[:, 1]), np.max(stand_devs[:, 1])))
 
-        plt.subplot(325)
+        plt.subplot(337)
         plt.plot(t_span, stand_devs[:, 2], 'r--', t_span, -1 * stand_devs[:, 2], 'r--')
         plt.plot(t_span, x_hat_array[:, 2], 'k.')
         plt.ylabel('z (km)')
@@ -374,7 +376,7 @@ def main():
         ax.set_xticklabels(['t_0', 't_f'])
         plt.ylim((-np.max(stand_devs[:, 2]), np.max(stand_devs[:, 2])))
 
-        plt.subplot(322)
+        plt.subplot(332)
         plt.plot(t_span, stand_devs[:, 3], 'r--', t_span, -1 * stand_devs[:, 3], 'r--')
         plt.plot(t_span, x_hat_array[:, 3], 'k.')
         plt.ylabel('vx (km/s)')
@@ -383,14 +385,14 @@ def main():
         plt.ylim((-np.max(stand_devs[:, 3]), np.max(stand_devs[:, 3])))
 
 
-        plt.subplot(324)
+        plt.subplot(335)
         plt.plot(t_span, stand_devs[:, 4], 'r--', t_span, -1 * stand_devs[:, 4], 'r--')
         plt.plot(t_span, x_hat_array[:, 4], 'k.')
         plt.ylabel('vy (km/s)')
         plt.xticks([])
         plt.ylim((-np.max(stand_devs[:, 4]), np.max(stand_devs[:, 4])))
 
-        plt.subplot(326)
+        plt.subplot(338)
         plt.plot(t_span, stand_devs[:, 5], 'r--', t_span, -1 * stand_devs[:, 5], 'r--')
         plt.plot(t_span, x_hat_array[:, 5], 'k.')
         plt.ylabel('vz (km/s)')
@@ -398,6 +400,31 @@ def main():
         ax = plt.gca()
         ax.set_xticklabels(['t_0', 't_f'])
         plt.ylim((-np.max(stand_devs[:, 5]), np.max(stand_devs[:, 5])))
+
+        plt.subplot(333)
+        plt.plot(t_span, stand_devs[:, 6], 'r--', t_span, -1 * stand_devs[:, 6], 'r--')
+        plt.plot(t_span, x_hat_array[:, 6], 'k.')
+        plt.ylabel('ax (km/s)')
+        plt.xticks([])
+        plt.title('Accelerations')
+        plt.ylim((-1.1*np.max(stand_devs[:, 6]), 1.1*np.max(stand_devs[:, 6])))
+
+
+        plt.subplot(336)
+        plt.plot(t_span, stand_devs[:, 7], 'r--', t_span, -1 * stand_devs[:, 7], 'r--')
+        plt.plot(t_span, x_hat_array[:, 7], 'k.')
+        plt.ylabel('ay (km/s)')
+        plt.xticks([])
+        plt.ylim((-1.1*np.max(stand_devs[:, 7]), 1.1*np.max(stand_devs[:, 7])))
+
+        plt.subplot(339)
+        plt.plot(t_span, stand_devs[:, 8], 'r--', t_span, -1 * stand_devs[:, 8], 'r--')
+        plt.plot(t_span, x_hat_array[:, 8], 'k.')
+        plt.ylabel('az (km/s)')
+        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+        ax = plt.gca()
+        ax.set_xticklabels(['t_0', 't_f'])
+        plt.ylim((-1.1*np.max(stand_devs[:, 8]), 1.1*np.max(stand_devs[:, 8])))
 
         plt.suptitle('State Errors' + ' $\hat{x}$' + ' and Covariance Bounds')
         plt.tight_layout()
@@ -633,7 +660,7 @@ def main():
         plt.subplot(121)
         plt.plot(t_span, Y_observed[:, 0] - Y_truth[:, 0])
         plt.xticks([])
-        plt.title('Range (km)')
+        plt.title('Pixel (-)')
         plt.ylabel('Added Error')
         plt.xticks(t_span, rotation=90, ha='right')
         ax = plt.gca()
@@ -642,7 +669,7 @@ def main():
         plt.subplot(122)
         plt.plot(t_span, Y_observed[:, 1] - Y_truth[:, 1])
         plt.xticks([])
-        plt.title('Range Rate (km/s)')
+        plt.title('Line (-)')
         plt.xticks(t_span, rotation=90, ha='right')
         ax = plt.gca()
         ax.set_xticklabels(beacon_list)

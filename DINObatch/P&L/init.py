@@ -65,19 +65,19 @@ def writingText(itr, ref_state, est_state, true_ephem, extra_data, position_erro
     ResultString += 'Actual Error = ' + str(position_error) + str(velocity_error) + '\n'
     ResultString += '\n'
 
-    ResultString += 'Last X Pos err = ' + str(err[-1, 0]) + '\n'
-    ResultString += 'Last Y Pos err = ' + str(err[-1, 1]) + '\n'
-    ResultString += 'Last Z Pos err = ' + str(err[-1, 2]) + '\n'
-    ResultString += 'Last X Vel err = ' + str(err[-1, 3]) + '\n'
-    ResultString += 'Last Y Vel err = ' + str(err[-1, 4]) + '\n'
-    ResultString += 'Last Z Vel err = ' + str(err[-1, 5]) + '\n'
+    ResultString += 'Ref X Pos err = ' + str(err[-1, 0]) + '\n'
+    ResultString += 'Ref Y Pos err = ' + str(err[-1, 1]) + '\n'
+    ResultString += 'Ref Z Pos err = ' + str(err[-1, 2]) + '\n'
+    ResultString += 'Ref X Vel err = ' + str(err[-1, 3]) + '\n'
+    ResultString += 'Ref Y Vel err = ' + str(err[-1, 4]) + '\n'
+    ResultString += 'Ref Z Vel err = ' + str(err[-1, 5]) + '\n'
     ResultString += '\n'
-    ResultString += 'Last X Pos err = ' + str(err_hat[-1, 0]) + '\n'
-    ResultString += 'Last Y Pos err = ' + str(err_hat[-1, 1]) + '\n'
-    ResultString += 'Last Z Pos err = ' + str(err_hat[-1, 2]) + '\n'
-    ResultString += 'Last X Vel err = ' + str(err_hat[-1, 3]) + '\n'
-    ResultString += 'Last Y Vel err = ' + str(err_hat[-1, 4]) + '\n'
-    ResultString += 'Last Z Vel err = ' + str(err_hat[-1, 5]) + '\n'
+    ResultString += 'Est X Pos err = ' + str(err_hat[-1, 0]) + '\n'
+    ResultString += 'Est Y Pos err = ' + str(err_hat[-1, 1]) + '\n'
+    ResultString += 'Est Z Pos err = ' + str(err_hat[-1, 2]) + '\n'
+    ResultString += 'Est X Vel err = ' + str(err_hat[-1, 3]) + '\n'
+    ResultString += 'Est Y Vel err = ' + str(err_hat[-1, 4]) + '\n'
+    ResultString += 'Est Z Vel err = ' + str(err_hat[-1, 5]) + '\n'
     ResultString += '\n'
 
     print ResultString
@@ -171,7 +171,8 @@ def main():
     extras['ref_frame'] = 'J2000'
 
     # SRP parameter
-    extras['SRP'] = -20 * 4.57 * 10 ** (-6)
+    # A/M ratio multiplied by solar pressure constant at 1 AU with adjustments
+    extras['SRP'] = 0.3**2/14. * 149597870.**2 * 1358. / 299792458. / 1000. # turboprop document Eq (64)
 
     # coefficient of reflectivity
     extras['cR'] = 1
@@ -212,7 +213,7 @@ def main():
     extras['line_direction'] = 1.
 
     # Are we using the real dynamics for the ref or the trueData
-    extras['realData']= 'ON'
+    extras['realData']= 'OFF'
 
     ##################################################################################
 
