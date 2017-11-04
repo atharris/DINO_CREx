@@ -258,7 +258,59 @@ def test_4_9_imageRemoveOccultations():
 	#assert that the removed star farthest from the center of the FOV
 	#is closer than the limb of the earth.
 	assert( max(rmAngDist) < center2limbAng )
+	plot = 1
+	if plot:
 
+		plt.figure()
+		plt.plot(starCam.images[0].scenes[0].pixel, starCam.images[0].scenes[0].line, '.', markersize='2' )
+		plt.plot(256,256,marker='x',color='red',markersize='5')
+		plt.xlim([0,512])
+		plt.ylim([0,512])
+		plt.xlabel('Pixel')
+		plt.ylabel('Line')
+		plt.title('Test 4.9 Full Star Field with Occulted Stars Removed')
+		plt.axes().set_aspect('equal')
+
+		plt.figure()
+		plt.plot(starCam.images[0].scenes[0].pixel, starCam.images[0].scenes[0].line, '.', markersize='5' )
+		plt.plot(256,256,marker='x',color='red',markersize='5')
+		plt.xlim([156,356])
+		plt.ylim([156,356])
+		plt.xlabel('Pixel')
+		plt.ylabel('Line')
+		plt.title('Test 4.9 Partial Star Field with Occulted Stars Removed')
+		plt.axes().set_aspect('equal')
+
+		plt.figure()
+		plt.plot(rmPix+256, rmLine+256, '.', markersize='5' )
+		plt.plot(256,256,marker='x',color='red',markersize='5')
+		plt.xlim([156,356])
+		plt.ylim([156,356])
+		plt.xlabel('Pixel')
+		plt.ylabel('Line')
+		plt.title('Test 4.9 Partial Star Field with Non-Occulted Stars Removed')
+		plt.axes().set_aspect('equal')
+
+		plt.figure()
+		plt.plot(starCam.images[1].scenes[0].pixel, starCam.images[1].scenes[0].line, '.', markersize='2' )
+		plt.plot(256,256,marker='x',color='red',markersize='5')
+		plt.xlim([0,512])
+		plt.ylim([0,512])
+		plt.xlabel('Pixel')
+		plt.ylabel('Line')
+		plt.title('Test 4.9 Full Star Field')
+		plt.axes().set_aspect('equal')
+
+		plt.figure()
+		plt.plot(rmPix+256, rmLine+256, '.', markersize=2)
+		plt.plot(256,256,marker='x',color='red',markersize='5')
+		plt.xlim([0,512])
+		plt.ylim([0,512])
+		plt.xlabel('Pixel')
+		plt.ylabel('Line')
+		plt.title('Test 4.9 Full Star Field with Non-Occulted Stars Removed')
+		plt.axes().set_aspect('equal')
+		pdb.set_trace()
 
 def test_4_16_pixelLineConversion():
 	#find distance between center of FOV and each star in p/l coords.
@@ -284,8 +336,22 @@ def test_4_16_pixelLineConversion():
 	#vector with the unit vector to the star
 	trueAngDist = np.arccos(starCam.images[1].scenes[0].c1)
 
+	plot = 1
+
+	if plot:
+		plt.figure()
+		plt.plot(starCam.images[1].scenes[0].pixel, starCam.images[1].scenes[0].line, '.', markersize='2' )
+		plt.plot(256,256,marker='x',color='red',markersize='5')
+		plt.xlim([0,512])
+		plt.ylim([0,512])
+		plt.xlabel('Pixel')
+		plt.ylabel('Line')
+		plt.title('Test 4.10 Star Field')
+		plt.axes().set_aspect('equal')
+
 	#assert that the worst error between the two angular distances
-	#is still within machine precision
+	#is still within machine precision	
+	pdb.set_trace()
 	assert( max(abs(angDist - trueAngDist)) < 1e-13 )
 
 
@@ -323,5 +389,29 @@ def test_4_21_mapSphere():
 
 def test_4_23_lumos():
 	import lightSimFunctions
+	earthLumos = lightSimFunctions.lumos(
+		np.array([au,0,0]),
+		np.array([0,0,0]),
+		bod.earth.albedo,
+		bod.earth.r_eq,
+		100,
+		100)
 	pdb.set_trace()
 	assert ( 1 == 1 )
+
+def test_4_x_lightSim():
+	from lightSimFunctionsOld import lightSim
+	earthLightSim = lightSim(
+		np.identity(3),
+		np.array([0,0,0]),
+		np.array([au,0,0]),
+		(20,20),
+		100,
+		100,
+		True,
+		bod.earth.albedo,
+		bod.earth.r_eq,
+		'Earth'
+		)
+	pdb.set_trace()	
+	assert( 1 == 1 )
