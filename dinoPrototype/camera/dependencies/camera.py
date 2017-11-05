@@ -836,13 +836,19 @@ class image:
 		msg,
 		**kwargs):
 
-		from numpy import deg2rad, sin, cos, append, sqrt, zeros, ones, logical_and
+		from numpy import array, deg2rad, sin, cos, append, sqrt, zeros, ones, logical_and
 		from numpy.linalg import norm
 
 		if len(msg['bodies']) != 0:
 
 			n = 1	
 			bodies = msg['bodies']
+
+			#calculate how far each body is from the sc
+			for body in bodies: body.distFromSc = norm(body.state[0:3] - self.camera.sc.state[0:3])
+			#sort bodies by how far they are from the sc
+			#this needs to be done 
+			bodies.sort(key=lambda x:x.distFromSc, reverse=True)
 
 			for body in bodies:
 				n+=1
@@ -872,8 +878,8 @@ class image:
 							self.camera.angular_height,
 							self.camera.angular_width
 							),
-						100,
-						100,
+						200,
+						200,
 						False,
 						body.albedo,
 						body.r_eq,
@@ -881,6 +887,7 @@ class image:
 						)
 					if facets == -1: continue #if true, then lightSim FOV check failed
 					#position from center of body to facet
+
 					surf_n1 = facets['bodypos'][:,0].astype(float)
 					surf_n2 = facets['bodypos'][:,1].astype(float)
 					surf_n3 = facets['bodypos'][:,2].astype(float)
