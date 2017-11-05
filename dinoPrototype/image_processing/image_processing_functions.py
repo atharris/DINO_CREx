@@ -548,7 +548,7 @@ def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18
 
     img = cv2.medianBlur(img, blur)
     cv2.GaussianBlur(img, (blur, blur), 0)
-    cv2.imwrite('beacon_orig_blur.png', img)
+    #cv2.imwrite('beacon_orig_blur.png', img)
 
     # if show_img:
     #     cv2.imshow('blur', img)

@@ -50,11 +50,6 @@ attde_sc = dyn.eulerDCM_321(math.radians(251.115), math.radians(-32.842), math.r
 # load example image to use
 # note: image map is in the (line, pixel) format ... same as (row, column) .... (y, x)
 
-# ex_image = misc.imread('psf_examples/psf_lower_right2.png', mode='L')
-ex_image = misc.imread('psf_examples/psf_example_landscape.png', mode='L')
-ex_image = misc.imread('psf_examples/bct_nsc1.png', mode='L')
-
-
 # load example image from image generation module
 do_CDR_beacon = True
 if do_CDR_beacon:
@@ -108,7 +103,7 @@ if do_CDR_stars2:
     ex_image = misc.imread('psf_examples/bct_nsc1.png')
     print ex_image.shape
 
-    attde_sc = eulerDCM_321(math.radians(251.115), math.radians(-32.842), math.radians(-65.2))
+    attde_sc = dyn.eulerDCM_321(math.radians(251.115), math.radians(-32.842), math.radians(-65.2))
 
     cam_res = (868, 725)
     cam_fov = (14.4, 12)
@@ -123,7 +118,7 @@ if do_CDR_stars2:
     print cam_fov
 
 # star catalog filename
-fname_catalog = 'star_catalog/tycho.db'
+fname_catalog = 'star_catalog/tycho_mag7cutoff.db'
 
 # TODO calculate/select ROI parameters <-- unclear if handled by image gen already
 # signal_threshold, noise_threshold, ROI_size (n x n pixel border), single side ROI_border_width
@@ -227,7 +222,7 @@ if doplot_isearch == True:
         plt.scatter(pixel_line_beacon_i[0][0], pixel_line_beacon_i[1][0], color='r', marker='+', s=30)
         plt.scatter(390, 256, color='r', marker='+', s=30)
 
-        plt.savefig('CDR_save_files/90_deg_orig_initial_estimate.png')
+        #plt.savefig('CDR_save_files/90_deg_orig_initial_estimate.png')
 
     if do_CDR_stars or do_CDR_stars2:
 
@@ -235,7 +230,7 @@ if doplot_isearch == True:
         for ind in range(20):
             plt.scatter(pixel_star[0, ind], line_star[0, ind], color='r', marker='+', s=30)
             fig1.suptitle('Original Image with Initial Beacon Location Estimate', fontsize=12, fontweight='bold')
-            plt.savefig('CDR_save_files/stars_only_initial_estimate.png')
+            #plt.savefig('CDR_save_files/stars_only_initial_estimate.png')
 
     fig1.suptitle('Original Image with Initial Beacon Location Estimate', fontsize=12, fontweight='bold')
     plt.show()
@@ -260,7 +255,6 @@ if doplot_centroid == True:
         plt.scatter(pixel_line_centroid[ind_cent][0], pixel_line_centroid[ind_cent][1], color='r', marker='x', s=75)
 
     plt.show()
-    plt.savefig('saved_output/psf_centroid_landscape.png')
     fig1.suptitle('Original Image with Centroid Marked', fontsize=12, fontweight='bold')
 
 #plt.figure(2)

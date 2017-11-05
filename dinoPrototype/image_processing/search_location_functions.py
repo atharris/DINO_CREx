@@ -218,10 +218,10 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
 
     # remove star catalog entries outside of rectangular field of view
     s.execute("SELECT * FROM tycho_data WHERE RA BETWEEN (?) AND (?)"
-              " AND DE BETWEEN (?) AND (?)"
+              " AND DEC BETWEEN (?) AND (?)"
               " AND BTmag IS NOT NULL "
               " AND BTmag <= (?)"
-              " ORDER BY VTmag ASC",
+              " ORDER BY BTmag ASC",
               (ra_min, ra_max, dec_min, dec_max, M_CUTOFF))
     rows = s.fetchall()
     n_stars = len(rows)
@@ -234,11 +234,11 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
     dec = []
     id = []
     for ind in range(n_stars):
-        ra.append(rows[ind][4])
-        dec.append(rows[ind][5])
+        ra.append(rows[ind][1])
+        dec.append(rows[ind][2])
         id.append(rows[ind][0])
         if ind < 4:
-            print rows[ind][0], rows[ind][2], rows[ind][4], rows[ind][5]
+            print rows[ind][0], rows[ind][1], rows[ind][2], rows[ind][3]
 
     radec_inertial = (ra, dec, id)
 
