@@ -152,12 +152,18 @@ def checkFoV(pos_cb, pos_obs, DCM_BN, fov, radius_cb):
     :return: true if in field of view, false otherwise
     """
     from datetime import datetime
+    from numpy.linalg import norm
     start = datetime.now()
 
     # compute relative position of celestial body to observer in body coordinates
     pos_obs2cb_helio = (pos_cb-pos_obs)
     pos_obs2cb_body = np.matmul(DCM_BN, pos_obs2cb_helio)
     e_obs2cb_body = pos_obs2cb_body / np.linalg.norm(pos_obs2cb_body)
+
+    #compute angular size of body
+    pos_obs2cb_helio_norm = norm(pos_obs2cb_helio)
+    body_angsize = math.degrees(
+        math.atan2(radius_cb/2,pos_obs2cb_helio_norm))
 
     # take field of view angles from centerline
     horiz_fovcenter = fov[0]/2.
@@ -169,7 +175,7 @@ def checkFoV(pos_cb, pos_obs, DCM_BN, fov, radius_cb):
 
     # check if limits in camera specs
     chk = True
-    if (abs(az) > horiz_fovcenter) or (abs(el) > vert_fovcenter):
+    if (abs(az) > horiz_fovcenter + body_angsize) or (abs(el) > vert_fovcenter + body_angsize):
         chk = False
 
     if np.linalg.norm(pos_obs2cb_body) < radius_cb:
