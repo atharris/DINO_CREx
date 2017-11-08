@@ -3,8 +3,13 @@ Iteration number 1
 ---------------------------------------------------
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 Estimated x_hat_0 = [ -2.49126471e+03   2.98527488e+03   1.65954857e+03  -4.11869083e-02
   -2.24531988e-02  -1.00426165e-02]
+=======
+Estimated x_hat_0 = [ -1.97732098e+03   2.53475716e+03   1.64076594e+03  -4.24545086e-02
+  -2.07606544e-02  -1.00707099e-02]
+>>>>>>> Stashed changes
 Actual Error = [ 2789.12789832 -3800.24051432 -1667.01457705][ 0.04198607  0.02517178  0.01017602]
 
 Ref X Pos err = 28177.8041894
@@ -14,6 +19,7 @@ Ref X Vel err = 0.0419171197751
 Ref Y Vel err = 0.0247489306685
 Ref Z Vel err = 0.00999627983958
 
+<<<<<<< Updated upstream
 Est X Pos err = 783.83576563
 Est Y Pos err = 823.653247237
 Est Z Pos err = 69.8166896775
@@ -39,5 +45,13 @@ Last Z Pos err = -694.589454815
 Last X Vel err = -0.0277759354774
 Last Y Vel err = -0.0216920170636
 Last Z Vel err = -0.0101968282675
+>>>>>>> Stashed changes
+=======
+Est X Pos err = 532.220032901
+Est Y Pos err = 1393.66679859
+Est Z Pos err = 32.5116930306
+Est X Vel err = -0.000468998102864
+Est Y Vel err = 0.00438940517354
+Est Z Vel err = 9.63487205574e-05
 >>>>>>> Stashed changes
 

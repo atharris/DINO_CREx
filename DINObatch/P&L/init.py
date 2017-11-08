@@ -39,6 +39,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from batchFilter import run_batch
 import data_generation as dg
+from plotFilter import plotFunction as PF
+from beaconBinSPICE import getObs
+
+import pdb
 ################################################################################
 #                  S E C O N D A R Y     F U N C T I O N S:
 ################################################################################
@@ -108,15 +112,27 @@ def writingText(itr, ref_state, est_state, true_ephem, extra_data, position_erro
 
 def main():
 
+    # extras dictionary for importing to functions
+    extras = {}
+
     ###########################################
+    #
     #  S  P  I  C  E  C  O  D  E
-    #  S  P  I  C  E  C  O  D  E
+    #  
     ##########################################
-    pyswice.furnsh_c(bskSpicePath + 'de430.bsp')
+
+    # basic .bsp filename (generic, such as de430, etc)
+    extras['basic_bsp']   = 'de430.bsp'
+    # .bsp filename for mission
+    extras['mission_bsp'] = 'DINO_kernel.bsp'
+    # .tls filename 
+    extras['tls']         = 'naif0011.tls'
+
+    # prep pyswice for the extraction of initial data
+    # is the only reason that we do this is for lines 165 and 166?
+    pyswice.furnsh_c(bskSpicePath  + 'de430.bsp')
     pyswice.furnsh_c(dinoSpicePath + 'naif0011.tls')
     pyswice.furnsh_c(dinoSpicePath + 'DINO_kernel.bsp')
-    # SP.furnsh('SPICE/jup310.bsp')
-    # SP.furnsh('SPICE/mar097.bsp')
 
     DINO_kernel = dinoSpicePath + 'DINO_kernel.bsp'
     body_int = -100#SP.spkobj(DINO_kernel)
@@ -148,11 +164,10 @@ def main():
     pyswice.utc2et_c('30 JUL 2020 17:00:00', end_et)
 
     start_et = pyswice.doubleArray_getitem(start_et, 0)
-    end_et = pyswice.doubleArray_getitem(end_et, 0)
+    end_et   = pyswice.doubleArray_getitem(end_et, 0)
 
 
-    # extras dictionary for importing to functions
-    extras = {}
+
     # body vector for SUN, EARTH, MARS
     # CODE RELIES ON SUN BEING INDEXED AS 0
     extras['bodies'] = ['SUN', '3', '399']
@@ -178,7 +193,7 @@ def main():
     extras['cR'] = 1
 
     # number of observations per beacon until moving to the next
-    extras['n_obs'] = 1
+    extras['repeat_obs'] = 1
 
     # SNC coefficient
     extras['SNC'] = (2 * 10 ** (-4)) ** 3
@@ -217,7 +232,8 @@ def main():
 
     ##################################################################################
 
-    # Get Observation Times and Ephemerides
+    # Get Observation Times and Ephemerides. This outputs a full data set that is not
+    # parsed in any way. Ephemerides for all objects at all times are given.
     true_ephem, t_span = dg.generate_data(sc_ephem_file=DINO_kernel,
                                           planet_beacons = ['earth','mars barycenter'],
                                           beacon_ids=[],
@@ -232,13 +248,11 @@ def main():
 
 
     # number and keys of beacons. note that the true ephem is going to have one spot for the
-    # sun, which in NOT a beacon
+    # sun, which in NOT a beacon. These are used in beaconBinSPICE. 
     beacon_names = true_ephem.keys()
     beacon_names.remove('spacecraft')
-    extras['beacons'] = beacon_names
-    extras['n_beacons'] = len(beacon_names)
-
-
+    extras['unique_beacon_IDs'] = beacon_names
+    extras['n_unique_beacons'] = len(beacon_names)
 
     ##################################################################################
     #
@@ -249,13 +263,9 @@ def main():
     # copy the initial conditions as the first sun to SC ref_states from the SPICE file
     IC = np.copy(true_ephem['spacecraft'][:, 0])
 
-    ######################################
-    # UNMODELED ACCELERATION TERMS
-    # ALPHA IMPLEMENTATION
-    # CURRENTLY TOO MUCH HARD CODING
-    ######################################
-
     print 'IC', IC
+
+    # spice_derived_state is only referenced here. Should these be axed?
     spice_derived_state = pyswice.new_doubleArray(6)
     lt = pyswice.new_doubleArray(1)
     pyswice.spkezr_c(body_id_str, t_span[0], 'J2000', 'None', 'Sun', spice_derived_state, lt)
@@ -270,16 +280,15 @@ def main():
     P_bar[4, 4] = .1**2
     P_bar[5, 5] = .1**2
 
-    # position_error = np.zeros(3)
-    # velocity_error = np.zeros(3)
-
     # add uncertainty to the IC
     position_error = 5000 * np.divide(IC[0:3], norm(IC[0:3]))
     velocity_error = 0.05 * np.divide(IC[3:6], norm(IC[3:6]))
 
     IC[0:6] += np.append(position_error, velocity_error)
 
-    # uncertainty to be added in the form of noise to the measurables. Takes the form of variance
+    # uncertainty to be added in the form of noise to the measurables. 
+    # Takes the form of variance. Currently, the same value is used in both
+    # the creation of the measurements as well as the weighting of the filter (W)
     observation_uncertainty = np.identity(2)
     observation_uncertainty[0, 0] = 0.1 ** 2
     observation_uncertainty[1, 1] = 0.1 ** 2
@@ -293,7 +302,37 @@ def main():
     # initiate a filter output dictionary
     filter_outputs = {}
 
-    # run the filter and output the reference ref_states (including STMs), est states and extra data
+    ##################################################################################
+    #
+    # Get the noisy observations
+    #
+    ##################################################################################
+        
+    # observation inputs
+    obs_inputs = (true_ephem, observation_uncertainty, extras)
+
+    # Get the observation data (obs_data). This dictionary contains the SPICE data
+    # from which values are calculated (key = 'SPICE'), the true observations before
+    # uncertainty is added (key = 'truth') and the measured observations (key = 'data').
+    # These are the 'data' values that are now simulating an actual observation, 
+    # and they are to be processed by the filter. 
+    # The dictionary also contains the list of beacons by name and order of processing. 
+    # This list of strings (key = 'beacons') is needed for 
+    # the filter's own beacon position generator
+    obs_data = getObs(obs_inputs)
+
+    # create dictionary for observation data to be inputs in filter
+    obs_filter = {}
+    obs_filter['measurements'] = obs_data['data']
+    obs_filter['beaconIDs']    = obs_data['beacons']
+
+    ##################################################################################
+    #
+    # Run the Filter
+    #
+    ##################################################################################
+
+   # run the filter and output the reference ref_states (including STMs), est states and extra data
     for itr in xrange(extras['iterations']):
 
         if itr > 0:
@@ -303,7 +342,8 @@ def main():
         # the arguments for the filter are the IC, the first STM, the time span, the observables
         # data dictionary, a priori uncertainty, and the measurables' uncertainty,
         # as well as any extras
-        filter_inputs = (IC, phi0, t_span, true_ephem, P_bar, observation_uncertainty, x_bar, extras)
+        filter_inputs = (IC, phi0, t_span, obs_filter,\
+                         P_bar, observation_uncertainty, x_bar, extras)
         # run filter function
         ref_state, est_state, extra_data = run_batch(filter_inputs)
 
@@ -335,347 +375,20 @@ def main():
         # compare the estimated and true trajectories: estimated state errors
         err_hat = est_state[:, 0:6] - true_ephem['spacecraft'].T
 
-        x_hat_array = extra_data['x_hat_array']
-        P_array = extra_data['P_array']
-        prefits = extra_data['prefit residuals']
-        postfits = extra_data['postfit residuals']
-        beacon_list = extra_data['Y']['beacons']
-        Y_observed = extra_data['Y']['data']
-        Y_truth = extra_data['Y']['truth']
+        plot_data = extra_data
 
-        stand_devs = 3. * np.array([np.sqrt(np.fabs(np.diag(P))) for P in P_array])
+        plot_data['truth']       = obs_data['truth']
+        plot_data['beacon_list'] = obs_data['beacons']
+        plot_data['t_span']      = t_span
+        plot_data['dirIt']       = dirIt
+        plot_data['err']         = err
+        plot_data['err_hat']     = err_hat
+        plot_data['obs_uncertainty'] = observation_uncertainty
+        plot_data['ref_state']   = ref_state
+        plot_data['true_ephem']  = true_ephem
+        plot_data['extras']      = extras
+        PF( plot_data )
 
-        plt.figure(1)
-        plt.subplot(321)
-        plt.plot(t_span, stand_devs[:, 0], 'r--', t_span, -1 * stand_devs[:, 0], 'r--')
-        plt.plot(t_span, x_hat_array[:, 0], 'k.')
-        plt.ylabel('x (km)')
-        plt.xticks([])
-        plt.title('Position')
-        plt.ylim((-np.max(stand_devs[:, 0]), np.max(stand_devs[:, 0])))
-
-        plt.subplot(323)
-        plt.plot(t_span, stand_devs[:, 1], 'r--', t_span, -1 * stand_devs[:, 1], 'r--')
-        plt.plot(t_span, x_hat_array[:, 1], 'k.')
-        plt.ylabel('y (km)')
-        plt.xticks([])
-        plt.ylim((-np.max(stand_devs[:, 1]), np.max(stand_devs[:, 1])))
-
-        plt.subplot(325)
-        plt.plot(t_span, stand_devs[:, 2], 'r--', t_span, -1 * stand_devs[:, 2], 'r--')
-        plt.plot(t_span, x_hat_array[:, 2], 'k.')
-        plt.ylabel('z (km)')
-        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-        ax = plt.gca()
-        ax.set_xticklabels(['t_0', 't_f'])
-        plt.ylim((-np.max(stand_devs[:, 2]), np.max(stand_devs[:, 2])))
-
-        plt.subplot(322)
-        plt.plot(t_span, stand_devs[:, 3], 'r--', t_span, -1 * stand_devs[:, 3], 'r--')
-        plt.plot(t_span, x_hat_array[:, 3], 'k.')
-        plt.ylabel('vx (km/s)')
-        plt.xticks([])
-        plt.title('Velocity')
-        plt.ylim((-np.max(stand_devs[:, 3]), np.max(stand_devs[:, 3])))
-
-
-        plt.subplot(324)
-        plt.plot(t_span, stand_devs[:, 4], 'r--', t_span, -1 * stand_devs[:, 4], 'r--')
-        plt.plot(t_span, x_hat_array[:, 4], 'k.')
-        plt.ylabel('vy (km/s)')
-        plt.xticks([])
-        plt.ylim((-np.max(stand_devs[:, 4]), np.max(stand_devs[:, 4])))
-
-        plt.subplot(326)
-        plt.plot(t_span, stand_devs[:, 5], 'r--', t_span, -1 * stand_devs[:, 5], 'r--')
-        plt.plot(t_span, x_hat_array[:, 5], 'k.')
-        plt.ylabel('vz (km/s)')
-        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-        ax = plt.gca()
-        ax.set_xticklabels(['t_0', 't_f'])
-        plt.ylim((-np.max(stand_devs[:, 5]), np.max(stand_devs[:, 5])))
-
-        plt.suptitle('State Errors' + ' $\hat{x}$' + ' and Covariance Bounds')
-        plt.tight_layout()
-        plt.subplots_adjust(top=.9)
-        plt.savefig(dirIt+'/State Errors and Covariance Bounds.png', dpi=300, format='png')
-
-        plt.figure(2)
-        plt.subplot(321)
-        plt.plot(t_span, x_hat_array[:, 0])
-        plt.ylabel('x (km)')
-        plt.xticks([])
-        plt.title('Position')
-        # plt.ylim((-ymax, ymax))
-
-        plt.subplot(323)
-        plt.plot(t_span, x_hat_array[:, 1])
-        plt.ylabel('y (km)')
-        plt.xticks([])
-        # plt.ylim((-ymax, ymax))
-
-        plt.subplot(325)
-        plt.plot(t_span, x_hat_array[:, 2])
-        plt.ylabel('z (km)')
-        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-        ax = plt.gca()
-        ax.set_xticklabels(['t_0', 't_f'])
-        # plt.ylim((-ymax, ymax))
-
-        plt.subplot(322)
-        plt.plot(t_span, x_hat_array[:, 3])
-        plt.ylabel('vx (km/s)')
-        plt.xticks([])
-        plt.title('Velocity')
-        # plt.ylim((-ymax, ymax))
-
-        plt.subplot(324)
-        plt.plot(t_span, x_hat_array[:, 4])
-        plt.ylabel('vy (km/s)')
-        plt.xticks([])
-        # plt.ylim((-ymax, ymax))
-
-        plt.subplot(326)
-        plt.plot(t_span, x_hat_array[:, 5])
-        plt.ylabel('vz (km/s)')
-        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-        ax = plt.gca()
-        ax.set_xticklabels(['t_0', 't_f'])
-        # plt.ylim((-ymax, ymax))
-        plt.suptitle('State Error Estimates ' + '$\hat{x}$')
-        plt.tight_layout()
-        plt.subplots_adjust(top=.9)
-        plt.savefig(dirIt + '/State Error Estimates.png', dpi=300, format='png')
-
-        plt.figure(3)
-        plt.subplot(321)
-        plt.plot(t_span, err[:, 0])
-        plt.xticks([])
-        plt.ylabel('x (km)')
-        plt.title('Position')
-
-        plt.subplot(323)
-        plt.plot(t_span, err[:, 1])
-        plt.xticks([])
-        plt.ylabel('y (km)')
-
-        plt.subplot(325)
-        plt.plot(t_span, err[:, 2])
-        plt.ylabel('z (km)')
-        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-        ax = plt.gca()
-        ax.set_xticklabels(['t_0', 't_f'])
-
-        plt.subplot(322)
-        plt.plot(t_span, err[:, 3])
-        plt.ylabel('vx (km/s)')
-        plt.xticks([])
-        plt.title('Velocity')
-
-        plt.subplot(324)
-        plt.plot(t_span, err[:, 4])
-        plt.ylabel('vy (km/s)')
-        plt.xticks([])
-        plt.subplot(326)
-        plt.plot(t_span, err[:, 5])
-        plt.ylabel('vz (km/s)')
-        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-        ax = plt.gca()
-        ax.set_xticklabels(['t_0', 't_f'])
-        plt.suptitle('Reference Trajectory Error vs Spice Trajectory: Dynamics Errors')
-        plt.tight_layout()
-        plt.subplots_adjust(top=.9)
-        plt.savefig(dirIt + '/Reference Trajectory Error.png', dpi=300, format='png')
-
-        plt.figure(4)
-        plt.subplot(121)
-        plt.plot(t_span, prefits[:, 0], '.')
-        plt.plot(t_span, 3*np.ones(len(t_span))*observation_uncertainty[0,0]**2, 'r--')
-        plt.plot(t_span, -3*np.ones(len(t_span))*observation_uncertainty[0,0]**2, 'r--')
-        plt.xticks([])
-        plt.title('Pixel (-)')
-        plt.ylabel('Residual')
-        plt.xticks(t_span, rotation=90, ha='right')
-        ax = plt.gca()
-        ax.set_xticklabels(beacon_list)
-
-        plt.subplot(122)
-        plt.plot(t_span, prefits[:, 1], '.')
-        plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2), 'r--')
-        plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2), 'r--')
-        plt.xticks([])
-        plt.title('Line (-)')
-        plt.xticks(t_span, rotation=90, ha='right')
-        ax = plt.gca()
-        ax.set_xticklabels(beacon_list)
-
-        plt.suptitle('Prefit Observation Residuals')
-        plt.tight_layout()
-        plt.subplots_adjust(top=.9)
-        plt.savefig(dirIt + '/Prefit Observation Residuals.png', dpi=300, format='png')
-
-        plt.figure(5)
-        plt.subplot(121)
-        plt.plot(t_span, postfits[:, 0], '.')
-        plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[0,0]**2), 'r--')
-        plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[0,0]**2), 'r--')
-        plt.xticks([])
-        plt.ylabel('Residual')
-        plt.title('Pixel (-)')
-        plt.xticks(t_span, rotation=90, ha='right')
-        ax = plt.gca()
-        ax.set_xticklabels(beacon_list)
-
-        plt.subplot(122)
-        plt.plot(t_span, postfits[:, 1], '.')
-        plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2), 'r--')
-        plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2), 'r--')
-        plt.xticks([])
-        plt.title('Line (-)')
-        plt.xticks(t_span, rotation=90, ha='right')
-        ax = plt.gca()
-        ax.set_xticklabels(beacon_list)
-
-
-        plt.suptitle('Postfit Observation Residuals')
-        plt.tight_layout()
-        plt.subplots_adjust(top=.9)
-        plt.savefig(dirIt + '/Postfit Observation Residuals.png', dpi=300, format='png')
-
-        plt.figure(6)
-        plt.scatter(ref_state[:, 1], ref_state[:, 2], color='r')
-        plt.scatter(true_ephem['spacecraft'].T[:, 1], true_ephem['spacecraft'].T[:, 2], color='b')
-        plt.suptitle('Reference Trajectory (r) vs Spice Trajectory (b)')
-        plt.savefig(dirIt + '/Trajectories.png', dpi=300, format='png')
-
-        jet = plt.get_cmap('jet')
-        colors = iter(jet(np.linspace(0, 1, extras['n_beacons'])))
-
-        jet = plt.get_cmap('jet')
-        colors = iter(jet(np.linspace(0, 1, extras['n_beacons'])))
-
-        plt.figure(8)
-        plt.subplot(321)
-        plt.plot(t_span, stand_devs[:, 0], 'r-', t_span, P_array[:, 0, 0], 'b-')
-        plt.ylabel('x (km)')
-        plt.xticks([])
-        ax = plt.gca()
-        ax.set_yscale('log')
-        plt.title('Position')
-
-        plt.subplot(323)
-        plt.plot(t_span, stand_devs[:, 1], 'r-', t_span, P_array[:, 1, 1], 'b-')
-        plt.ylabel('y (km)')
-        plt.xticks([])
-        ax = plt.gca()
-        ax.set_yscale('log')
-
-        plt.subplot(325)
-        plt.plot(t_span, stand_devs[:, 2], 'r-', t_span, P_array[:, 2, 2], 'b-')
-        plt.ylabel('z (km)')
-        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-        ax = plt.gca()
-        ax.set_yscale('log')
-        ax.set_xticklabels(['t_0', 't_f'])
-
-        plt.subplot(322)
-        plt.plot(t_span, stand_devs[:, 3], 'r-', t_span, P_array[:, 3, 3], 'b-')
-        plt.ylabel('vx (km/s)')
-        plt.xticks([])
-        ax = plt.gca()
-        ax.set_yscale('log')
-        plt.title('Velocity')
-
-        plt.subplot(324)
-        plt.plot(t_span, stand_devs[:, 4], 'r-', t_span, P_array[:, 4, 4], 'b-')
-        plt.ylabel('vy (km/s)')
-        ax = plt.gca()
-        ax.set_yscale('log')
-        plt.xticks([])
-
-        plt.subplot(326)
-        plt.plot(t_span, stand_devs[:, 5], 'r-', t_span, P_array[:, 5, 5], 'b-')
-        plt.ylabel('vz (km/s)')
-        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-        ax = plt.gca()
-        ax.set_yscale('log')
-        ax.set_xticklabels(['t_0', 't_f'])
-        plt.suptitle('Standard Deviation and Covariance')
-        plt.tight_layout()
-        plt.subplots_adjust(top=.9)
-        plt.savefig(dirIt + '/Standard Deviation and Covariance.png', dpi=300, format='png')
-
-        plt.figure(9)
-        plt.subplot(121)
-        plt.plot(t_span, Y_observed[:, 0] - Y_truth[:, 0])
-        plt.xticks([])
-        plt.title('Range (km)')
-        plt.ylabel('Added Error')
-        plt.xticks(t_span, rotation=90, ha='right')
-        ax = plt.gca()
-        ax.set_xticklabels(beacon_list)
-
-        plt.subplot(122)
-        plt.plot(t_span, Y_observed[:, 1] - Y_truth[:, 1])
-        plt.xticks([])
-        plt.title('Range Rate (km/s)')
-        plt.xticks(t_span, rotation=90, ha='right')
-        ax = plt.gca()
-        ax.set_xticklabels(beacon_list)
-
-        plt.suptitle('Observation Errors: $Y_{obs} - Y_{true}$')
-        plt.tight_layout()
-        plt.subplots_adjust(top=.9)
-        plt.savefig(dirIt + '/Observation Errors.png', dpi=300, format='png')
-
-        plt.figure(10)
-        plt.subplot(321)
-        plt.plot(t_span, err_hat[:, 0])
-        plt.ylabel('x (km)')
-        plt.xticks([])
-        plt.title('Position')
-        # plt.ylim((-ymax, ymax))
-
-        plt.subplot(323)
-        plt.plot(t_span, err_hat[:, 1])
-        plt.ylabel('y (km)')
-        plt.xticks([])
-        # plt.ylim((-ymax, ymax))
-
-        plt.subplot(325)
-        plt.plot(t_span, err_hat[:, 2])
-        plt.ylabel('z (km)')
-        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-        ax = plt.gca()
-        ax.set_xticklabels(['t_0', 't_f'])
-        # plt.ylim((-ymax, ymax))
-
-        plt.subplot(322)
-        plt.plot(t_span, err_hat[:, 3])
-        plt.ylabel('vx (km/s)')
-        plt.xticks([])
-        plt.title('Velocity')
-        # plt.ylim((-ymax, ymax))
-
-        plt.subplot(324)
-        plt.plot(t_span, err_hat[:, 4])
-        plt.ylabel('vy (km/s)')
-        plt.xticks([])
-        # plt.ylim((-ymax, ymax))
-
-        plt.subplot(326)
-        plt.plot(t_span, err_hat[:, 5])
-        plt.ylabel('vz (km/s)')
-        plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
-        ax = plt.gca()
-        ax.set_xticklabels(['t_0', 't_f'])
-        # plt.ylim((-ymax, ymax))
-        plt.suptitle('Estimated State minus Spice Ephemeris')
-        plt.tight_layout()
-        plt.subplots_adjust(top=.9)
-        plt.savefig(dirIt + '/State Deviation Est - Spice.png', dpi=300, format='png')
-
-        plt.close('all')
     return
 
 

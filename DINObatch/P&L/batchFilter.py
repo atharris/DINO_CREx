@@ -25,12 +25,14 @@ from pixelLineBatch import fncG
 from posVel import EOM
 from posVel import matrixA
 
+from beaconPropagator import beaconStates
+
 from numpy.linalg import inv as aInv
 
-from beaconBinSPICE import getObs
+import pdb
 
 ################################################################################
-#                  E X primary_index O R T E D     F U N C T I O N secondary_indices:
+#                  E X P O R T E D     F U N C T I O N S:
 ################################################################################
 
 #-------------------------------------------------------------------------------
@@ -40,10 +42,10 @@ def norm( input ) :
 
 def runRef( input ) :
 
-  IC0     = input[0]
-  phi0    = input[1]
-  t_span  = input[2]
-  extras  = input[-1]
+  IC0          = input[0]
+  phi0         = input[1]
+  t_span       = input[2]
+  extras       = input[-1]
 
   # size of estimation state
   n_state           = IC0.shape[0]
@@ -91,20 +93,23 @@ def runRef( input ) :
 
 def run_batch( input ) :
 
-  IC         = input[0]
-  phi        = input[1]
-  t_span     = input[2]
-  SPICE_data = input[3]
-  P_bar      = input[4]
+  IC           = input[0]
+  phi          = input[1]
+  t_span       = input[2]
+  obs_filter   = input[3]
+  P_bar        = input[4]
   observation_uncertainty = input[5]
-  x_bar      = input[6]
-  extras     = input[-1]
+  x_bar        = input[6]
+  extras       = input[-1]
 
   # number of estimated states
   n_state   = IC.shape[0]
 
   # number of samples/observations
   n_samples = t_span.shape[0]
+
+  # observed measurement data
+  Y_obs = obs_filter['measurements']
 
   # initiate x_hat
   x_hat = np.zeros( (n_state,) )
@@ -136,37 +141,10 @@ def run_batch( input ) :
   # execute propagation
   state      = runRef( prop_input )
   ref_state  = np.copy( state )
-
-
-  ##################################################################################
-  #Get the noisy observations
-  #
-  ##################################################################################
-
-  # get the observations
-  #
-  # observation inputs
-  obs_inputs = (SPICE_data, observation_uncertainty, extras)
-  # get observations and the associated beacon ket
-  # inputs for Y_refs (G) calculation
-  Y_obs = getObs(obs_inputs)
-
-  # collect the list of beacons (in observational order) into an extras list
-  extras['obs_beacons'] = list(Y_obs['beacons'])
-
-  # copy the SPICE data pulled from the observation generation function
-  SPICE_data_GH = Y_obs['SPICE']
-
-  # create observation weight matrix (W)
-  W = aInv( observation_uncertainty )
-
   
     #######################################################################
-    # The current estimated measurement (G) and observations (Y) scheme 
-    # is based on the SPICE ref_state of planets. These same states are used
-    # in the calculation of G, which is then corrupted with Gaussian noise
-    # to make Y. The measurements are currently range and range rate. This
-    # is hard coded in a few places with the placeholder int 2. 
+    # The measurements are currently of size 2 for each time step. 
+    # This is hard coded in a few places with the placeholder int 2. 
     #######################################################################
 
   ##################################################################################
@@ -175,19 +153,29 @@ def run_batch( input ) :
   #
   ##################################################################################
 
+  # collect the list of beacons (in observational order) into an extras list
+  extras['obs_beacons'] = list(obs_filter['beaconIDs'])
+
+  # generate the positions of beacons using dictated function beaconPositions
+  beacon_inputs = ( obs_filter['beaconIDs'], t_span, extras )
+  beacon_states = beaconStates( beacon_inputs )
+
+  # create observation weight matrix (W)
+  W = aInv( observation_uncertainty )
+
   # inputs for Y_refs (G) calculation
-  G_ref_inputs = ( ref_state[:,0:n_state], SPICE_data_GH, extras )
+  G_ref_inputs = ( ref_state[:,0:n_state], beacon_states, extras )
 
   # calculate the estimated observables and organize into an array
   Y_refs = fncG( G_ref_inputs )
 
 
   # using the inputs of G, calculate the H matrix
-  H_inputs = ( ref_state[:,0:n_state], SPICE_data_GH, extras )
+  H_inputs = ( ref_state[:,0:n_state], beacon_states, extras )
   H_tilde   = fncH( H_inputs )
 
   # calculate the deviation of the observables ( Y - G )
-  y    = Y_obs['data'] - Y_refs
+  y    = Y_obs - Y_refs
 
   # initiate an array to hold the filtered covariances
   P_array = np.zeros( (n_samples, n_state, n_state) )
@@ -237,7 +225,7 @@ def run_batch( input ) :
     # P_array[ii,:,:]   = np.dot( np.dot( phi_t_t0, P ), phi_t_t0.T )
 
   # inputs for Y_est (G) calculation
-  G_est_inputs = ( est_state[:,0:n_state], SPICE_data_GH, extras )
+  G_est_inputs = ( est_state[:,0:n_state], beacon_states, extras )
 
   # calculate the estimated observables and organize into an array
   Y_est = fncG( G_est_inputs )
@@ -251,7 +239,6 @@ def run_batch( input ) :
   for ii in range(1,np.shape(x_hat_array)[0]):
     prefits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*(ii):2+2*(ii),:], x_hat_array[ii-1,:])
 
-
   # store various arrays in a data dictionary
   extra_data                      = {}
   extra_data['Y']                 = Y_obs
@@ -259,6 +246,7 @@ def run_batch( input ) :
   extra_data['x_hat_array']       = x_hat_array
   extra_data['prefit residuals']  = prefits
   extra_data['postfit residuals'] = postfits
+  # is this legacy code?
   extras['x_hat_0']               += x_hat
   extra_data['x_hat_0']           = extras['x_hat_0']
 

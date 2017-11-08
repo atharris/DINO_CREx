@@ -32,9 +32,9 @@ def getObs(input):
     SPICE_data = input[0]
     observation_uncertainty = input[1]
     extras = input[-1]
-    n_beacons = extras['n_beacons']
+    n_beacons = extras['n_unique_beacons']
     # number of observations in a mini observation set per beacon
-    n_obs = extras['n_obs']
+    n_obs = extras['repeat_obs']
 
     # for simplification, give the location of the SC with respect to the sun it's own variable
     r_spacecraft = SPICE_data['spacecraft']
@@ -82,7 +82,7 @@ def getObs(input):
             end_idx   = bb * bin_size + n_obs + n_obs * ii
 
             # pull out relevant key
-            key = extras['beacons'][ii]
+            key = extras['unique_beacon_IDs'][ii]
  
             # store the key associated with the data
             obs['beacons'] += [key] * n_obs
@@ -110,7 +110,7 @@ def getObs(input):
             end_idx   = n_samples
 
             # pull out relevant key
-            key = extras['beacons'][ii]
+            key = extras['unique_beacon_IDs'][ii]
 
             # copy the relevant keys in
             obs['beacons'] += [key] * (end_idx - start_idx)
@@ -139,27 +139,6 @@ def getObs(input):
     obs['truth'] = np.copy(fncG(G_ref_inputs))
     obs['data'] = np.copy(fncG(G_ref_inputs)) + observation_noise
     return obs
-
-def putObs( input ) :
-
-   data   = input[0]
-   extras = input[-1]
-
-   n_samples = extra_data['Y']['data'].shape[0]
-
-   n_obs     = extra_data['Y']['data']
-
-   obs_data = {}
-
-   for bb in xrange( extras['n_beacons'] ) :
-      key = extras['beacons'][bb]
-      obs_data[key] = {}
-      
-
-   for ii in xrange( n_samples ) :
-      print 'wow'
-      
-   return obs_data
 
 ################################################################################
 #                    E X P O R T E D     C L A S S E S:
