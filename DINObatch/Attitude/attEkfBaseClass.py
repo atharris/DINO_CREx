@@ -6,7 +6,7 @@ import attKalmanAlgs as aka
 import RigidBodyKinematics as rbk
 
 class attitudeEKF:
-    def __init__(self, initState, initCovar, procNoise, measNoise, measPartials, measTransmission, dt):
+    def __init__(self, initState, initCovar, procNoise, measNoise, dt):
         #! Function spec:
         #! Inputs
         #! initState - 6x1 - initial state vector; 1st 3 are MRP components, second 3 are body/inertial angular rates
@@ -24,8 +24,7 @@ class attitudeEKF:
         self.Q = procNoise
         self.R = measNoise
 
-        self.H = measPartials
-        self.J = measTransmission
+        self.H = aka.define_H_mat()
 
         self.dt = dt
 
@@ -52,8 +51,8 @@ class attitudeEKF:
             self.filterProp()
 
     def filterProp(self):
-        stm = aka.linearizeSystem(self.estState[0:3],self.estState[4:6])
-        self.estState = stm * self.estState
+        stm, G = aka.linearizeSystem(self.estState[0:3],self.estState[3:6])
+        self.estState = stm.dot(self.estState)
         self.estCovar = np.transpose(stm).dot(self.estCovar).dot(stm)
 
     def filterUpdate(self, newSt, newGyro):
@@ -82,19 +81,28 @@ class attitudeEKF:
         rbk.MRPShadow(self.estState, 1.0)
 
 if __name__ == "__main__":
-    (k_f, dt, k_meas) = aka.define_numericData()
+    (k_f, dt, k_meas) = ekf.define_numericData()
     print 't_sim = ', k_f*dt
 
-    (cov_ARW, cov_RRW) = aka.define_noiseIntensities()
+    (cov_ARW, cov_RRW) = ekf.define_noiseIntensities()
     print 'cov_ARW = ', cov_ARW
     print 'cov_RRW = ', cov_RRW
 
-    (sigma0_true, omega_true, bias_true) = aka.initialize_groundTruth()
+    (sigma0_true, omega_true, bias_true) = ekf.initialize_groundTruth()
     X0_ground = np.append(sigma0_true, bias_true)
     print 'sigma0_true = ', sigma0_true
     print 'omega_true = ', omega_true
     print 'bias_true = ', bias_true
     W = ekf.define_PSD_Q()
     X0_est = ekf.define_initialGuess_KF()
-                    #self, initState, initCovar, procNoise, measNoise, statePartials, directTransmission, measPartials, measTransmission, dt
-    ekfClass = attitudeEKF(X0_est, np.identity(6), cov_ARW, cov_RRW,
+    print "Initial guess:", X0_est[0:6]
+                    #self, initState, initCovar, procNoise, measNoise, dt)
+    ekfClass = attitudeEKF(X0_est[0:6], np.identity(6), cov_ARW, cov_RRW, dt)
+    print "Initial state in filter:", ekfClass.estState
+    ekfClass.UpdateState()
+    print "Propagated estimate:", ekfClass.estState
+    ekfClass.newStMeas(np.array([1,0,0]))
+    ekfClass.newGyroMeas(np.array([0,0,0]))
+    ekfClass.UpdateState()
+    print "filtered estimate:"
+    print ekfClass.estState
