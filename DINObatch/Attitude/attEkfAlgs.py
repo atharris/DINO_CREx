@@ -1,11 +1,10 @@
 import numpy as np
 from scipy import linalg as la
-import KF_commonAlgs as kf
+import attKalmanAlgs as kf
 import matplotlib.pyplot as plt
 
 import sys, os
-userPath = os.path.expanduser('~')
-sys.path.append(userPath + '/Desktop/astroPy/')
+sys.path.append('/baseline_filter')
 import RigidBodyKinematics as rbk
 
 # ------------------------------------------ #
