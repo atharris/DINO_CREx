@@ -1,4 +1,5 @@
 import sys, os, inspect
+import numpy as np
 
 bskName = 'Basilisk'
 bskPath = '../..' + '/' + bskName + '/'
@@ -9,12 +10,15 @@ import macros as mc
 import unitTestSupport as sp
 #import simMessages
 
+import sim_model
 import spacecraftPlus
 import gravityEffector
 import simple_nav
 import spice_interface
 import ephemeris_converter
 import radiation_pressure
+import star_tracker
+import imu_sensor
 
 #   Define the base class for simulation dynamics
 class DynamicsClass():
@@ -53,6 +57,9 @@ class DynamicsClass():
         SimBase.AddModelToTask(self.taskName, self.scObject, None, 10)
         SimBase.AddModelToTask(self.taskName, self.simpleNavObject, None, 9)
         SimBase.AddModelToTask(self.taskName, self.srpDynEffector, None, 18)
+        SimBase.AddModelToTask(self.taskName, self.starTracker,None, 8)
+        SimBase.AddModelToTask(self.taskName, self.gyroModel,None,7)
+
         beaconInd = 21
         for beacon in self.beaconList:
             SimBase.AddModelToTask(self.taskName, beacon, None, beaconInd)
@@ -190,6 +197,47 @@ class DynamicsClass():
             self.beaconList[ind-1].hub.IHubPntBc_B = sp.np2EigenMatrix3d(self.I_sc)
         ephemFile.close()
 
+    def AddStarTracker(self):
+        self.starTracker = star_tracker.StarTracker()
+        self.starTracker.ModelTag = 'StarTracker'
+        self.starTracker.inputStateMessage = self.scObject.scStateOutMsgName
+        self.starTracker.outputStateMessage = "st_output_data"
+
+        senNoiseStd = 0.01
+        PMatrix = [0.0] * 3 * 3
+        PMatrix[0 * 3 + 0] = PMatrix[1 * 3 + 1] = PMatrix[2 * 3 + 2] = senNoiseStd
+
+        errorBounds = [1e6] * 3
+        self.starTracker.walkBounds = sim_model.DoubleVector(errorBounds)
+        self.starTracker.PMatrix = sim_model.DoubleVector(PMatrix)
+
+    def AddGyro(self):
+        self.gyroModel = imu_sensor.ImuSensor()
+        self.gyroModel.ModelTag = "GyroModel"
+        self.gyroModel.InputStateMsg = self.scObject.scStateOutMsgName
+        self.gyroModel.OutputDataMsg = "gyro_output_data"
+
+        self.gyroModel.sensorPos_B = imu_sensor.DoubleVector([0.0, 0.0, 0.0])
+        self.gyroModel.setBodyToPlatformDCM(0.0, 0.0, 0.0)
+        self.gyroModel.accelLSB = 0.0
+        self.gyroModel.gyroLSB = 0.0
+        self.gyroModel.senRotBias = [0.0] * 3
+        self.gyroModel.senTransBias = [0.0] * 3
+        self.gyroModel.senRotMax = 1.0e6
+        self.gyroModel.senTransMax = 1.0e6
+        
+        senNoiseStd = 0.01
+        PMatrixGyro = [0.0] * 3 * 3
+        PMatrixGyro[0 * 3 + 0] = PMatrixGyro[1 * 3 + 1] = PMatrixGyro[2 * 3 + 2] = senNoiseStd
+        errorBoundsGyro = [1e6] * 3
+        
+        PMatrixAccel = [0.0] * 3 * 3
+        errorBoundsAccel = [1e6] * 3
+        
+        self.gyroModel.PMatrixGyro = sim_model.DoubleVector(PMatrixGyro)
+        self.gyroModel.walkBoundsGyro = sim_model.DoubleVector(errorBoundsGyro)
+        self.gyroModel.PMatrixAccel = sim_model.DoubleVector(PMatrixAccel)
+        self.gyroModel.walkBoundsAccel = sim_model.DoubleVector(errorBoundsAccel)
 
     # Global call to initialize every module
     def InitAllDynObjects(self):
@@ -200,3 +248,5 @@ class DynamicsClass():
         self.SetEphemerisConverter()
         self.SetSRPModel()
         self.SetBeacons()
+        self.AddStarTracker()
+        self.AddGyro()

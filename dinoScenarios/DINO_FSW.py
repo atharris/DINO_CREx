@@ -6,7 +6,7 @@ sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 
 import macros as mc
-import batch_filter
+#import batch_filter
 import ephem_difference
 import ephem_nav_converter
 
@@ -22,9 +22,9 @@ class FSWClass():
         SimBase.fswProc.addTask(SimBase.CreateNewTask("batchFilterTask", self.defaultTaskTimeStep), 10)
 
         # Create module data and module wraps
-        self.batchFilterData = batch_filter.BatchConfig()
-        self.batchFilterWrap = SimBase.setModelDataWrap(self.batchFilterData)
-        self.batchFilterWrap.ModelTag = "batchFilter"
+        #self.batchFilterData = batch_filter.BatchConfig()
+        #self.batchFilterWrap = SimBase.setModelDataWrap(self.batchFilterData)
+        #self.batchFilterWrap.ModelTag = "batchFilter"
 
         self.ephemDifferenceConv = ephem_difference.EphemDifferenceData()
         self.ephemDifferenceConvWrap = SimBase.setModelDataWrap(self.ephemDifferenceConv)
@@ -40,7 +40,7 @@ class FSWClass():
 
         # Assign initialized modules to tasks
         SimBase.AddModelToTask("ephemDiffConverterTask", self.ephemDifferenceConvWrap, self.ephemDifferenceConv, 10)
-        #SimBase.AddModelToTask("vehicleConverterTask", self.vehicleEphConvWrap, self.vehicleEphConv, 9)
+        SimBase.AddModelToTask("vehicleConverterTask", self.vehicleEphConvWrap, self.vehicleEphConv, 9)
 
     def SetEphemDifferenceConverter(self, SimBase):
         self.ephemDifferenceConv.ephBaseInMsgName = self.baseEphemeris
@@ -63,22 +63,22 @@ class FSWClass():
         self.vehicleEphConv.ephInMsgName = self.baseEphemeris
         self.vehicleEphConv.stateOutMsgName = "vehicle_eph_state_est"
 
-    def SetBatchODFilter(self):
-        self.batchFilterData.navStateOutMsgName = "trans_filter_nav_state"
-        self.batchFilterData.filtDataOutMsgName = "trans_filter_data"
+    #def SetBatchODFilter(self):
+        #self.batchFilterData.navStateOutMsgName = "trans_filter_nav_state"
+        #self.batchFilterData.filtDataOutMsgName = "trans_filter_data"
 
-        self.batchFilterData.X0_star = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        self.batchFilterData.x0_bar = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        #self.batchFilterData.X0_star = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        #self.batchFilterData.x0_bar = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
-        self.batchFilterData.P0_bar = [
-            1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-            0.0, 0.0, 0.0, 0.0, 0.0, 1.0
-        ]
+        #self.batchFilterData.P0_bar = [
+        #    1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        #    0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+        #    0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+        #    0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+        #    0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+        #    0.0, 0.0, 0.0, 0.0, 0.0, 1.0
+        #]
 
     def InitAllFSWObjects(self, SimBase):
         self.SetEphemDifferenceConverter(SimBase)
-        #self.SetVehicleEphemNavConverter()
+        self.SetVehicleEphemNavConverter()
