@@ -13,10 +13,6 @@ class attitudeEKF:
         #! initCovar - 6x6 - initial covariance matrix, used as a tuning parameter.
         #! procNoise - 6x6 - process noise matrix; used as a tuning paramter.
         #! measNoise - 6x6 - measurement noise matrix; used as a tuning paramter.
-        #! statePartials - 6x6 - state transition matrix F used to propagate dynamics within the filter.
-        #! directTranmission - 6x3 - G matrix used to transform from the actuator space into the state space. Can be set to zero if no actuator effects are considered.
-        #! measPartials - 6x6 - partials of measurements with respect to the states. User-spec-able.
-        #! measTransmission - 6x3 - partials of measurements with respect to the control inputs. Typically will be zero.
 
         self.estState = initState
         self.estCovar = initCovar
