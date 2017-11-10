@@ -1,14 +1,18 @@
 import sys, os, inspect
+import numpy as np
 
 bskName = 'Basilisk'
 bskPath = '../..' + '/' + bskName + '/'
+dinoPath = '../DINObatch/Attitude'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
+sys.path.append(dinoPath)
 
 import macros as mc
 #import batch_filter
 import ephem_difference
 import ephem_nav_converter
+import attEkfBaseClass as aekf
 
 class FSWClass():
     def __init__(self, SimBase):
@@ -63,21 +67,15 @@ class FSWClass():
         self.vehicleEphConv.ephInMsgName = self.baseEphemeris
         self.vehicleEphConv.stateOutMsgName = "vehicle_eph_state_est"
 
-    #def SetBatchODFilter(self):
-        #self.batchFilterData.navStateOutMsgName = "trans_filter_nav_state"
-        #self.batchFilterData.filtDataOutMsgName = "trans_filter_data"
+    def SetAttFilter(self):
 
-        #self.batchFilterData.X0_star = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        #self.batchFilterData.x0_bar = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-
-        #self.batchFilterData.P0_bar = [
-        #    1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        #    0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-        #    0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
-        #    0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-        #    0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-        #    0.0, 0.0, 0.0, 0.0, 0.0, 1.0
-        #]
+        sigma_hat_BN = np.array([0,0,0,0,0,0])
+        P_hat_BN = np.identity(6)
+        Q = np.identity(6)
+        R = np.array([np.zeros(3)],[np.identity(3)])
+                                        #initState, initCovar, procNoise, measNoise, dt):
+        self.attFilter = aekf.attitudeEKF(sigma_hat_BN, P_hat_BN, Q, R, self.defaultTaskTimeStep)
+        self.attFilter.
 
     def InitAllFSWObjects(self, SimBase):
         self.SetEphemDifferenceConverter(SimBase)
