@@ -31,6 +31,7 @@ bskPath = splitPath[0] + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 sys.path.append(dinoSpicePath)
+sys.path.append('../common_functions')
 
 print bskPath
 
@@ -345,6 +346,7 @@ def main():
         # the arguments for the filter are the IC, the first STM, the time span, the observables
         # data dictionary, a priori uncertainty, and the measurables' uncertainty,
         # as well as any extras
+        pdb.set_trace()
         filter_inputs = (IC, phi0, t_span, obs_filter,\
                          P_bar, observation_uncertainty, x_bar, extras)
         # run filter function

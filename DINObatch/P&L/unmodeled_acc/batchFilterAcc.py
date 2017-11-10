@@ -245,7 +245,7 @@ def run_batch( input ) :
 
   prefits = np.zeros([np.shape(x_hat_array)[0], np.shape(y)[1]])
   for ii in range(1,np.shape(x_hat_array)[0]):
-    prefits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*(ii):2+2*(ii),:], x_bar_array[ii-1,:])
+    prefits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*(ii):2+2*(ii),:], x_bar_array[ii,:])
 
   # store various arrays in a data dictionary
   extra_data                      = {}
