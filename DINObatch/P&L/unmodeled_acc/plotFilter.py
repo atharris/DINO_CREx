@@ -30,6 +30,7 @@ import pdb
 # -------------------------------------------------------------------------------
 def plotFunction(data_dict):
 
+    est_states = data_dict['states']
     x_hat_array = data_dict['x_hat_array']
     P_array = data_dict['P_array']
     prefits = data_dict['prefit residuals']
@@ -45,6 +46,7 @@ def plotFunction(data_dict):
     ref_state = data_dict['ref_state']
     true_ephem = data_dict['true_ephem']
     extras = data_dict['extras']
+    postDelta = data_dict['postfit changes']
 
     stand_devs = 3. * np.array([np.sqrt(np.fabs(np.diag(P))) for P in P_array])
 
@@ -183,6 +185,117 @@ def plotFunction(data_dict):
       plt.tight_layout()
       plt.subplots_adjust(top=.9)
       plt.savefig(dirIt+'/State Errors and Covariance Bounds.png', dpi=300, format='png')
+    else:
+      print 'Did not specify if plotting estimated accelerations was on or off'
+
+
+    if data_dict['acc_est'] == 'OFF':
+      plt.figure(111)
+      plt.subplot(321)
+      plt.plot(t_span, est_states[:, 0], 'b.')
+      plt.ylabel('x (km)')
+      plt.xticks([])
+      plt.title('Position')
+
+      plt.subplot(323)
+      plt.plot(t_span, est_states[:, 1], 'b.')
+      plt.ylabel('y (km)')
+      plt.xticks([])
+
+      plt.subplot(325)
+      plt.plot(t_span, est_states[:, 2], 'b.')
+      plt.ylabel('z (km)')
+      plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+      ax = plt.gca()
+      ax.set_xticklabels(['t_0', 't_f'])
+
+      plt.subplot(322)
+      plt.plot(t_span, est_states[:, 3], 'b.')
+      plt.ylabel('vx (km/s)')
+      plt.xticks([])
+      plt.title('Velocity')
+
+
+      plt.subplot(324)
+      plt.plot(t_span, est_states[:, 4], 'b.')
+      plt.ylabel('vy (km/s)')
+      plt.xticks([])
+
+      plt.subplot(326)
+      plt.plot(t_span, est_states[:, 5], 'b.')
+      plt.ylabel('vz (km/s)')
+      plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+      ax = plt.gca()
+      ax.set_xticklabels(['t_0', 't_f'])
+
+      plt.suptitle('States' + ' $X$' )
+      plt.tight_layout()
+      plt.subplots_adjust(top=.9)
+      plt.savefig(dirIt+'/States.png', dpi=300, format='png')
+    elif data_dict['acc_est'] == 'ON':
+      plt.figure(111)
+      plt.subplot(331)
+      plt.plot(t_span, est_states[:, 0], 'b.')
+      plt.ylabel('x (km)')
+      plt.xticks([])
+      plt.title('Position')
+
+      plt.subplot(334)
+      plt.plot(t_span, est_states[:, 1], 'b.')
+      plt.ylabel('y (km)')
+      plt.xticks([])
+
+      plt.subplot(337)
+      plt.plot(t_span, est_states[:, 2], 'b.')
+      plt.ylabel('z (km)')
+      plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+      ax = plt.gca()
+      ax.set_xticklabels(['t_0', 't_f'])
+
+      plt.subplot(332)
+      plt.plot(t_span, est_states[:, 3], 'b.')
+      plt.ylabel('vx (km/s)')
+      plt.xticks([])
+      plt.title('Velocity')
+
+      plt.subplot(335)
+      plt.plot(t_span, est_states[:, 4], 'b.')
+      plt.ylabel('vy (km/s)')
+      plt.xticks([])
+
+      plt.subplot(338)
+      plt.plot(t_span, est_states[:, 5], 'b.')
+      plt.ylabel('vz (km/s)')
+      plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+      ax = plt.gca()
+      ax.set_xticklabels(['t_0', 't_f'])
+
+      plt.subplot(333)
+      plt.plot(t_span, est_states[:, 6], 'b.')
+      plt.ylabel('ax (km/s)')
+      plt.ylim(-max(est_states[:,6])*3,max(est_states[:, 6])*3)
+      plt.xticks([])
+      plt.title('Accelerations')
+
+
+      plt.subplot(336)
+      plt.plot(t_span, est_states[:, 7], 'b.')
+      plt.ylabel('ay (km/s)')
+      plt.ylim(-max(est_states[:,7])*3,max(est_states[:, 7])*3)
+      plt.xticks([])
+
+      plt.subplot(339)
+      plt.plot(t_span, est_states[:, 8], 'b.')
+      plt.ylabel('az (km/s)')
+      plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+      plt.ylim(-max(est_states[:,8])*3,max(est_states[:, 8])*3)
+      ax = plt.gca()
+      ax.set_xticklabels(['t_0', 't_f'])
+
+      plt.suptitle('States' + ' $X$' )
+      plt.tight_layout()
+      plt.subplots_adjust(top=.9)
+      plt.savefig(dirIt+'/States.png', dpi=300, format='png')
     else:
       print 'Did not specify if plotting estimated accelerations was on or off'
 
@@ -327,6 +440,31 @@ def plotFunction(data_dict):
     plt.tight_layout()
     plt.subplots_adjust(top=.9)
     plt.savefig(dirIt + '/Postfit Observation Residuals.png', dpi=300, format='png')
+
+    plt.figure(55)
+    plt.subplot(121)
+    plt.plot(t_span, postDelta[:, 0], '.')
+    plt.xticks([])
+    plt.ylabel('Residual')
+    plt.title('Pixel (-)')
+    plt.xticks(t_span, rotation=90, ha='right')
+    ax = plt.gca()
+    ax.set_xticklabels(beacon_list)
+
+    plt.subplot(122)
+    plt.plot(t_span, postDelta[:, 1], '.')
+    plt.xticks([])
+    plt.title('Line (-)')
+    plt.xticks(t_span, rotation=90, ha='right')
+    ax = plt.gca()
+    ax.set_xticklabels(beacon_list)
+
+
+    plt.suptitle('Postfit Changes')
+    plt.tight_layout()
+    plt.subplots_adjust(top=.9)
+    plt.savefig(dirIt + '/Postfit Delta.png', dpi=300, format='png')
+
 
     plt.figure(6)
     plt.scatter(ref_state[:, 1], ref_state[:, 2], color='r')

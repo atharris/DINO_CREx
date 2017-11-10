@@ -228,7 +228,7 @@ def main():
     extras['line_direction'] = 1.
 
     # Are we using the real dynamics for the ref or the trueData
-    extras['realData']= 'OFF'
+    extras['realData']= 'ON'
 
     ##################################################################################
 
@@ -339,6 +339,9 @@ def main():
             IC = est_state[0, :]
             x_bar -= extra_data['x_hat_array'][0, :]
 
+        if itr==0:
+            extras['oldPost'] = np.zeros([len(t_span), 2])
+
         # the arguments for the filter are the IC, the first STM, the time span, the observables
         # data dictionary, a priori uncertainty, and the measurables' uncertainty,
         # as well as any extras
@@ -346,6 +349,7 @@ def main():
                          P_bar, observation_uncertainty, x_bar, extras)
         # run filter function
         ref_state, est_state, extra_data = run_batch(filter_inputs)
+        extras['oldPost'] = extra_data['postfit residuals']
 
         # save all outputs into the dictionary with a name associated with the iteration
         filter_outputs[str(itr)] = {}
@@ -377,6 +381,8 @@ def main():
 
         plot_data = extra_data
 
+        plot_data['postfit delta']= extra_data['postfit changes']
+        plot_data['states']      = est_state
         plot_data['truth']       = obs_data['truth']
         plot_data['beacon_list'] = obs_data['beacons']
         plot_data['t_span']      = t_span

@@ -228,7 +228,7 @@ def main():
     extras['line_direction'] = 1.
 
     # Are we using the real dynamics for the ref or the trueData
-    extras['realData']= 'OFF'
+    extras['realData']= 'ON'
 
     ##################################################################################
 
@@ -280,15 +280,15 @@ def main():
     
     # a priori uncertainty for the ref_states
     P_bar = np.zeros((IC.shape[0], IC.shape[0]))
-    P_bar[0, 0] = 10000**2
-    P_bar[1, 1] = 10000**2
-    P_bar[2, 2] = 10000**2
-    P_bar[3, 3] = .1**2
-    P_bar[4, 4] = .1**2
-    P_bar[5, 5] = .1**2
-    P_bar[6, 6] = (10**(-8))**2
-    P_bar[7, 7] = (10**(-8))**2
-    P_bar[8, 8] = (10**(-8))**2
+    # P_bar[0, 0] = 10000**2
+    # P_bar[1, 1] = 10000**2
+    # P_bar[2, 2] = 10000**2
+    # P_bar[3, 3] = .1**2
+    # P_bar[4, 4] = .1**2
+    # P_bar[5, 5] = .1**2
+    # P_bar[6, 6] = (10**(-8))**2
+    # P_bar[7, 7] = (10**(-8))**2
+    # P_bar[8, 8] = (10**(-8))**2
 
     # add uncertainty to the IC
     position_error = 5000 * np.divide(IC[0:3], norm(IC[0:3]))
@@ -352,11 +352,15 @@ def main():
         # the arguments for the filter are the IC, the first STM, the time span, the observables
         # data dictionary, a priori uncertainty, and the measurables' uncertainty,
         # as well as any extras
+        if itr==0:
+            extras['oldPost'] = np.zeros([len(t_span), 2])
+
         filter_inputs = (IC, phi0, t_span, obs_filter,\
                          P_bar, observation_uncertainty, x_bar, extras)
         # run filter function
         ref_state, est_state, extra_data = run_batch(filter_inputs)
 
+        extras['oldPost'] = extra_data['postfit residuals']
         # save all outputs into the dictionary with a name associated with the iteration
         filter_outputs[str(itr)] = {}
         filter_outputs[str(itr)]['ref_state'] = ref_state
@@ -387,6 +391,8 @@ def main():
 
         plot_data = extra_data
 
+        plot_data['postfit delta']= extra_data['postfit changes']
+        plot_data['states']      = est_state
         plot_data['truth']       = obs_data['truth']
         plot_data['beacon_list'] = obs_data['beacons']
         plot_data['t_span']      = t_span

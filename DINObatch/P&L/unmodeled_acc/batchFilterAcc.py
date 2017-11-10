@@ -126,7 +126,7 @@ def run_batch( input ) :
   # if there exists a priori information. if not, use default
   if np.sum(np.sum( P_bar )) == 0 :
     info_matrix = np.zeros( (n_state,n_state) )
-    normal_matrix = np.zeros( (n_state,) )
+    normal_matrix = np.zeros( (n_state,1) )
  
   else :
     info_matrix = aInv( P_bar )
@@ -188,9 +188,11 @@ def run_batch( input ) :
       H    = np.dot( H_tilde[0+2*ii:2+2*ii,:], phi_t_t0 )
       # add the new H^T H result to the information matrix
       info_matrix   += np.dot( H.T, np.dot( W, H ) )
-      P_array[ii,:,:]   = aInv( info_matrix )
+      # P_array[ii,:,:]   = aInv( info_matrix )
       # add the H^T Y result to the observation information matrix
-      normal_matrix += np.dot( H.T, np.dot( W, np.expand_dims(y[ii,:],axis=1) ) )
+      yii = np.zeros([len( y[ii,:]),1])
+      yii[:,0] = y[ii,:]
+      normal_matrix += np.dot( H.T, np.dot( W, yii))
 
   ##################################################################################
   #
@@ -212,12 +214,14 @@ def run_batch( input ) :
 
   # initiate an array for the state deviation vectors
   x_hat_array = np.zeros( (n_samples, n_state) )
+  x_bar_array = np.zeros( (n_samples, n_state) )
 
   for ii in xrange( ref_state.shape[0] ) :
     # pull the STM that is able to transform from the current time to t0
     phi_t_t0  = np.reshape( ref_state[ii,n_state:], (n_state,n_state) )
     # linearly transform deviation and at it to the ref_state and save
     x_hat_array[ii,:] = np.dot( phi_t_t0, x_hat ).T
+    x_bar_array[ii,:] = np.dot( phi_t_t0, x_bar ).T
     P_array[ii,:,:] = np.dot(np.dot( phi_t_t0, P ),  phi_t_t0.T)
     # add the deviation to the reference state 
     est_state[ii,:]   = ref_state[ii,0:n_state] + x_hat_array[ii,:]
@@ -232,12 +236,16 @@ def run_batch( input ) :
 
   # compute the postfits using the updated observables and the measured values
   postfits = np.zeros([np.shape(x_hat_array)[0], np.shape(y)[1]])
+  postfitsDelta = np.zeros([np.shape(x_hat_array)[0], np.shape(y)[1]])
   for ii in range(np.shape(x_hat_array)[0]):
-    postfits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*ii:2+2*ii,:], x_hat_array[ii,:])
+    postfitsDelta[ii,:] = extras['oldPost'][ii,:] - y[ii,:] + np.dot(H_tilde[0+2*ii:2+2*ii,:], x_hat_array[ii,0:np.shape(H_tilde)[1]])
+    postfits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*ii:2+2*ii,:], x_hat_array[ii,0:np.shape(H_tilde)[1]])
+
+
 
   prefits = np.zeros([np.shape(x_hat_array)[0], np.shape(y)[1]])
   for ii in range(1,np.shape(x_hat_array)[0]):
-    prefits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*(ii):2+2*(ii),:], x_hat_array[ii-1,:])
+    prefits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*(ii):2+2*(ii),:], x_bar_array[ii-1,:])
 
   # store various arrays in a data dictionary
   extra_data                      = {}
@@ -246,6 +254,7 @@ def run_batch( input ) :
   extra_data['x_hat_array']       = x_hat_array
   extra_data['prefit residuals']  = prefits
   extra_data['postfit residuals'] = postfits
+  extra_data['postfit changes'] = postfitsDelta
   # is this legacy code?
   extras['x_hat_0']               += x_hat
   extra_data['x_hat_0']           = extras['x_hat_0']
