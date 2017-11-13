@@ -169,7 +169,6 @@ def run_batch( input ) :
   # calculate the estimated observables and organize into an array
   Y_refs = fncG( G_ref_inputs )
 
-
   # using the inputs of G, calculate the H matrix
   H_inputs = ( ref_state[:,0:n_state], beacon_states, extras )
   H_tilde   = fncH( H_inputs )
@@ -253,7 +252,6 @@ def run_batch( input ) :
   extra_data['prefit residuals']  = prefits
   extra_data['postfit residuals'] = postfits
   extra_data['postfit changes'] = postfitsDelta
-  # is this legacy code?
   extras['x_hat_0']               += x_hat
   extra_data['x_hat_0']           = extras['x_hat_0']
 

@@ -168,12 +168,7 @@ def EOM(state, et, primary_index, secondary_indices, n_secondaries, mu_primary, 
     f_SRP = cR * kSRP * (state[0:3] - r_sun) / np.linalg.norm(state[0:3] - r_sun) ** 3
 
     # total force (acceleration) vector
-    f = f_primary + f_3rd_bodies + f_SRP
-
-    # add the unmodeled acceleration terms to the force vector
-    f[0] += state[6]
-    f[1] += state[7]
-    f[2] += state[8]
+    f = f_primary + f_3rd_bodies + f_SRP + state[6:9]
 
     # args for the A matrix function
     args = (state[0:n_state], n_secondaries, mu_primary, mu_secondaries, kSRP, cR, r_sun,

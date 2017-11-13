@@ -15,9 +15,7 @@ __date__ = '$Date$'[7:26]
 ################################################################################
 #                     I M P O R T     L I B R A R I E S
 ################################################################################
-import sys, os, inspect
 import matplotlib.pyplot as plt
-import pyswice
 
 import numpy as np
 
@@ -464,6 +462,53 @@ def plotFunction(data_dict):
     plt.tight_layout()
     plt.subplots_adjust(top=.9)
     plt.savefig(dirIt + '/Postfit Delta.png', dpi=300, format='png')
+
+    plt.figure(7)
+    plt.subplot(321)
+    plt.plot(t_span, true_ephem['spacecraft'].T[:, 1] - est_states[:, 0])
+    plt.ylabel('$\delta$ x (km)')
+    plt.xticks([])
+    plt.title('Position')
+    # plt.ylim((-ymax, ymax))
+
+    plt.subplot(323)
+    plt.plot(t_span, true_ephem['spacecraft'].T[:, 2] - est_states[:, 1])
+    plt.ylabel('$\delta$ y (km)')
+    plt.xticks([])
+    # plt.ylim((-ymax, ymax))
+
+    plt.subplot(325)
+    plt.plot(t_span, true_ephem['spacecraft'].T[:, 3] - est_states[:, 2])
+    plt.ylabel('$\delta$ z (km)')
+    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+    ax = plt.gca()
+    ax.set_xticklabels(['t_0', 't_f'])
+    # plt.ylim((-ymax, ymax))
+
+    plt.subplot(322)
+    plt.plot(t_span, true_ephem['spacecraft'].T[:, 4] - est_states[:, 3])
+    plt.ylabel('$\delta$ vx (km/s)')
+    plt.xticks([])
+    plt.title('Velocity')
+    # plt.ylim((-ymax, ymax))
+
+    plt.subplot(324)
+    plt.plot(t_span, true_ephem['spacecraft'].T[:, 5] - est_states[:, 4])
+    plt.ylabel('$\delta$ vy (km/s)')
+    plt.xticks([])
+    # plt.ylim((-ymax, ymax))
+
+    plt.subplot(326)
+    plt.plot(t_span, true_ephem['spacecraft'].T[:, 6] - est_states[:, 5])
+    plt.ylabel('$\delta$ vz (km/s)')
+    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+    ax = plt.gca()
+    ax.set_xticklabels(['t_0', 't_f'])
+    # plt.ylim((-ymax, ymax))
+    plt.suptitle('Estimated state deviation from true Spice data')
+    plt.tight_layout()
+    plt.subplots_adjust(top=.9)
+    plt.savefig(dirIt + '/Truth-EstimatedState.png', dpi=300, format='png')
 
 
     plt.figure(6)

@@ -26,13 +26,13 @@ bskName = 'Basilisk'
 dinoName = 'DINO_CREx'
 splitPath = path.split(dinoName)
 dinoSpicePath = splitPath[0] + dinoName + '/DINObatch/SPICE/'
+dinoCommonPath = splitPath[0] + dinoName + '/DINObatch/P&L/common_functions/'
 bskSpicePath = splitPath[0] + bskName + '/External/EphemerisData/'
 bskPath = splitPath[0] + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 sys.path.append(dinoSpicePath)
-
-print bskPath
+sys.path.append(dinoCommonPath)
 
 import pyswice
 import numpy as np
@@ -237,7 +237,7 @@ def main():
     true_ephem, t_span = dg.generate_data(sc_ephem_file=DINO_kernel,
                                           planet_beacons = ['earth','mars barycenter'],
                                           beacon_ids=[],
-                                          n_observations=12,
+                                          n_observations=24,
                                           start_et=start_et,
                                           end_et=end_et,
                                           extras = extras,
@@ -280,15 +280,15 @@ def main():
     
     # a priori uncertainty for the ref_states
     P_bar = np.zeros((IC.shape[0], IC.shape[0]))
-    # P_bar[0, 0] = 10000**2
-    # P_bar[1, 1] = 10000**2
-    # P_bar[2, 2] = 10000**2
-    # P_bar[3, 3] = .1**2
-    # P_bar[4, 4] = .1**2
-    # P_bar[5, 5] = .1**2
-    # P_bar[6, 6] = (10**(-8))**2
-    # P_bar[7, 7] = (10**(-8))**2
-    # P_bar[8, 8] = (10**(-8))**2
+    P_bar[0, 0] = 10000**2
+    P_bar[1, 1] = 10000**2
+    P_bar[2, 2] = 10000**2
+    P_bar[3, 3] = .1**2
+    P_bar[4, 4] = .1**2
+    P_bar[5, 5] = .1**2
+    P_bar[6, 6] = (10**(-8))**2
+    P_bar[7, 7] = (10**(-8))**2
+    P_bar[8, 8] = (10**(-8))**2
 
     # add uncertainty to the IC
     position_error = 5000 * np.divide(IC[0:3], norm(IC[0:3]))
@@ -300,8 +300,8 @@ def main():
     # Takes the form of variance. Currently, the same value is used in both
     # the creation of the measurements as well as the weighting of the filter (W)
     observation_uncertainty = np.identity(2)
-    observation_uncertainty[0, 0] = 0.1 ** 2
-    observation_uncertainty[1, 1] = 0.1 ** 2
+    observation_uncertainty[0, 0] = 0.2 ** 2
+    observation_uncertainty[1, 1] = 0.2 ** 2
 
     # the initial STM is an identity matrix
     phi0 = np.identity(IC.shape[0])

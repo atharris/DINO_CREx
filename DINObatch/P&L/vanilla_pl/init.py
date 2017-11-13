@@ -26,18 +26,16 @@ bskName = 'Basilisk'
 dinoName = 'DINO_CREx'
 splitPath = path.split(dinoName)
 dinoSpicePath = splitPath[0] + dinoName + '/DINObatch/SPICE/'
+dinoCommonPath = splitPath[0] + dinoName + '/DINObatch/P&L/common_functions/'
 bskSpicePath = splitPath[0] + bskName + '/External/EphemerisData/'
 bskPath = splitPath[0] + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 sys.path.append(dinoSpicePath)
-sys.path.append('../common_functions')
-
-print bskPath
+sys.path.append(dinoCommonPath)
 
 import pyswice
 import numpy as np
-import matplotlib.pyplot as plt
 from batchFilter import run_batch
 import data_generation as dg
 from plotFilter import plotFunction as PF
@@ -238,7 +236,7 @@ def main():
     true_ephem, t_span = dg.generate_data(sc_ephem_file=DINO_kernel,
                                           planet_beacons = ['earth','mars barycenter'],
                                           beacon_ids=[],
-                                          n_observations=12,
+                                          n_observations=24,
                                           start_et=start_et,
                                           end_et=end_et,
                                           extras = extras,
@@ -282,8 +280,8 @@ def main():
     P_bar[5, 5] = .1**2
 
     # add uncertainty to the IC
-    position_error = 5000 * np.divide(IC[0:3], norm(IC[0:3]))
-    velocity_error = 0.05 * np.divide(IC[3:6], norm(IC[3:6]))
+    position_error = 1000 * np.divide(IC[0:3], norm(IC[0:3]))
+    velocity_error = 0.01 * np.divide(IC[3:6], norm(IC[3:6]))
 
     IC[0:6] += np.append(position_error, velocity_error)
 
@@ -291,8 +289,8 @@ def main():
     # Takes the form of variance. Currently, the same value is used in both
     # the creation of the measurements as well as the weighting of the filter (W)
     observation_uncertainty = np.identity(2)
-    observation_uncertainty[0, 0] = 0.1 ** 2
-    observation_uncertainty[1, 1] = 0.1 ** 2
+    observation_uncertainty[0, 0] = 0.2 ** 2
+    observation_uncertainty[1, 1] = 0.2 ** 2
 
     # the initial STM is an identity matrix
     phi0 = np.identity(IC.shape[0])
@@ -346,7 +344,6 @@ def main():
         # the arguments for the filter are the IC, the first STM, the time span, the observables
         # data dictionary, a priori uncertainty, and the measurables' uncertainty,
         # as well as any extras
-        pdb.set_trace()
         filter_inputs = (IC, phi0, t_span, obs_filter,\
                          P_bar, observation_uncertainty, x_bar, extras)
         # run filter function

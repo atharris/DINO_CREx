@@ -45,8 +45,8 @@ def getObs(input):
     # create noise for the estimated observations
     # np.random.seed(42)
     observation_noise = np.zeros([n_samples, 2])
-    observation_noise[:,0] = rndNrm(0., observation_uncertainty[0,0] , n_samples)
-    observation_noise[:,1] = rndNrm(0., observation_uncertainty[1,1] , n_samples)
+    observation_noise[:,0] = rndNrm(0., np.sqrt(observation_uncertainty[0,0]) , n_samples)
+    observation_noise[:,1] = rndNrm(0., np.sqrt(observation_uncertainty[1,1]) , n_samples)
 
     # the size of an observation "bin". A "bin" is a super set of 
     # observations for each beacon. Each beacon is observed
