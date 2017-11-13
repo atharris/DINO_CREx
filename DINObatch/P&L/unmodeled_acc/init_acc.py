@@ -291,8 +291,8 @@ def main():
     P_bar[8, 8] = (10**(-8))**2
 
     # add uncertainty to the IC
-    position_error = 5000 * np.divide(IC[0:3], norm(IC[0:3]))
-    velocity_error = 0.05 * np.divide(IC[3:6], norm(IC[3:6]))
+    position_error = 1000 * np.divide(IC[0:3], norm(IC[0:3]))
+    velocity_error = 0.01 * np.divide(IC[3:6], norm(IC[3:6]))
 
     IC[0:6] += np.append(position_error, velocity_error)
 

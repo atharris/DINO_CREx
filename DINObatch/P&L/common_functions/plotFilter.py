@@ -16,7 +16,7 @@ __date__ = '$Date$'[7:26]
 #                     I M P O R T     L I B R A R I E S
 ################################################################################
 import matplotlib.pyplot as plt
-
+import pylab
 import numpy as np
 
 
@@ -397,8 +397,8 @@ def plotFunction(data_dict):
 
     plt.subplot(122)
     plt.plot(t_span, prefits[:, 1], '.')
-    plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2), 'r--')
-    plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2), 'r--')
+    plt.plot(t_span, 3*np.ones(len(t_span))*observation_uncertainty[1, 1], 'r--')
+    plt.plot(t_span, -3*np.ones(len(t_span))*observation_uncertainty[1, 1], 'r--')
     plt.xticks([])
     plt.title('Line (-)')
     plt.xticks(t_span, rotation=90, ha='right')
@@ -413,8 +413,8 @@ def plotFunction(data_dict):
     plt.figure(5)
     plt.subplot(121)
     plt.plot(t_span, postfits[:, 0], '.')
-    plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[0,0]**2), 'r--')
-    plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[0,0]**2), 'r--')
+    plt.plot(t_span, 3*np.ones(len(t_span))*observation_uncertainty[0,0], 'r--')
+    plt.plot(t_span, -3*np.ones(len(t_span))*observation_uncertainty[0,0], 'r--')
     plt.xticks([])
     plt.ylabel('Residual')
     plt.title('Pixel (-)')
@@ -424,8 +424,8 @@ def plotFunction(data_dict):
 
     plt.subplot(122)
     plt.plot(t_span, postfits[:, 1], '.')
-    plt.plot(t_span, 3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2), 'r--')
-    plt.plot(t_span, -3*np.ones(len(t_span))*np.sqrt(observation_uncertainty[1, 1]**2), 'r--')
+    plt.plot(t_span, 3*np.ones(len(t_span))*observation_uncertainty[1, 1], 'r--')
+    plt.plot(t_span, -3*np.ones(len(t_span))*observation_uncertainty[1, 1], 'r--')
     plt.xticks([])
     plt.title('Line (-)')
     plt.xticks(t_span, rotation=90, ha='right')
@@ -509,6 +509,55 @@ def plotFunction(data_dict):
     plt.subplots_adjust(top=.9)
     plt.savefig(dirIt + '/Truth-EstimatedState.png', dpi=300, format='png')
 
+
+
+    plt.figure(77)
+
+    PosErrorNorm = np.zeros(len(est_states[:,0]))
+    VelErrorNorm = np.zeros(len(est_states[:, 0]))
+    PosCovarNormMax =  np.zeros(len(est_states[:, 0]))
+    PosCovarNormMin =  np.zeros(len(est_states[:, 0]))
+    VelCovarNormMax =  np.zeros(len(est_states[:, 0]))
+    VelCovarNormMin =  np.zeros(len(est_states[:, 0]))
+    for i in range(len(est_states[:,0])):
+        PosErrorNorm[i] = np.linalg.norm(true_ephem['spacecraft'].T[i, 0:3] - est_states[i, 0:3])
+        VelErrorNorm[i] = np.linalg.norm(true_ephem['spacecraft'].T[i, 3:6] - est_states[i, 3:6])
+        PosCovarNormMax[i] = PosErrorNorm[i] + np.sqrt(stand_devs[i,0]**2 + stand_devs[i,1]**2 + stand_devs[i,2]**2)/30.
+        PosCovarNormMin[i] = PosErrorNorm[i] - np.sqrt(stand_devs[i,0]**2 + stand_devs[i,1]**2 + stand_devs[i,2]**2)/30.
+        VelCovarNormMax[i] = VelErrorNorm[i] + np.sqrt(stand_devs[i,3]**2 + stand_devs[i,4]**2 + stand_devs[i,5]**2)/30.
+        VelCovarNormMin[i] = VelErrorNorm[i] - np.sqrt(stand_devs[i,3]**2 + stand_devs[i,4]**2 + stand_devs[i,5]**2)/30.
+
+    n_PosMin = PosErrorNorm.argmax()
+    n_VelMin = VelErrorNorm.argmax()
+
+    plt.subplot(121)
+    plt.plot(t_span,PosErrorNorm, 'b')
+    plt.plot(t_span,PosCovarNormMax, 'r--', label= '$\sigma$/10')
+    plt.plot(t_span,PosCovarNormMin, 'r--')
+    plt.ylabel('$\delta$ R (km)')
+    plt.yticks(np.linspace(PosCovarNormMax.max(), PosCovarNormMin.min(), 12))
+    plt.xticks([])
+    ax = plt.gca()
+    ax.set_xticklabels(['t_0', 't_f'])
+    plt.title('Position Error')
+    # plt.ylim((-ymax, ymax))
+
+    plt.subplot(122)
+    plt.plot(t_span, VelErrorNorm, 'b')
+    plt.plot(t_span,VelCovarNormMax, 'r--',label= '$\sigma$/10')
+    plt.plot(t_span,VelCovarNormMin, 'r--')
+    plt.ylabel('$\delta$ V (km/s)')
+    plt.yticks(np.linspace(VelCovarNormMax.max(), VelCovarNormMin.min(), 12))
+    plt.xticks([])
+    ax = plt.gca()
+    ax.set_xticklabels(['t_0', 't_f'])
+    plt.title('Velocity Error')
+    # plt.ylim((-ymax, ymax))
+
+    plt.suptitle('Estimated state Norm from true Spice data')
+    plt.tight_layout()
+    plt.subplots_adjust(top=.9)
+    plt.savefig(dirIt + '/Truth-EstimatedStateNorms.png', dpi=300, format='png')
 
     plt.figure(6)
     plt.scatter(ref_state[:, 1], ref_state[:, 2], color='r')
