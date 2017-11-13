@@ -19,7 +19,6 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
-import pdb
 
 ################################################################################
 #                  E X P O R T E D     F U N C T I O N S:
@@ -465,20 +464,20 @@ def plotFunction(data_dict):
 
     plt.figure(7)
     plt.subplot(321)
-    plt.plot(t_span, true_ephem['spacecraft'].T[:, 1] - est_states[:, 0])
+    plt.plot(t_span, true_ephem['spacecraft'].T[:, 0] - est_states[:, 0])
     plt.ylabel('$\delta$ x (km)')
     plt.xticks([])
     plt.title('Position')
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(323)
-    plt.plot(t_span, true_ephem['spacecraft'].T[:, 2] - est_states[:, 1])
+    plt.plot(t_span, true_ephem['spacecraft'].T[:, 1] - est_states[:, 1])
     plt.ylabel('$\delta$ y (km)')
     plt.xticks([])
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(325)
-    plt.plot(t_span, true_ephem['spacecraft'].T[:, 3] - est_states[:, 2])
+    plt.plot(t_span, true_ephem['spacecraft'].T[:, 2] - est_states[:, 2])
     plt.ylabel('$\delta$ z (km)')
     plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
     ax = plt.gca()
@@ -486,20 +485,20 @@ def plotFunction(data_dict):
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(322)
-    plt.plot(t_span, true_ephem['spacecraft'].T[:, 4] - est_states[:, 3])
+    plt.plot(t_span, true_ephem['spacecraft'].T[:, 3] - est_states[:, 3])
     plt.ylabel('$\delta$ vx (km/s)')
     plt.xticks([])
     plt.title('Velocity')
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(324)
-    plt.plot(t_span, true_ephem['spacecraft'].T[:, 5] - est_states[:, 4])
+    plt.plot(t_span, true_ephem['spacecraft'].T[:, 4] - est_states[:, 4])
     plt.ylabel('$\delta$ vy (km/s)')
     plt.xticks([])
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(326)
-    plt.plot(t_span, true_ephem['spacecraft'].T[:, 6] - est_states[:, 5])
+    plt.plot(t_span, true_ephem['spacecraft'].T[:, 5] - est_states[:, 5])
     plt.ylabel('$\delta$ vz (km/s)')
     plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
     ax = plt.gca()
