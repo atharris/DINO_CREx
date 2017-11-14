@@ -112,6 +112,8 @@ class camera:
 		effective_area,
 		dark_current,
 		read_sigma,
+		dnBinSize,
+		dnDepthMax,
 		sc,
 		msg,
 		**kwargs
@@ -189,10 +191,10 @@ class camera:
 		self.sc = sc
 		self.effective_area = effective_area
 		self.dark_current = dark_current
-		self.blackbody = {}
 		self.images = {}
 		self.msg = msg
-
+		self.dnBinSize = dnBinSize
+		self.dnDepthMax = dnDepthMax
 
 	###########################################################################
 	#	load_all_stars()
@@ -584,7 +586,7 @@ class image:
 			self.DCM.append(self.camera.sc.attitudeDCM)
 		else:
 			from scipy.linalg import inv
-			from numpy import arctan2, arcsin, array, zeros, pi
+			from numpy import arctan2, arcsin, array, zeros, pi, floor
 			from em import planck
 			import pdb
 
@@ -760,7 +762,7 @@ class image:
 							each_scene.psf_pixel,
 							each_scene.psf_line,
 							each_scene.psf_I
-							)
+							)*self.camera.msg['dt']
 
 					if self.camera.msg['dark']:
 						each_scene.detector_array = \
@@ -781,7 +783,12 @@ class image:
 						)
 
 			self.detector_array[self.detector_array < 0] = 0
+			
+			#convert phton counts to DN
+			self.detector_array = floor(self.detector_array/self.camera.dnBinSize)
 
+			#cut off pixels that are saturated
+			self.detector_array[self.detector_array > self.camera.dnDepthMax] = self.camera.dnDepthMax
 			# if self.camera.msg['hot_dark']:
 			# 	self.detector_array = self.detector_array*self.camera.hot_dark
 				# if 	self.camera.msg['raster'] + self.camera.msg['photon'] + \
@@ -839,6 +846,8 @@ class image:
 		from numpy import array, deg2rad, sin, cos, append, sqrt, zeros, ones, logical_and
 		from numpy.linalg import norm
 
+		import pdb
+		pdb.set_trace()
 		if len(msg['bodies']) != 0:
 
 			n = 1	
@@ -1254,6 +1263,158 @@ class image:
 		from constants import h, c
 		return h*c/lam
 
+	###########################################################################
+	#	addZodiacalLight() 
+	#
+	#	Inputs: 
+	#		attitudeDCM: DCM for the inertial to camera attitude.
+	#		
+	#	Outputs:
+	#		zodiacalFlux: 
+	#
+	#	Notes:
+	#
+	# ###########################################################################
+	def addZodiacalLight(self):
+		from numpy import array, identity, flip, vstack, hstack, transpose
+		from numpy import arctan2, pi, rad2deg, arcsin, argmin
+		sunAngleRad = arctan2(self.camera.sc.attitudeDCM[1],self.camera.sc.attitudeDCM[0]) + pi
+		sunAngleDeg = rad2deg(sunAngleRad)
+
+		raBins = array([
+			0,5,10,15,20,25,30,35,40,45,60,75,90,105,120,135,150,165,180
+			])
+		decBins = array([
+			0,5,10,15,20,25,30,45,60,75
+			])
+		C12 = self.camera.sc.attitudeDCM[0,1]
+		C11 = self.camera.sc.attitudeDCM[0,0]
+		C13 = self.camera.sc.attitudeDCM[0,2]
+
+		camRArad = arctan2(C12,C11)
+		camDErad = -arcsin(C13)
+
+		camRAdeg = abs(rad2deg(camRArad))
+		camDEdeg = abs(rad2deg(camDErad))
+		camDEbin = argmin(abs(camDEdeg-decBins))
+		camRAbin = argmin(abs(camRAdeg-raBins))
+
+		zodiacalLight = array([
+			[0, 0, 0, 2450, 1260, 770, 500, 215, 117, 78],
+			[0, 0, 0, 2300, 1200, 740, 490, 212, 117, 78],
+			[0, 0, 3700, 1930, 1070, 675, 460, 206, 116, 78],
+			[9000, 5300, 2690, 1450, 870, 590, 410, 196, 114, 78],
+			[5000, 3500, 1880, 1100, 710, 495, 355, 185, 110, 77],
+			[3000, 2210, 1350, 860, 585, 425, 320, 174, 106, 76],
+			[1940, 1460, 955, 660, 480, 365, 285, 162, 102, 74],
+			[1290, 990, 710, 530, 400, 310, 250, 151, 98, 73],
+			[925, 735, 545, 415, 325, 264, 220, 140, 94, 72],
+			[710, 570, 435, 345, 278, 228, 195, 130, 91, 70],
+			[395, 345, 275, 228, 190, 163, 143, 105, 81, 67],
+			[264, 248, 210, 177, 153, 134, 118, 91, 73, 64],
+			[202, 196, 176, 151, 130, 115, 103, 81, 67, 62],
+			[166, 164, 154, 133, 117, 104, 93, 75, 64, 60],
+			[147, 145, 138, 120, 108, 98, 88, 70, 60, 58],
+			[140, 139, 130, 115, 105, 95, 86, 70, 60, 57],
+			[140, 139, 129, 116, 107, 99, 91, 75, 62, 56],
+			[153, 150, 140, 129, 118, 110, 102, 81, 64, 56],
+			[180, 166, 152, 139, 127, 116, 105, 82, 65, 56]
+		])
+
+		#zodiacalLight = zodiacalLight*1.28e-8*.156
+
+		return zodiacalLight[camRAbin,camDEbin]
+
+	###########################################################################
+	#	addBkgdStarLight() 
+	#
+	#	Inputs: 
+	#		attitudeDCM: DCM for the inertial to camera attitude.
+	#		
+	#	Outputs:
+	#		bkgdFlux: 
+	#
+	#	Notes: the data represented in pioneer10BkdgStarLight comes from
+	#	Lienert's 1997 reference on diffuse night sky brightness on p78 and 79.
+	# 
+	#	Units for the array are S10_sun, given by leinart to be 1.28e-8*.156
+	#	W/m^2/sr
+	#
+	#	Rows of the array represent bins of declination, and are spaced by 10
+	#	degrees. Columns are binned by right ascension and are spaced every 10
+	#	degrees.
+	#
+	# ###########################################################################
+	def addBkgdStarLight(self):
+
+		from numpy import array, arcsin, arctan2, rad2deg, deg2rad, flip
+
+		decBins = array([-80, -70, -60, -50, -40, -30, -24, -20, -16, -12, -8, -4, 0,4, 8, 12, 16, 20, 24, 30, 40, 50, 60, 70, 80])
+		raBins = array([0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,260,270,280,290,300,310,320,330,340,350])
+
+		C12 = self.camera.sc.attitudeDCM[0,1]
+		C11 = self.camera.sc.attitudeDCM[0,0]
+		C13 = self.camera.sc.attitudeDCM[0,2]
+
+		camRArad = arctan2(C12,C11)
+		camDErad = -arcsin(C13)
+
+		camRAdeg = rad2deg(camRArad)
+		camDEdeg = rad2deg(camDErad)
+		if camDEdeg < 0: camDEdeg
+		if camRAdeg < 0: camRAdeg += 360
+
+
+		#probably a better way to do this...
+		#the place where the difference between camera DE and the decliation bins
+		#given by Leinert is the smallest will be the delination bin that we want.
+		camDEbin = min(abs(camDEdeg-decBins)) == abs(camDEdeg-decBins)
+		camRAbin = min(abs(camRAdeg-raBins)) == abs(camRAdeg-raBins)
+
+
+
+		pioneer10BkdgStarLight = array([
+			[ 68,  55,  55,  56,  49,   35,  39,  40,  38,  42,  49,  46,  50,  56,  43,  51,  59,  56,  61,  71, 116, 192, 284, 162, 124],                  
+			[ 74,  74,  42,  38,  36,   35,  34,  43,  39,  34,  44,  45,  35,  48,  47,  51,  55,  52,  63,  64, 108, 181, 261, 185, 121],
+			[ 78,  67,  51,  44,  40,   31,  36,  40,  39,  39,  43,  38,  32,  53,  45,  40,  56,  58,  57,  79,  99, 158, 250, 176, 106],
+			[ 78,  53,  48,  44,  39,   38,  34,  46,  45,  41,  40,  51,  43,  47,  64,  56,  61,  56,  66,  82,  97, 187, 265, 157, 110],
+			[ 73,  69,  49,  42,  36,   36,  45,  42,  40,  44,  45,  48,  53,  49,  59,  54,  61,  62,  60,  74, 116, 177, 240, 150, 109],
+			[ 72,  63,  56,  41,  48,   50,  44,  41,  44,  51,  49,  56,  60,  59,  61,  70,  74,  79,  78,  85, 141, 168, 205, 140, 111],
+			[ 77,  71,  53,  52,  48,   50,  51,  52,  52,  57,  60,  68,  68,  73,  88,  85,  82,  90, 103, 108, 133, 183, 175, 128, 117],
+			[ 81,  90,  72,  62,  54,   58,  66,  64,  64,  74,  76,  75,  87,  82,  93,  95, 112, 122, 102, 104, 189, 164, 161, 137, 103],
+			[ 81, 341,  64,  72,  64,   63,  80,  84,  90, 115, 134, 131, 136, 135, 135, 125, 146, 143, 130, 179, 214, 284, 125, 115,  85],
+			[ 88, 226,  88,  93,  83,   90, 117, 123, 138, 147, 155, 158, 174, 174, 220, 238, 258, 218, 246, 227, 169, 137, 112,  91,  93],
+			[ 98, 107, 114, 116, 135,  176, 193, 248, 240, 248, 225, 253, 283, 280, 284, 263, 229, 233, 207, 210, 145, 119, 108,  77,  84],
+			[102, 111, 141, 182, 218,  315, 331, 321, 297, 312, 295, 267, 225, 206, 182, 184, 165, 135, 138, 105, 108,  93,  81,  73,  77],
+			[110, 141, 176, 275, 308,  385, 327, 288, 249, 200, 166, 178, 173, 167, 155,  -1,  -1,  -1,  -1, 105,  75,  63,  75,  79,  73],
+			[113, 142, 224, 337, 272,  274, 201, 156, 137,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  77,  52,  57,  74,  70],
+			[119, 206, 372, 294, 398,  175, 114, 116, 126, 109, 101,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  53,  57,  80,  65],
+			[116, 224, 490, 334, 193,  120, 104,  85,  72,  68,  65,  65,  66,  67,  68,  -1,  -1,  -1,  -1,  -1,  -1,  52,  55,  57,  55],
+			[116, 265, 846, 250, 156,  100,  75,  74,  62,  65,  57,  68,  71,  71,  65,  62,  59,  60,  58,  55,  52,  46,  52,  46,  49],
+			[141, 308, 744, 229, 116,   88,  76,  59,  63,  61,  56,  52,  55,  60,  68,  66,  58,  52,  52,  50,  60,  36,  51,  54,  52],
+			[145, 340, 632, 230,  99,   78,  61,  61,  57,  58,  54,  56,  54,  54,  41,  47,  50,  31,  45,  38,  37,  43,  45,  38,  52],
+			[137, 335, 450, 214, 120,   72,  67,  59,  63,  54,  51,  42,  43,  55,  45,  41,  41,  36,  41,  33,  37,  35,  42,  50,  51],
+			[145, 410, 565, 262, 115,   91,  77,  59,  53,  58,  51,  49,  44,  48,  40,  34,  39,  42,  38,  38,  34,  37,  45,  50,  58],
+			[154, 351, 516, 256, 144,   95,  73,  68,  66,  71,  58,  52,  47,  50,  49,  44,  57,  44,  40,  40,  40,  43,  43,  48,  59],
+			[153, 337, 559, 284, 173,  102,  87,  81,  80,  77,  54,  53,  58,  48,  53,  47,  42,  47,  54,  38,  35,  44,  40,  54,  61],
+			[156, 310, 538, 481, 249,  134, 110,  88,  97,  79,  77,  62,  71,  60,  54,  50,  52,  43,  46,  41,  55,  44,  49,  61,  69],
+			[146, 262, 537, 357, 242,  200, 152, 137, 106, 101,  82,  83,  77,  77,  64,  64,  54,  54,  55,  53,  47,  51,  53,  60,  68],
+			[128, 213, 373, 571, 485,  366, 217, 145, 141, 145, 108, 110, 101,  89,  87,  79,  75,  68,  67,  59,  57,  59,  56,  65,  71],
+			[127, 190, 284, 494, 550,  571, 344, 356, 301, 172, 144, 119, 136, 120, 123, 119, 116,  90,  85,  89,  81,  66,  64,  78,  75],
+			[115, 155, 205, 284, 626, 1393, 649, 498, 474, 261, 199, 162, 204, 225, 201, 166, 157, 148, 132, 120,  94,  96,  73,  82,  76],
+			[101, 106, 150, 135, 262,  461, 481, 534, 542, 515, 509, 343, 210, 254, 382, 341, 237, 218, 206, 176, 145, 111,  96,  91,  81],
+			[103, 113, 129, 191, 141,  183, 211, 246, 272, 274, 260, 257, 331, 366, 374, 271, 283, 250, 327, 387, 228, 168, 117,  90,  89],
+			[102, 107,  93,  99, 112,  112, 117, 134, 144, 143, 162, 149, 178, 215, 237, 323, 366, 407, 316, 421, 403, 245, 163, 102,  93],
+			[ 93,  88,  78,  80,  77,   81,  89,  85,  89,  91,  91, 109, 128, 138, 145, 174, 168, 227, 240, 288, 280, 292, 187, 133,  94],
+			[ 87,  81,  72,  65,  64,   73,  70,  73,  72,  77, 100,  75,  85,  93, 109, 107, 131, 119, 153, 192, 279, 286, 225, 136, 105],
+			[ 75,  76,  56,  54,  60,   42,  66,  60,  56,  67,  67,  63,  81,  78,  78, 103,  85,  93, 105, 142, 188, 384, 259, 167, 119],
+			[ 66,  69,  57,  52,  51,   53,  43,  48,  58,  64,  57,  47,  49,  67,  65,  58,  63,  76,  76,  97, 171, 268, 241, 178, 122],
+			[ 66,  64,  59,  43,  46,   56,  48,  49,  43,  50,  44,  47,  62,  48,  55,  59,  61,  69,  72,  84, 104, 203, 256, 166, 110] 
+			])
+
+
+
+		return pioneer10BkdgStarLight[camRAbin,camDEbin][0]
 
 ###############################################################################
 #	scene is a class for collecting each integration step during an exposure.
