@@ -127,6 +127,7 @@ ROI_parameters['signal_threshold'] = .01
 ROI_parameters['noise_threshold'] = .001
 ROI_parameters['ROI_size'] = 100
 ROI_parameters['ROI_border_width'] = 2
+ROI_parameters['max_search_dist'] = 50
 
 
 ##################################################
@@ -194,7 +195,10 @@ for ind in range(4):
 #                                                                         (pixel_star[0, 1], line_star[0, 1]),
 #                                                                         (pixel_star[0, 2], line_star[0, 2])),
 #                                                                         ROI_parameters, 3)
-pixel_line_centroid, DN = imfunc.find_center_resolved_body(ex_image, ((256, 256), (390, 256)), ROI_parameters, 2)
+
+# PLACEHOLDER ---- Included (240, 245) to check for finding same beacon twice
+ROI_estimates = ((256, 256), (390, 256), (240, 245))
+pixel_line_centroid, DN = imfunc.find_center_resolved_body(ex_image, ROI_estimates, ROI_parameters)
 
 print '\nPixel Line Centroid Locations:'
 # pixel_line_centroid = (0, 0)

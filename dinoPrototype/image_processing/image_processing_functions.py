@@ -41,6 +41,7 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
     noise_threshold = ROI_parameters['noise_threshold']
     ROI_size = ROI_parameters['ROI_size']
     ROI_border_width = ROI_parameters['ROI_border_width']
+    max_search_pixels = ROI_parameters['max_search_dist']
     pixel_map_height, pixel_map_width = pixel_map.shape
 
     # Initialize return parameters
@@ -56,8 +57,10 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
         center_ROI_array = np.empty((0, 2), dtype=int)
 
         # If the initial pixel is above the threshold, use it.
-        if pixel_map[current_beacon[1], current_beacon[0]] >= signal_threshold:
+        if pixel_map[current_beacon[1], current_beacon[0]] >= signal_threshold \
+                and not already_found_ROI((current_beacon[1], current_beacon[0]), corner_ROI, image_ROI):
             center_ROI_array = np.vstack((center_ROI_array, current_beacon))
+            signal_found = True
 
         # if initial pixel is not above threshold begin expanding search outward to find a pixel above signal threshold
         else:
@@ -69,9 +72,10 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
             search_col_max = current_beacon[0] + 1
 
             signal_found = False
+            search_iterations = 0
 
-            # continue searching for a pixel above threshold or until entire image is searched
-            while signal_found == False:
+            # continue searching for a pixel above threshold or until max number of searches reached
+            while (not signal_found) and (search_iterations < max_search_pixels):
 
                 # cycle through each row of search region
                 for current_row in range(search_row_min, search_row_max+1):
@@ -82,33 +86,37 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
                         for current_col in range(search_col_min, search_col_max+1):
                             current_value = pixel_map[current_row, current_col]
 
-                            if current_value >= signal_threshold:
+                            if current_value >= signal_threshold \
+                                    and not already_found_ROI((current_row, current_col), corner_ROI, image_ROI):
                                 center_ROI_array = np.vstack((center_ROI_array, np.array([current_col, current_row])))
+                                signal_found = True
+                                print "\n\nAdding thing for: ", pixel_line_beacon_i[i][0], pixel_line_beacon_i[i][1]
 
                     # cycle through vertical edges of search border
                     else:
                         current_value_left = pixel_map[current_row, search_col_min]
                         current_value_right = pixel_map[current_row, search_col_max]
 
-                        if current_value_left >= signal_threshold:
+                        if current_value_left >= signal_threshold \
+                                    and not already_found_ROI((current_row, search_col_min), corner_ROI, image_ROI):
                             center_ROI_array = np.vstack((center_ROI_array, np.array([search_col_min, current_row])))
-                        if current_value_right >= signal_threshold:
+                            signal_found = True
+                            print "\n\nAdding thing for: ", pixel_line_beacon_i[i][0], pixel_line_beacon_i[i][1]
+                        elif current_value_right >= signal_threshold \
+                                    and not already_found_ROI((current_row, search_col_max), corner_ROI, image_ROI):
                             center_ROI_array = np.vstack((center_ROI_array, np.array([search_col_max, current_row])))
+                            signal_found = True
+                            print "\n\nAdding thing for: ", pixel_line_beacon_i[i][0], pixel_line_beacon_i[i][1]
 
                 # if no pixels above threshold found expand ROI
-                if center_ROI_array.size > 0:
-                    signal_found = True
-                else:
+                #if center_ROI_array.size > 0:
+                #    signal_found = True
+                #else:
+                if not signal_found:
                     search_row_min = search_row_min - 1
                     search_row_max = search_row_max + 1
                     search_col_min = search_col_min - 1
                     search_col_max = search_col_max + 1
-
-                # exit if entire image is searched without any signals found
-                if search_row_min < 0 and search_col_min < 0 \
-                    and search_row_max > pixel_map_height-1 and search_col_max > pixel_map_width-1:
-                    signal_found = True
-                    print "\nNo signal found in image"
 
                 # make sure search border is within image resolution
                 if search_row_min < 0:
@@ -120,8 +128,15 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
                 if search_col_max > pixel_map_width-1:
                     search_col_max = pixel_map_width-1
 
-        # create a pixel_map of the region of interest only
-        if center_ROI_array.size > 0:
+                # Made another search.  Increment search_iterations.
+                search_iterations = search_iterations + 1
+
+            # If signal was not found within allowed search iterations, print error message.
+            if not signal_found:
+                print "\nNo signal found in image"
+
+        # create a pixel_map of the region of interest only if we found a signal
+        if signal_found:
 
             # TODO - add method of choosing center of ROI if multiple pixels above threshold are found in border
             # placeholder currently selects first entry
@@ -160,15 +175,15 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
 
             corner_ROI.append([ROI_min_row, ROI_min_col])
 
-        else:
-            #print "Image append else"
-            #print image_ROI
-            #print "Map"
-            #print pixel_map
-            image_ROI.append(pixel_map)
-            #print "Done"
-            #print image_ROI
-            corner_ROI.append([0, 0])
+        # else:
+        #     #print "Image append else"
+        #     #print image_ROI
+        #     #print "Map"
+        #     #print pixel_map
+        #     image_ROI.append(pixel_map)
+        #     #print "Done"
+        #     #print image_ROI
+        #     corner_ROI.append([0, 0])
 
         do_plots = False
         if do_plots == True:
@@ -473,7 +488,7 @@ def find_right_pixel(initial_pixel_loc, pixel_map, threshold):
 # input:    initial_pixel_loc       The initial location of the beacon
 #           pixel_map               Map of pixels to examine
 #           threshold               Minimum value to be considered a hit
-# output:   current_x               The s coordinate of the rightmost pixel of the beacon
+# output:   current_x               The x coordinate of the rightmost pixel of the beacon
 def find_left_pixel(initial_pixel_loc, pixel_map, threshold):
 
     # Pull off starting x and y locations
@@ -563,10 +578,18 @@ def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18
         cv2.imwrite('beacon_orig_canny.png', canny_img)
         cv2.destroyAllWindows()
 
-    circles = cv2.HoughCircles(img, cv2.cv.CV_HOUGH_GRADIENT, dp, center_dist,
+    print "\n\nCircles debug"
+    print img
+    print cv2.HOUGH_GRADIENT
+    print dp
+    print center_dist
+
+
+    circles = cv2.HoughCircles(img, cv2.HOUGH_GRADIENT, dp, center_dist,
                                param1=canny_thresh, param2=accum, minRadius=min_rad,
                                maxRadius=max_rad)
-    if len(circles) < 0:
+    #if len(circles) < 0:
+    if circles is None:
         print "unable to find any circles"
         return None
 
@@ -633,15 +656,17 @@ def find_centroid_point_source(pixel_map, pixel_line_beacon_i, ROI_parameters, n
 # Output    loc_center      list of (x,y) pixel/line coordinates of center locations
 #           DN              total signal content of ROI
 
-def find_center_resolved_body(pixel_map, pixel_line_beacon_i, ROI_parameters, num_beacons):
+def find_center_resolved_body(pixel_map, pixel_line_beacon_i, ROI_parameters):
 
-    loc_center = np.empty([num_beacons], dtype=tuple)
-    DN = np.empty([num_beacons], dtype=int)
+    loc_center = np.empty([len(pixel_line_beacon_i)], dtype=tuple)
+    DN = np.empty([len(pixel_line_beacon_i)], dtype=int)
 
     # crop original image to an ROI based on initial
     corner_ROI, image_ROI = generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters)
 
-    for i in range(0, num_beacons):
+    print "\n\nIMAGE ROI: ", len(image_ROI)
+
+    for i in range(0, len(image_ROI)):
         # determine average value of region of interest border, subtract from rest of pixel map
         image_ROI[i] = apply_ROI_border(image_ROI[i], ROI_parameters)
 
@@ -652,11 +677,59 @@ def find_center_resolved_body(pixel_map, pixel_line_beacon_i, ROI_parameters, nu
         # (starts with 1)
         # loc_centroid[i], DN[i] = find_centroid(image_ROI[i], corner_ROI[i], ROI_parameters)
 
+        print "\n\nImage ROI size: ", image_ROI[i].shape
+
         center = hough_circles(image_ROI[i], center_dist=1E5, canny_thresh= 250, blur=1, accum=5, show_img=False)
-        print 'CHECK Center-finding ',center
+        print 'CHECK Center-finding ', center
         print center.shape
         print 'CHECK corner ROI ', corner_ROI[i]
         print len(corner_ROI[i])
         loc_center[i] = (center[0] + corner_ROI[i][1], center[1] + corner_ROI[i][0])
 
     return loc_center, DN
+
+##################################################
+##################################################
+
+# Function to determine if the body at the entered pixel location has already been discovered
+# input:    pixel_loc               The pixel location to check
+#           corner_ROI              List of corner ROIs found so far
+#           image_ROI               List of images for ROIs found so far
+# output:   alreadyFound            True if the pixel location is inside one of the previously found ROIs and false
+#                                   otherwise
+
+def already_found_ROI(pixel_loc, corner_ROI, image_ROI):
+
+    # Initially have not found it
+    alreadyFound = False
+    i = 0
+
+    # Iterate through by checking the pixel location against each corner_ROI
+    while (i < len(corner_ROI) and not alreadyFound):
+
+        #print "\n\nLoop ", i
+        #print "\n", pixel_loc
+        #print corner_ROI[i]
+        #print image_ROI[i].shape
+
+        beaconLengthY, beaconLengthX = image_ROI[i].shape
+
+        # OFFSET - Included offset of 2 pixels to eliminate close proximity values
+        # Check x location of pixel to see if it is between x of corner_ROI and x of corner_ROI plus x distance of
+        # image_ROI
+        if (pixel_loc[1] >= corner_ROI[i][1] - 2) and (pixel_loc[1] < corner_ROI[i][1] + beaconLengthX + 2):
+
+            # Check y location of pixel to see if it is between y of corner_ROI and y of corner_ROI plus y distance of
+            # image_ROI
+            if (pixel_loc[0] >= corner_ROI[i][0] - 2) and (pixel_loc[0] < corner_ROI[i][0] + beaconLengthY + 2):
+
+                # This ROI has already been found.  Disregard it.
+                #print "Found the thing!"
+                alreadyFound = True
+
+        # Increment i
+        i = i + 1
+
+    #print "\n\n"
+
+    return alreadyFound
