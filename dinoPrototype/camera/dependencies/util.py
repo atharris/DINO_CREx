@@ -193,7 +193,7 @@ def r3 (theta):
 
 ###############################################################################
 #
-# interpolate_lambda_dependent() 
+# interpolateLambdaDependent() 
 #
 #	Inputs:
 #		
@@ -204,7 +204,7 @@ def r3 (theta):
 #
 ###############################################################################
 
-def interpolate_lambda_dependent(ex,lambda_set):
+def interpolateLambdaDependent(ex,lambda_set):
 	from numpy import array
 	lam = ex['lambda']
 	data = ex['throughput']

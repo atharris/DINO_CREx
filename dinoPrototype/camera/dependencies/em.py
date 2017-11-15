@@ -52,7 +52,7 @@ def planck(T,lam):
 	return I
 
 ###############################################################################
-#	stefan_boltzmann() is a function that total flux from a star given 
+#	stefanBoltzmann() is a function that total flux from a star given 
 #
 #	Inputs:
 #		T: temperature of the star in Kelvin
@@ -64,7 +64,7 @@ def planck(T,lam):
 #
 ###############################################################################
 
-def stefan_boltzmann(T):
+def stefanBoltzmann(T):
 	from constants import sigma
 	return sigma*T**4
 

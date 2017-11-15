@@ -25,33 +25,37 @@
 ###############################################################################
 
 ###############################################################################
-#	Camera is a class for the simulation of a spacecraft camera.
+#	Camera is a class for the simulation of a spacecraft camera. It holds all
+#	physical characteristics of the camera and all stars. The Camera object
+#	controls when image objects are opened and closed based on the takeImage
+#	message read in from the navigation executive.
 #
-#	methods:
+#	Methods:
 #		load_all_stars()
-#		calculate_FOV()
+#		calculateFOV()
+#		findLambdaSet()
 #		interpolate_lambda()
-#		find_lambda_set()
-#		update_state()
+#		calculateHotDark()
+#		updateState()
 #
 #	User Variables:
-#		detector_height: Physical height of detector
-#			Can be any dimension so long as it matches detector_width and
-#			focal_length
-#		detector_width: Physical width of detector
-#			Can be any dimension so long as it matches detector_height and
-#			focal_length
-#		focal_length: Physical distance between lens and focal point
-#			Can be any dimension so long as it matches detector_width and
-#			detector_width
-#		resolution_height: # of pixels in same dimension as detector_height
-#		resolution_width: # of pixels in same dimension as detector_width
-#		angular_height: Angular height of the detector field of view. 
-#			Calculated using calculate_fov()
-#		angular_width: Angular width of the detector field of view. 
-#			Calculated using calculate_fov()
+#		detectorHeight: Physical height of detector
+#			Can be any dimension so long as it matches detectorWidth and
+#			focalLength
+#		detectorWidth: Physical width of detector
+#			Can be any dimension so long as it matches detectorHeight and
+#			focalLength
+#		focalLength: Physical distance between lens and focal point
+#			Can be any dimension so long as it matches detectorWidth and
+#			detectorWidth
+#		resolutionHeight: # of pixels in same dimension as detectorHeight
+#		resolutionWidth: # of pixels in same dimension as detectorWidth
+#		angularHeight: Angular height of the detector field of view. 
+#			Calculated using calculateFOV()
+#		angularWidth: Angular width of the detector field of view. 
+#			Calculated using calculateFOV()
 #		body2cameraDCM: DCM describing orientation of camera relative to sc
-#		max_mag: Maximum magnitude star visible to this camera.
+#		maxMag: Maximum magnitude star visible to this camera.
 #		qe: Quantum Effeciency Curve as a dict of two numpy arrays. 
 #			One must be called 'lambda', and the other must be called 
 #			must be called 'throughput'. qe['lambda'] must be an array of 
@@ -70,14 +74,14 @@
 #			1. qe['lambda'] and tc['lambda'] do not necessarily need to
 #			match as interpolate_lambda will interpolate tc['throughput']
 #			so that they do.
-#		min_lambda_bin_size: the width of bins in wavelength space to be
+#		minLambdaBinSize: the width of bins in wavelength space to be
 #			returned from interpolate_lambda().
 #		sc: Spacecraft object this camera is attached to
-#		hot_dark: NOT YET IMPLEMENTED!
+#		hotDark: NOT YET IMPLEMENTED!
 #
 #	Computed Variables:
-#		angular_height: Size of detector field of view on the sky.
-#		angular_width: 
+#		angularHeight: Size of detector field of view on the sky.
+#		angularWidth: 
 #		RA: Right ascension of all stars loaded from db
 #		DE: Declination of all stars loaded from db
 #		n1: First unit vector component in inertial space of all stars loaded 
@@ -98,19 +102,19 @@
 class camera:
 	def __init__(
 		self, 
-		detector_height, 
-		detector_width, 
-		focal_length,
-		resolution_height,
-		resolution_width,
+		detectorHeight, 
+		detectorWidth, 
+		focalLength,
+		resolutionHeight,
+		resolutionWidth,
 		body2cameraDCM,
-		max_mag,
-		min_mag,
+		maxMag,
+		minMag,
 		qe,
 		tc,
-		lambda_bin_size,
-		effective_area,
-		dark_current,
+		lambdaBinSize,
+		effectiveArea,
+		darkCurrent,
 		read_sigma,
 		dnBinSize,
 		dnDepthMax,
@@ -132,22 +136,22 @@ class camera:
 		except:
 			db = 'db/tycho.db'
 		
-		FOV = self.calculate_FOV(
-			focal_length,
-			detector_height, 
-			detector_width,
+		FOV = self.calculateFOV(
+			focalLength,
+			detectorHeight, 
+			detectorWidth,
 			verbose=verbose
 			)
 
-		if msg['add_stars']:
-			allstars = self.load_all_stars(db, max_mag, min_mag, verbose=verbose)
-		lambda_set = self.find_lambda_set(qe, tc, lambda_bin_size)
-		qe = self.interpolate_lambda_dependent(qe,lambda_set)
-		tc = self.interpolate_lambda_dependent(tc,lambda_set) 
+		if msg['addStars']:
+			allstars = self.load_all_stars(db, maxMag, minMag, verbose=verbose)
+		lambdaSet = self.findLambdaSet(qe, tc, lambdaBinSize)
+		qe = self.interpolateLambdaDependent(qe,lambdaSet)
+		tc = self.interpolateLambdaDependent(tc,lambdaSet) 
 		sensitivity_curve = qe['throughput']*tc['throughput']
-		lambda_set = lambda_set[sensitivity_curve != 0]
+		lambdaSet = lambdaSet[sensitivity_curve != 0]
 
-		if msg['add_stars']:
+		if msg['addStars']:
 			self.RA = allstars['RA']
 			self.DE = allstars['DE']
 			self.n1 = allstars['n1']
@@ -155,9 +159,9 @@ class camera:
 			self.n3 = allstars['n3']
 			self.VT = allstars['VT']
 			self.BVT = allstars['BVT']
-			self.star_id = allstars['star_id']
+			self.starID = allstars['starID']
 			self.T = allstars['T']
-			self.reduction_term = allstars['reduction_term']
+			self.reductionTerm = allstars['reductionTerm']
 		else:
 			self.RA = array([])
 			self.DE = array([])
@@ -166,31 +170,31 @@ class camera:
 			self.n3 = array([])
 			self.VT = array([])
 			self.BVT = array([])
-			self.star_id = array([])
+			self.starID = array([])
 			self.T = array([])
-			self.reduction_term = array([])
+			self.reductionTerm = array([])
 
-		self.solar_bb = planck(5778,lambda_set*1e-9)
-		self.lambda_set = lambda_set
+		self.solar_bb = planck(5778,lambdaSet*1e-9)
+		self.lambdaSet = lambdaSet
 		self.sensitivity_curve = sensitivity_curve[sensitivity_curve != 0]
 		self.qe = qe
 		self.tc = tc
-		self.lambda_bin_size = lambda_bin_size
-		self.resolution_height = resolution_height
-		self.resolution_width = resolution_width		
+		self.lambdaBinSize = lambdaBinSize
+		self.resolutionHeight = resolutionHeight
+		self.resolutionWidth = resolutionWidth		
 		self.body2cameraDCM = body2cameraDCM
-		self.max_mag = max_mag
-		self.min_mag = min_mag
-		self.angular_height = FOV['alpha']
-		self.angular_width = FOV['beta']
-		self.angular_diagonal = FOV['gamma']
-		self.detector_height = detector_height
-		self.detector_width = detector_width
-		self.focal_length = focal_length
+		self.maxMag = maxMag
+		self.minMag = minMag
+		self.angularHeight = FOV['alpha']
+		self.angularWidth = FOV['beta']
+		self.angularDiagonal = FOV['gamma']
+		self.detectorHeight = detectorHeight
+		self.detectorWidth = detectorWidth
+		self.focalLength = focalLength
 		self.read_sigma = read_sigma
 		self.sc = sc
-		self.effective_area = effective_area
-		self.dark_current = dark_current
+		self.effectiveArea = effectiveArea
+		self.darkCurrent = darkCurrent
 		self.images = {}
 		self.msg = msg
 		self.dnBinSize = dnBinSize
@@ -213,7 +217,7 @@ class camera:
 	#				the user with timings for the database call
 	#
 	###########################################################################
-	def load_all_stars(self,db, max_mag, min_mag, **kwargs):
+	def load_all_stars(self,db, maxMag, minMag, **kwargs):
 		import sqlite3
 		from numpy import array, sin, cos, deg2rad, logical_and
 
@@ -240,8 +244,8 @@ class camera:
 		BT = []
 		phi = []
 		theta = []
-		star_id = []
-		reduction_term = []
+		starID = []
+		reductionTerm = []
 		T = []
 
 		for row in c:
@@ -260,15 +264,15 @@ class camera:
 				BT.append(float(row[2]))
 			theta.append(float(RA[-1]))
 			phi.append(float(90-DE[-1]))
-			star_id.append(float(row[4]))
+			starID.append(float(row[4]))
 			#this IS a cheat. force the flux from the star
 			#to be zero if we haven't gotten a computed T in for
 			#it yet. The temp doesn't matter if the reduction
 			#term is zero
 			try:
-				reduction_term.append(float(row[5]))
+				reductionTerm.append(float(row[5]))
 			except:
-				reduction_term.append(float(0))
+				reductionTerm.append(float(0))
 			try:
 				T.append(float(row[6]))
 			except:
@@ -281,21 +285,21 @@ class camera:
 		BVT = BT - VT
 		phi = array(phi)
 		theta = array(theta)
-		star_id = array(star_id)
-		reduction_term = array(reduction_term)
+		starID = array(starID)
+		reductionTerm = array(reductionTerm)
 		T = array(T)
 
-		ind = VT < max_mag
-		ind = logical_and(ind, VT > min_mag)
+		ind = VT < maxMag
+		ind = logical_and(ind, VT > minMag)
 		RA = RA[ind]
 		DE = DE[ind]
 		VT = VT[ind]
 		BVT = BVT[ind]
 		theta = theta[ind]
 		phi = phi[ind]
-		star_id = star_id[ind]
+		starID = starID[ind]
 		T = T[ind]
-		reduction_term = reduction_term[ind]
+		reductionTerm = reductionTerm[ind]
 		#convert spherical coordinates to cartesian in inertial
 		n1 = sin(deg2rad(phi))*cos(deg2rad(theta))
 		n2 = sin(deg2rad(phi))*sin(deg2rad(theta))
@@ -309,20 +313,20 @@ class camera:
 			'n1': n1,
 			'n2': n2,
 			'n3': n3,
-			'star_id': star_id,
-			'reduction_term': reduction_term,
+			'starID': starID,
+			'reductionTerm': reductionTerm,
 			'T': T	
 			}
 
 	###############################################################################
 	#
-	# calculate_FOV() finds the angular size of a camera FOV using freshman-level
+	# calculateFOV() finds the angular size of a camera FOV using freshman-level
 	#	optics. 
 	#
 	#	Inputs:
-	#		focal_length: Focal length of modeled lens 
-	#		detector_height: y-direction dimension of the lens
-	#		detector_width: x-direction dimension of the lens
+	#		focalLength: Focal length of modeled lens 
+	#		detectorHeight: y-direction dimension of the lens
+	#		detectorWidth: x-direction dimension of the lens
 	#		
 	#	Outputs:
 	#		A dict with the following entries:
@@ -335,11 +339,11 @@ class camera:
 	#
 	###############################################################################
 
-	def calculate_FOV(self, focal_length, detector_height, detector_width, **kwargs):
+	def calculateFOV(self, focalLength, detectorHeight, detectorWidth, **kwargs):
 		from numpy import sqrt, arctan2, rad2deg
-		f = focal_length
-		a = detector_height
-		b = detector_width
+		f = focalLength
+		a = detectorHeight
+		b = detectorWidth
 		c = sqrt(a**2 + b**2)
 
 		#angular distance of diagonal of FOV
@@ -355,7 +359,7 @@ class camera:
 
 	###############################################################################
 	#
-	# find_lambda_set() 
+	# findLambdaSet() 
 	#
 	#	Inputs:
 	#		
@@ -365,17 +369,17 @@ class camera:
 	#
 	###############################################################################
 
-	def find_lambda_set(self, qe, tc, lambda_bin_size):
+	def findLambdaSet(self, qe, tc, lambdaBinSize):
 		from numpy import concatenate, arange
-		all_lambdas = concatenate([qe['lambda'],tc['lambda']])
-		min_lambda = min(all_lambdas)
-		max_lambda = max(all_lambdas)
-		lambda_set = arange(min_lambda,max_lambda + lambda_bin_size,lambda_bin_size)
-		return lambda_set
+		allLambdas = concatenate([qe['lambda'],tc['lambda']])
+		minLambda = min(allLambdas)
+		maxLambda = max(allLambdas)
+		lambdaSet = arange(minLambda,maxLambda + lambdaBinSize,lambdaBinSize)
+		return lambdaSet
 
 	###############################################################################
 	#
-	# interpolate_lambda_dependent() 
+	# interpolateLambdaDependent() 
 	#
 	#	Inputs:
 	#		
@@ -388,13 +392,13 @@ class camera:
 	#
 	###############################################################################
 
-	def interpolate_lambda_dependent(self, ex,lambda_set):
-		from util import interpolate_lambda_dependent
-		return interpolate_lambda_dependent(ex,lambda_set)
+	def interpolateLambdaDependent(self, ex,lambdaSet):
+		from util import interpolateLambdaDependent
+		return interpolateLambdaDependent(ex,lambdaSet)
 
 	###############################################################################
 	#
-	# hot_dark() 
+	# hotDark() 
 	#
 	#	Inputs:
 	#		
@@ -404,17 +408,17 @@ class camera:
 	#
 	###############################################################################
 
-	# def calculate_hot_dark(self):
-	# 	resolution_height = self.resolution_height
-	# 	resolution_width = self.resolution_width
-	# 	current_hot_dark = self.hot_dark
+	# def calculateHotDark(self):
+	# 	resolutionHeight = self.resolutionHeight
+	# 	resolutionWidth = self.resolutionWidth
+	# 	current_hotDark = self.hotDark
 	# 	#do your thing here
 		
-	# 	self.hot_dark_arr = hot_dark_array
+	# 	self.hotDark_arr = hotDark_array
 
 	###############################################################################
 	#
-	# update_state() 
+	# updateState() 
 	#
 	#	Inputs:
 	#		
@@ -424,13 +428,13 @@ class camera:
 	#
 	###############################################################################
 
-	def update_state(self):
+	def updateState(self):
 
-		# self.hot_dark = self.calculate_hot_dark(dt)
+		# self.hotDark = self.calculateHotDark(dt)
 
 		#initialize a counter so we can check if we have open images
 		open_images = 0
-		take_image = self.msg['take_image']
+		takeImage = self.msg['takeImage']
 		#loop through all images counting the ones that are open.
 		#if you find an open one, set its key to open_image_key.
 		#if there's more than one open, the var will be overwritten, but
@@ -448,18 +452,18 @@ class camera:
 		elif open_images == 1.:
 			#if there is exactly one open image and we are still imaging
 			#we need to update the state.
-			if take_image == 1:
-				self.images[open_image_key].update_state()
+			if takeImage == 1:
+				self.images[open_image_key].updateState()
 			#if there is exactly one open image but the exec has told the
 			#camera to stop imaging, just close it. We still neet do run
-			#the image's update_state() method in order to get it to actually
+			#the image's updateState() method in order to get it to actually
 			#create the image. It only collects attitude information until
 			#this step.
 			else:
 				self.images[open_image_key].image_open = 0
-				self.images[open_image_key].update_state()
+				self.images[open_image_key].updateState()
 		else:
-			if take_image == 1.:
+			if takeImage == 1.:
 				#if we have no open image, count the number of open images
 				#and use that as the key for the next one (python indexes at
 				#zero, so if we want to index using autoincrementing numbers, 
@@ -468,7 +472,7 @@ class camera:
 				#initialize the image.
 				self.images[new_key] = image(self,self.msg)
 				#give the image its first update.
-				self.images[new_key].update_state()
+				self.images[new_key].updateState()
 
 		return
 
@@ -513,7 +517,7 @@ class camera:
 # 		line: Similar to the line varable that is held in the camera object,
 #			but with only stars/facets that are in the FOC of this image.
 # 		color:
-#		detector_array:
+#		detectorArray:
 #
 #	Keyword Arguments:
 #
@@ -561,12 +565,12 @@ class image:
 		self.DCM = []
 		self.scenes = []
 		self.frames = []
-		self.detector_array = []
-		self.star_id = []
+		self.detectorArray = []
+		self.starID = []
 
 	###############################################################################
 	#
-	# update_state() 
+	# updateState() 
 	#
 	#	Inputs:
 	#		
@@ -576,13 +580,13 @@ class image:
 	#
 	###############################################################################
 
-	def update_state(self):
+	def updateState(self):
 
-		if self.camera.msg['take_image'] == 1:
+		if self.camera.msg['takeImage'] == 1:
 			#if the image is still actively being taken, all we do is save
 			#off a DCM for that scene. The image will only be created once
-			#self.camera.msg['take_image'] is set to zero and
-			#image.update_state() is run.
+			#self.camera.msg['takeImage'] is set to zero and
+			#image.updateState() is run.
 			self.DCM.append(self.camera.sc.attitudeDCM)
 		else:
 			from scipy.linalg import inv
@@ -638,17 +642,17 @@ class image:
 				#Don't know what twist (gamma) angle will be for
 				#any given exposure, so assume worst case scenario
 				#for bounding stars
-				self.camera.angular_diagonal/2,
-				self.camera.angular_diagonal/2,
-				self.camera.resolution_height,
-				self.camera.resolution_width,
+				self.camera.angularDiagonal/2,
+				self.camera.angularDiagonal/2,
+				self.camera.resolutionHeight,
+				self.camera.resolutionWidth,
 				self.camera.RA, self.camera.DE, 
 				self.camera.n1, self.camera.n2, self.camera.n3,
 				self.camera.VT, self.camera.BVT, self.camera.T,
 				self.camera.T, #spoof so the fcn won't break :-(
-				self.camera.reduction_term,
-				self.camera.max_mag, 
-				self.camera.star_id,
+				self.camera.reductionTerm,
+				self.camera.maxMag, 
+				self.camera.starID,
 				full_exposure_msg
 				)
 
@@ -661,8 +665,8 @@ class image:
 			self.c2 = FOV['c2']
 			self.c3 = FOV['c3']
 			self.T = FOV['T']
-			self.star_id = FOV['star_id']
-			self.reduction_term = FOV['reduction_term']
+			self.starID = FOV['starID']
+			self.reductionTerm = FOV['reductionTerm']
 			I = []
 			import matplotlib.pyplot as plt
 
@@ -673,19 +677,19 @@ class image:
 				if T == 5778: 
 					flux_per_m2_per_nm_per_sr_at_star = self.camera.solar_bb
 				else:
-					flux_per_m2_per_nm_per_sr_at_star = planck(T,self.camera.lambda_set*1e-9)
-				reduction_term = self.reduction_term[i]
+					flux_per_m2_per_nm_per_sr_at_star = planck(T,self.camera.lambdaSet*1e-9)
+				reductionTerm = self.reductionTerm[i]
 				
-				flux_per_m2_per_nm_per_sr_at_obs = flux_per_m2_per_nm_per_sr_at_star*reduction_term
+				flux_per_m2_per_nm_per_sr_at_obs = flux_per_m2_per_nm_per_sr_at_star*reductionTerm
 				flux_per_m2_per_nm = pi*flux_per_m2_per_nm_per_sr_at_obs
-				flux_per_m2 = flux_per_m2_per_nm*self.camera.lambda_bin_size
-				flux = flux_per_m2*self.camera.effective_area
-				photons_per_sec = flux/self.photon_energy(self.camera.lambda_set*1e-9)
+				flux_per_m2 = flux_per_m2_per_nm*self.camera.lambdaBinSize
+				flux = flux_per_m2*self.camera.effectiveArea
+				photons_per_sec = flux/self.photon_energy(self.camera.lambdaSet*1e-9)
 				electrons_per_sec = photons_per_sec*self.camera.sensitivity_curve
 				I.append(sum(electrons_per_sec))
 			
 			self.I = array(I)
-			self.star_id = FOV['star_id']
+			self.starID = FOV['starID']
 
 
 			#since the camera object removes occulted objects
@@ -693,8 +697,8 @@ class image:
 			#all again here, so we force those parts of the msg
 			# to be zero.
 			scene_msg = dict(self.camera.msg) 
-			scene_msg['rm_occ'] = 0
-			scene_msg['add_bod'] = 0
+			scene_msg['rmOcc'] = 0
+			scene_msg['addBod'] = 0
 			#create one scene per DCM we collected above
 			for i in range(0,len(self.DCM)):
 				FOV = self.find_stars_in_FOV(
@@ -705,17 +709,17 @@ class image:
 					0,
 					0,
 					0,
-					self.camera.angular_height/2,
-					self.camera.angular_width/2,
-					self.camera.resolution_height,
-					self.camera.resolution_width,
+					self.camera.angularHeight/2,
+					self.camera.angularWidth/2,
+					self.camera.resolutionHeight,
+					self.camera.resolutionWidth,
 					self.RA, self.DE, 
 					self.n1, self.n2, self.n3,
 					self.VT, self.BVT, self.T,
 					self.I,
-					self.reduction_term,
-					self.camera.max_mag, 
-					self.star_id,
+					self.reductionTerm,
+					self.camera.maxMag, 
+					self.starID,
 					scene_msg
 					)
 				self.scenes.append(
@@ -731,7 +735,7 @@ class image:
 						FOV['I'],
 						FOV['pixel'],
 						FOV['line'],
-						FOV['star_id']
+						FOV['starID']
 						)
 					)
 			i = 0
@@ -755,45 +759,45 @@ class image:
 					each_scene.psf_I = self.add_poisson_noise(each_scene.psf_I)
 
 				if self.camera.msg['raster']:
-					each_scene.detector_array = \
+					each_scene.detectorArray = \
 						self.rasterize(
-							self.camera.resolution_width,
-							self.camera.resolution_height,
+							self.camera.resolutionWidth,
+							self.camera.resolutionHeight,
 							each_scene.psf_pixel,
 							each_scene.psf_line,
 							each_scene.psf_I
 							)*self.camera.msg['dt']
 
 					if self.camera.msg['dark']:
-						each_scene.detector_array = \
-							each_scene.detector_array + \
+						each_scene.detectorArray = \
+							each_scene.detectorArray + \
 							self.add_poisson_noise(
-								zeros(len(each_scene.detector_array)) + \
-								self.camera.dark_current
+								zeros(len(each_scene.detectorArray)) + \
+								self.camera.darkCurrent
 								)
 
-			self.detector_array = 0
+			self.detectorArray = 0
 			for each_scene in self.scenes:
-				self.detector_array += each_scene.detector_array
+				self.detectorArray += each_scene.detectorArray
 
 			if self.camera.msg['read']:
-				self.detector_array = self.add_read_noise(
-						self.detector_array,
+				self.detectorArray = self.add_read_noise(
+						self.detectorArray,
 						self.camera.read_sigma
 						)
 
-			self.detector_array[self.detector_array < 0] = 0
+			self.detectorArray[self.detectorArray < 0] = 0
 			
 			#convert phton counts to DN
-			self.detector_array = floor(self.detector_array/self.camera.dnBinSize)
+			self.detectorArray = floor(self.detectorArray/self.camera.dnBinSize)
 
 			#cut off pixels that are saturated
-			self.detector_array[self.detector_array > self.camera.dnDepthMax] = self.camera.dnDepthMax
-			# if self.camera.msg['hot_dark']:
-			# 	self.detector_array = self.detector_array*self.camera.hot_dark
+			self.detectorArray[self.detectorArray > self.camera.dnDepthMax] = self.camera.dnDepthMax
+			# if self.camera.msg['hotDark']:
+			# 	self.detectorArray = self.detectorArray*self.camera.hotDark
 				# if 	self.camera.msg['raster'] + self.camera.msg['photon'] + \
 				# 	self.camera.msg['read']:
-				# 	self.detector_array = detector_array*hot_dark
+				# 	self.detectorArray = detectorArray*hotDark
 
 
 
@@ -837,17 +841,15 @@ class image:
 		RA, DE, 
 		n1, n2, n3,
 		VT, BVT,T,I,
-		reduction_term,
-		max_mag, 
-		star_ids,
+		reductionTerm,
+		maxMag, 
+		starIDs,
 		msg,
 		**kwargs):
 
 		from numpy import array, deg2rad, sin, cos, append, sqrt, zeros, ones, logical_and
 		from numpy.linalg import norm
 
-		import pdb
-		pdb.set_trace()
 		if len(msg['bodies']) != 0:
 
 			n = 1	
@@ -862,20 +864,20 @@ class image:
 			for body in bodies:
 				n+=1
 				if body.name == 'SC': continue
-				if msg['rm_occ']:
+				if msg['rmOcc']:
 					occ_check = self.remove_occultations(body,n1,n2,n3)
 					n1 = n1[occ_check]
 					n2 = n2[occ_check]
 					n3 = n3[occ_check]
 					RA = RA[occ_check]
 					DE = DE[occ_check]
-					star_ids = star_ids[occ_check]
+					starIDs = starIDs[occ_check]
 					T = T[occ_check]
-					reduction_term = reduction_term[occ_check]
+					reductionTerm = reductionTerm[occ_check]
 					I = I[occ_check]
 
 
-				if msg['add_bod']:
+				if msg['addBod']:
 					print(body.name)
 					from lightSimFunctions import lightSim
 					DCM = self.camera.body2cameraDCM.dot(self.camera.sc.attitudeDCM)
@@ -884,8 +886,8 @@ class image:
 						self.camera.sc.state[0:3],
 						body.state[0:3],
 						(
-							self.camera.angular_height,
-							self.camera.angular_width
+							self.camera.angularHeight,
+							self.camera.angularWidth
 							),
 						200,
 						200,
@@ -928,12 +930,12 @@ class image:
 					VT = append(VT, zeros(len(surf_n1)))
 					BVT = append(BVT, zeros(len(surf_n1)))
 					T = append(T, zeros(len(surf_n1)) + 5778)
-					star_ids = append(star_ids, zeros(len(surf_n1)))
+					starIDs = append(starIDs, zeros(len(surf_n1)))
 
 					if len(surf_n1) > 1:
 						print('>1')
-						reduction_term = append(
-							reduction_term,
+						reductionTerm = append(
+							reductionTerm,
 							facets['netAlbedo']*\
 							facets['facetArea'])
 						I = append(I,
@@ -941,8 +943,8 @@ class image:
 							facets['facetArea'])
 					else:
 						print('1')
-						reduction_term = append(
-							reduction_term,
+						reductionTerm = append(
+							reductionTerm,
 							sum(facets['netAlbedo']*\
 							facets['facetArea']))
 						I = append(I,
@@ -986,9 +988,9 @@ class image:
 		+n3*cos(gamma)*cos(beta)
 
 		#Remove stars outside the FOV in the c2 direction
-		ind = abs(c2/c1*self.camera.focal_length) < self.camera.detector_width/2
+		ind = abs(c2/c1*self.camera.focalLength) < self.camera.detectorWidth/2
 		#Remove stars outside the FOV in the c3 direction
-		ind = logical_and(ind,abs(c3/c1*self.camera.focal_length) < self.camera.detector_height/2)
+		ind = logical_and(ind,abs(c3/c1*self.camera.focalLength) < self.camera.detectorHeight/2)
 		#remove stars in the anti-boresight direction
 		ind = logical_and(ind,c1 > 0)
 
@@ -1001,18 +1003,18 @@ class image:
 		c1 = c1[ind]
 		c2 = c2[ind]
 		c3 = c3[ind]
-		star_ids = star_ids[ind]
+		starIDs = starIDs[ind]
 		T = T[ind]
-		reduction_term = reduction_term[ind]
+		reductionTerm = reductionTerm[ind]
 		I = I[ind]
 
 		#using similar triangles
-		pixel = -self.camera.focal_length*c2/c1*\
-			beta_resolution/self.camera.detector_width + \
+		pixel = -self.camera.focalLength*c2/c1*\
+			beta_resolution/self.camera.detectorWidth + \
 			beta_resolution/2
 
-		line = -self.camera.focal_length*c3/c1*\
-			alpha_resolution/self.camera.detector_height + \
+		line = -self.camera.focalLength*c3/c1*\
+			alpha_resolution/self.camera.detectorHeight + \
 			alpha_resolution/2
 
 		return {
@@ -1026,10 +1028,10 @@ class image:
 			'c1': c1,
 			'c2': c2,
 			'c3': c3,
-			'star_id' : star_ids,
+			'starID' : starIDs,
 			'I': I,
 			'T': T,
-			'reduction_term': reduction_term
+			'reductionTerm': reductionTerm
 		}
 	###########################################################################
 	#
@@ -1078,20 +1080,6 @@ class image:
 		occ_check = logical_or(discriminant < 0,v.T.dot(y_0) > 0)
 		return occ_check
 
-	###########################################################################
-	#
-	# diego() 
-	#
-	#	Inputs:
-	#		r, r_0, p, p_r: Floats. 
-	#
-	#	Outputs:
-	#		I
-	#
-	###########################################################################
-	def diego(self,r,r_0,p,p_r):
-		I = (1+(r/r_0)**(p*(1+(r/p_r))))**-1
-		return I
 
 	###########################################################################
 	#
@@ -1171,9 +1159,9 @@ class image:
 		data = concatenate([detector_position,intensity])
 		data = data.reshape(2,int(len(data)/2)).T
 		df = DataFrame(data,columns = ["Position","Intensity"])
-		detector_array = df.groupby("Position").sum().values.T[0]
+		detectorArray = df.groupby("Position").sum().values.T[0]
 
-		return detector_array
+		return detectorArray
 
 	###########################################################################
 	#
@@ -1184,9 +1172,9 @@ class image:
 	#	Outputs:
 	#
 	###########################################################################
-	def add_read_noise(self,detector_array,sigma):
+	def add_read_noise(self,detectorArray,sigma):
 		from numpy.random import randn
-		return detector_array + sigma*randn(len(detector_array))
+		return detectorArray + sigma*randn(len(detectorArray))
 
 	###########################################################################
 	#
@@ -1227,7 +1215,7 @@ class image:
 		return I
 
 	###########################################################################
-	#	stefan_boltzmann() is a function that total flux from a star given 
+	#	stefanBoltzmann() is a function that total flux from a star given 
 	#
 	#	Inputs:
 	#		T: temperature of the star in Kelvin
@@ -1242,7 +1230,7 @@ class image:
 	#
 	###########################################################################
 
-	def stefan_boltzmann(self, T):
+	def stefanBoltzmann(self, T):
 		from constants import sigma
 		return sigma*T**4
 
@@ -1438,7 +1426,7 @@ class scene:
 		I,
 		pixel,
 		line,
-		star_ids,
+		starIDs,
 		**kwargs
 		):
 
@@ -1453,7 +1441,7 @@ class scene:
 		self.I = I
 		self.pixel = pixel
 		self.line = line
-		self.star_ids = star_ids
+		self.starIDs = starIDs
 
 
 
