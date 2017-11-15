@@ -103,22 +103,6 @@ def mapSphere(latRes, longRes, radCB):
                 ).T
 
             ptsLatLong = np.vstack((ptsLatLong,tmpStack))
-            # for current_long_c in np.nditer(currentPtsLongC):
-            #     ptsLatLong = np.vstack((ptsLatLong, np.array([currentLat, current_long_c])))
-
-            # create array of latlong for facet center locations
-            # latitude value for center of facet
-
-            # tmpStack = np.vstack(
-            #     (
-            #         zeros(len(currentPtsLongC)) + currentLatC,
-            #         currentPtsLongC
-            #         )
-            #     ).T
-            # ptsLatLongC = np.vstack((ptsLatLongC,tmpStack))
-            # for current_long_c in np.nditer(currentPtsLongC):
-            #     if current_long_c < 180:
-            #         ptsLatLongC = np.vstack((ptsLatLongC, np.array([currentLatC, current_long_c])))
     
     ptsLatLongC = ptsLatLong
     ptsLatLongC[:,0] -= .5 * deltLat
@@ -244,17 +228,6 @@ def lumos(posCB, posObs, albedoCB, radCB, latRes, longRes):
     eNorm_jBody = cos(deg2rad(longitudes))*eNorm_ijNody
     pts_eNormBody = vstack([eNorm_iBody,eNorm_jBody,eNorm_kBody]).T
 
-    # for ind_latlong in range(nLatLong):
-    #     currentLat = ptsLatLong[ind_latlong,0]
-    #     current_long = ptsLatLong[ind_latlong,1]
-
-    #     eNorm_kBody = math.sin(math.radians(currentLat))
-    #     eNorm_ijNody = math.cos(math.radians(currentLat))
-
-    #     eNorm_iBody = math.sin(math.radians(current_long))*eNorm_ijNody
-    #     eNorm_jBody = math.cos(math.radians(current_long))*eNorm_ijNody
-    #     pts_eNormBody[ind_latlong,:] = [eNorm_iBody, eNorm_jBody, eNorm_kBody]
-
     # generate surface map of ijk heliocentric coordinates from center of celestial body
     ptsHelio = np.zeros((nLatLong,3))
 
@@ -265,23 +238,6 @@ def lumos(posCB, posObs, albedoCB, radCB, latRes, longRes):
     xyzbody = vstack([xbody,ybody,zbody]).T
     ptsHelio = np.matmul(dcmNB,xyzbody.T).T
     ind_pts = 0
-
-    # for ind_latlong in range(nLatLong):
-
-    #     currentLat = ptsLatLong[ind_latlong,0]
-    #     current_long = ptsLatLong[ind_latlong,1]
-
-    #     # determine surface point body coordinates
-    #     zbody = radCB * math.sin(math.radians(currentLat))
-    #     xybody = radCB * math.cos(math.radians(currentLat))
-    #     ybody = xybody*math.cos(math.radians(current_long))
-    #     xbody = xybody*math.sin(math.radians(current_long))
-    #     xyzbody = np.array([xbody,ybody,zbody])
-
-    #     # convert to heliocentric coordinates
-    #     ptsHelio[ind_pts,:] = np.matmul(dcmNB,xyzbody)
-
-    #     ind_pts += 1
 
     ###################################################
     # Calculate net flux reduction due to diffuse reflection and sun to CB inverse square law
@@ -294,17 +250,7 @@ def lumos(posCB, posObs, albedoCB, radCB, latRes, longRes):
         pts_eNormBody[:,0][pts_eNormBody[:,0] > 0]
     ptsAlbedo = ptsAlbedo.reshape(len(ptsAlbedo),1)*albedoCB
 
-    # ind_latlong = 0
-    # for  current_e_norm in pts_eNormBody:
 
-    #     phase_solar = math.acos(np.dot([1,0,0],current_e_norm))
-
-    #     if phase_solar > math.pi/2:
-    #         ptsAlbedo[ind_latlong] = 0.
-    #     else:
-    #         ptsAlbedo[ind_latlong] = math.cos(phase_solar)*albedoCB
-
-    #     ind_latlong += 1
 
     # calculate flux decay due to inverse square laws
     fluxDecaySun2cb = (fluxRefDistance/distanceCB)**2
@@ -355,92 +301,50 @@ def project2CamView(posCB, posObs, attdeCam, xyzHelio, fluxDecay, fov, facetArea
     horizCamfov = fov[0] / 2.
     vertCamfov = fov[1] / 2.
 
-    # xyz_camview = np.empty((0,3), float)
-    # xyz_camview_helio = np.empty((0,3), float)
-    # facetAreaCamview = np.empty((0,1), float)
-
-    # azel_pts = np.empty((0,2), float)
-    # fluxDecay_out = np.empty((0,1), float)
-    # xyz_vis_cam = np.empty((0,3), float)
-
-
     r = sqrt(xyzHelio[:,0]**2+xyzHelio[:,1]**2+xyzHelio[:,2]**2).reshape(
         len(xyzHelio),1)
-    e_xyzHelio = xyzHelio/r
-    # cos_cam_phase2 = np.dot(eObs2cbHelio, e_xyzHelio.T)
-    cos_cam_phase = einsum('ij,ji->i',eObs2facetHelio,e_xyzHelio.T)
+    eXyzHelio = xyzHelio/r
+    # cosCamPhase2 = np.dot(eObs2cbHelio, eXyzHelio.T)
+    cosCamPhase = einsum('ij,ji->i',eObs2facetHelio,eXyzHelio.T)
 
-    cam_phase = arccos(cos_cam_phase)
+    camPhase = arccos(cosCamPhase)
 
     # check if current facet is visible to observer
-    ind = cam_phase > math.pi/2
-    e_xyzHelio = e_xyzHelio[ind]
-    cos_cam_phase = cos_cam_phase[ind]
-    cam_phase = cam_phase[ind]
+    ind = camPhase > math.pi/2
+    eXyzHelio = eXyzHelio[ind]
+    cosCamPhase = cosCamPhase[ind]
+    camPhase = camPhase[ind]
     xyzHelio = xyzHelio[ind]
-    xyz_body = np.matmul(dcmBN, xyzHelio.T)
-    r_pt = posObs2cbHelio + xyz_body.T
-    r_pt_norm = sqrt(r_pt[:,0]**2+r_pt[:,1]**2+r_pt[:,2]**2)
+    xyzBody = np.matmul(dcmBN, xyzHelio.T)
+    r_pt = posObs2cbHelio + xyzBody.T
+    r_ptNorm = sqrt(r_pt[:,0]**2+r_pt[:,1]**2+r_pt[:,2]**2)
     az = rad2deg(arctan2(r_pt[:,1], r_pt[:,0]))
-    el = rad2deg(arcsin(r_pt[:,2] / r_pt_norm))
-    xyz_camview = xyz_body
-    xyz_camview_helio = xyzHelio
-    azel_pts = vstack((az,el)).T
-    fluxDecay_out = fluxDecay[ind]
-    xyz_vis_cam = xyz_body.T
+    el = rad2deg(arcsin(r_pt[:,2] / r_ptNorm))
+    xyzCamview = xyzBody
+    xyzCamviewHelio = xyzHelio
+    azelPts = vstack((az,el)).T
+    fluxDecayOut = fluxDecay[ind]
+    xyzVisCam = xyzBody.T
     # current_facet_proj_area = 
-    facetAreaCamview = facetArea * -cos_cam_phase
+    facetAreaCamview = facetArea * -cosCamPhase
     facetAreaCamview = facetAreaCamview.reshape(
         len(facetAreaCamview),1)
 
-    xyz_camview_helio = np.matmul(np.linalg.inv(dcmBN),xyz_camview_helio.T).T
-    xyz_vis_cam = np.matmul(np.linalg.inv(dcmBN),xyz_vis_cam.T).T
-    # plt.plot(xyz_camview_helio[:,0],xyz_camview_helio[:,1],'.')
-    # plt.plot(-posObs2cbHelio[0],-posObs2cbHelio[1],'.')
+    xyzCamviewHelio = np.matmul(np.linalg.inv(dcmBN),xyzCamviewHelio.T).T
+    xyzVisCam = np.matmul(np.linalg.inv(dcmBN),xyzVisCam.T).T
 
-    # ind_npts = 0
-    # for current_xyzHelio in xyzHelio:
-
-    #     e_current_xyzHelio = current_xyzHelio / np.linalg.norm(current_xyzHelio)
-    #     cos_cam_phase = np.dot(eObs2cbHelio, e_current_xyzHelio)
-    #     cam_phase = math.acos(cos_cam_phase)
-
-    #     # check if current facet is visible to observer
-    #     if cam_phase > math.pi/2:
-
-    #         xyz_body = np.matmul(dcmBN, current_xyzHelio.T)
-
-    #         r_pt = posObs2cbBody + xyz_body
-
-    #         az = math.degrees(math.atan2(r_pt[1], r_pt[0]))
-    #         el = math.degrees(math.asin(r_pt[2] / np.linalg.norm(r_pt)))
-
-    #         # # check if current facet is in camera field of view
-    #         # if (abs(az) < horizCamfov) & (abs(el) < vertCamfov):
-
-    #         xyz_camview = np.vstack((xyz_camview, xyz_body))
-    #         xyz_camview_helio = np.vstack((xyz_camview_helio, current_xyzHelio))
-
-    #         azel_pts = np.vstack((azel_pts, np.array([[az, el]])))
-    #         fluxDecay_out = np.vstack((fluxDecay_out, fluxDecay[ind_npts]))
-    #         xyz_vis_cam = np.vstack((xyz_vis_cam, xyz_body))
-
-    #         current_facet_proj_area = facetArea * -cos_cam_phase
-    #         facetAreaCamview = np.vstack((facetAreaCamview, current_facet_proj_area))
-
-    #     ind_npts +=1
     print("project2CamView: " + str(datetime.now() - start))
 
-    return azel_pts, xyz_camview_helio, xyz_vis_cam, fluxDecay_out, facetAreaCamview
+    return azelPts, xyzCamviewHelio, xyzVisCam, fluxDecayOut, facetAreaCamview
 
 
 
 ###################################################
 ###################################################
 
-def xyz2RADec(xyz_cb):
+def xyz2RADec(xyzCB):
     """Calculate right ascension and declination from xyz coordinates
-        :param xyz_cb: 1x3 array of position
+        :param xyzCB: 1x3 array of position
         :return raDec: 1x2 array of center of CB in right ascension and declination
                 ra [deg] is angle from [1,0,0] to point in the xy horizontal plane
                 dec [deg] is angle above xy plane to point"""
@@ -448,35 +352,20 @@ def xyz2RADec(xyz_cb):
     from numpy import arctan2, arcsin, sqrt, rad2deg
     from datetime import datetime
     start = datetime.now()
-    if len(xyz_cb.shape) == 1:
+    if len(xyzCB.shape) == 1:
 
-        r = np.linalg.norm(xyz_cb)
-        ra = math.degrees(math.atan2(xyz_cb[1], xyz_cb[0]))
-        dec = math.degrees(math.asin(xyz_cb[2]/r))
+        r = np.linalg.norm(xyzCB)
+        ra = math.degrees(math.atan2(xyzCB[1], xyzCB[0]))
+        dec = math.degrees(math.asin(xyzCB[2]/r))
 
     else:
 
 
-        r = sqrt(xyz_cb[:,0]**2+xyz_cb[:,1]**2+xyz_cb[:,2]**2)
-        ra = rad2deg(arctan2(xyz_cb[:,1],xyz_cb[:,0]))
-        dec = rad2deg(arcsin(xyz_cb[:,2]/r))
+        r = sqrt(xyzCB[:,0]**2+xyzCB[:,1]**2+xyzCB[:,2]**2)
+        ra = rad2deg(arctan2(xyzCB[:,1],xyzCB[:,0]))
+        dec = rad2deg(arcsin(xyzCB[:,2]/r))
         ra = ra.reshape(len(ra),1)
         dec = dec.reshape(len(dec),1)
-
-        # ra = []
-        # dec = []
-
-        # for current_xyz in xyz_cb:
-
-        #     current_r = np.linalg.norm(current_xyz)
-        #     current_ra = math.degrees(math.atan2(current_xyz[1], current_xyz[0]))
-        #     current_dec = math.degrees(math.asin(current_xyz[2]/current_r))
-
-        #     ra.append(current_ra)
-        #     dec.append(current_dec)
-
-        # ra = np.array(ra).reshape(len(ra),1)
-        # dec = np.array(dec).reshape(len(dec),1)
 
     raDec = (ra, dec)
     print("xyz2RADec: " + str(datetime.now() - start))
