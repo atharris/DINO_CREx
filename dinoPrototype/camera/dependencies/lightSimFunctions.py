@@ -237,7 +237,7 @@ def lumos(posCB, posObs, albedoCB, radCB, latRes, longRes):
     xbody = xybody*sin(deg2rad(longitudes))
     xyzbody = vstack([xbody,ybody,zbody]).T
     ptsHelio = np.matmul(dcmNB,xyzbody.T).T
-    ind_pts = 0
+    indPts = 0
 
     ###################################################
     # Calculate net flux reduction due to diffuse reflection and sun to CB inverse square law
@@ -325,7 +325,6 @@ def project2CamView(posCB, posObs, attdeCam, xyzHelio, fluxDecay, fov, facetArea
     azelPts = vstack((az,el)).T
     fluxDecayOut = fluxDecay[ind]
     xyzVisCam = xyzBody.T
-    # current_facet_proj_area = 
     facetAreaCamview = facetArea * -cosCamPhase
     facetAreaCamview = facetAreaCamview.reshape(
         len(facetAreaCamview),1)
