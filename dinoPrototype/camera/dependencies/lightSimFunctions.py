@@ -164,7 +164,6 @@ def checkFoV(posCB, posObs, dcmBN, fov, radiusCB):
 
     if np.linalg.norm(posObs2cbBody) < radiusCB:
         chk = False
-    print("checkFOV: " + str(datetime.now() - start))
 
     return chk
 
@@ -186,7 +185,6 @@ def lumos(posCB, posObs, albedoCB, radCB, latRes, longRes):
     from numpy import deg2rad, sin, cos, vstack, pi
     from datetime import datetime
     start = datetime.now()
-    print(start)
     # Constants
     fluxRefDistance = 695700. # radius of the sun in km
     ########################   ############
@@ -258,7 +256,6 @@ def lumos(posCB, posObs, albedoCB, radCB, latRes, longRes):
     fluxDecayCB2obs = (radCB/distanceCB2obs)**2
     fluxDecayCB2obs = (1/distanceCB2obs)**2
     fluxDecayNet = fluxDecaySun2cb * ptsAlbedo * fluxDecayCB2obs
-    print("lumos: " + str(datetime.now()-start))
     return ptsHelio, fluxDecayNet, facetArea
 
 ###################################################
@@ -332,7 +329,6 @@ def project2CamView(posCB, posObs, attdeCam, xyzHelio, fluxDecay, fov, facetArea
     xyzCamviewHelio = np.matmul(np.linalg.inv(dcmBN),xyzCamviewHelio.T).T
     xyzVisCam = np.matmul(np.linalg.inv(dcmBN),xyzVisCam.T).T
 
-    print("project2CamView: " + str(datetime.now() - start))
 
     return azelPts, xyzCamviewHelio, xyzVisCam, fluxDecayOut, facetAreaCamview
 
@@ -367,7 +363,6 @@ def xyz2RADec(xyzCB):
         dec = dec.reshape(len(dec),1)
 
     raDec = (ra, dec)
-    print("xyz2RADec: " + str(datetime.now() - start))
     return raDec
 
 
@@ -418,7 +413,6 @@ def lightSim(attdeCam, posCam, posCB, fov, latRes, longRes, doPtSource,
                 # compute position of CB center in camera view
                 dcmBN = attdeCam
                 posObs2cbHelio = (posCB - posCam)
-                print(posObs2cbHelio)
                 posObs2cbBody = np.matmul(dcmBN, posObs2cbHelio.T)
 
                 raDec = xyz2RADec(posObs2cbBody)

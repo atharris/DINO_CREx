@@ -50,12 +50,10 @@
 #			detectorWidth
 #		resolutionHeight: # of pixels in same dimension as detectorHeight
 #		resolutionWidth: # of pixels in same dimension as detectorWidth
-#		angularHeight: Angular height of the detector field of view. 
-#			Calculated using calculateFOV()
-#		angularWidth: Angular width of the detector field of view. 
-#			Calculated using calculateFOV()
 #		body2cameraDCM: DCM describing orientation of camera relative to sc
 #		maxMag: Maximum magnitude star visible to this camera.
+#		maxMag: Minimum magnitude star visible to this camera (not physically
+#			realistic, but useful for debugging).
 #		qe: Quantum Effeciency Curve as a dict of two numpy arrays. 
 #			One must be called 'lambda', and the other must be called 
 #			must be called 'throughput'. qe['lambda'] must be an array of 
@@ -74,9 +72,16 @@
 #			1. qe['lambda'] and tc['lambda'] do not necessarily need to
 #			match as interpolateLambda will interpolate tc['throughput']
 #			so that they do.
-#		minLambdaBinSize: the width of bins in wavelength space to be
+#		lambdaBinSize: the width of bins in wavelength space to be
 #			returned from interpolateLambda().
+#		effectiveArea: effective area of camera in m^2
+#		darkCurrent: signal due to dark current in electron/s. Added to
+#			every pixel in image, plus poisson photon noise
+#		readSigma: standard deviation for gaussian read noise
+#		dnBinSize: number of photons per intensity bin
+#		dnDepthMax: saturation level of detector
 #		sc: Spacecraft object this camera is attached to
+#		msg: debug message used to turn features of camera on or off
 #		hotDark: NOT YET IMPLEMENTED!
 #
 #	Computed Variables:
@@ -92,6 +97,25 @@
 #			from db via loadAllStars()
 #		VT: Tycho Visual band magnitude of all stars loaded from db
 #		BVT: Tycho (B-V) color index of all stars loaded from db
+#		starID: DINO C-REx catalog number loaded from db
+#		T: Estimated stellar temperature loaded from db
+#		soldAngleSubtended: estimated solid angle subtended by each star.
+#			loaded from db.
+#		angularHeight: Angular height of the detector field of view. 
+#			Calculated using calculateFOV()
+#		angularWidth: Angular width of the detector field of view. 
+#			Calculated using calculateFOV()
+#		angularDiagonal: Angular size of maximum dimension of detector
+#			(the diagonal since it's a rectangular detector)
+#		solarBB: Blackbody intensity of the sun measured at the wavelengths
+#			in lambdaSet. Used by image.updateState() to calculate beacon
+#			intenisty incident on detector
+#		lambdaSet: unified set of wavelength values for blackbody,
+#			transmission, and quantum efficiency curves
+#		qe: qe curve interpolated at wavelengths of lambdaSet
+#		tc: transmission curve interpolated at wavelengths of lambdaSet
+#		sensitivityCurve: Full throughput curve (qe*tc)
+#		images: dictionary to hold images
 #
 #	Keyword Arguments:
 #		verbose: print more to standard out for debugging. Mostly timings.
@@ -161,7 +185,7 @@ class camera:
 			self.BVT = allstars['BVT']
 			self.starID = allstars['starID']
 			self.T = allstars['T']
-			self.reductionTerm = allstars['reductionTerm']
+			self.soldAngleSubtended = allstars['soldAngleSubtended']
 		else:
 			self.RA = array([])
 			self.DE = array([])
@@ -172,7 +196,7 @@ class camera:
 			self.BVT = array([])
 			self.starID = array([])
 			self.T = array([])
-			self.reductionTerm = array([])
+			self.soldAngleSubtended = array([])
 
 		self.solarBB = planck(5778,lambdaSet*1e-9)
 		self.lambdaSet = lambdaSet
@@ -245,7 +269,7 @@ class camera:
 		phi = []
 		theta = []
 		starID = []
-		reductionTerm = []
+		soldAngleSubtended = []
 		T = []
 
 		for row in c:
@@ -270,9 +294,9 @@ class camera:
 			#it yet. The temp doesn't matter if the reduction
 			#term is zero
 			try:
-				reductionTerm.append(float(row[5]))
+				soldAngleSubtended.append(float(row[5]))
 			except:
-				reductionTerm.append(float(0))
+				soldAngleSubtended.append(float(0))
 			try:
 				T.append(float(row[6]))
 			except:
@@ -286,7 +310,7 @@ class camera:
 		phi = array(phi)
 		theta = array(theta)
 		starID = array(starID)
-		reductionTerm = array(reductionTerm)
+		soldAngleSubtended = array(soldAngleSubtended)
 		T = array(T)
 
 		ind = VT < maxMag
@@ -299,7 +323,7 @@ class camera:
 		phi = phi[ind]
 		starID = starID[ind]
 		T = T[ind]
-		reductionTerm = reductionTerm[ind]
+		soldAngleSubtended = soldAngleSubtended[ind]
 		#convert spherical coordinates to cartesian in inertial
 		n1 = sin(deg2rad(phi))*cos(deg2rad(theta))
 		n2 = sin(deg2rad(phi))*sin(deg2rad(theta))
@@ -314,14 +338,14 @@ class camera:
 			'n2': n2,
 			'n3': n3,
 			'starID': starID,
-			'reductionTerm': reductionTerm,
+			'soldAngleSubtended': soldAngleSubtended,
 			'T': T	
 			}
 
 	###############################################################################
 	#
 	# calculateFOV() finds the angular size of a camera FOV using freshman-level
-	#	optics. 
+	#	optics. The method uses a thin lens approximation.
 	#
 	#	Inputs:
 	#		focalLength: Focal length of modeled lens 
@@ -359,11 +383,19 @@ class camera:
 
 	###############################################################################
 	#
-	# findLambdaSet() 
+	# findLambdaSet() Caclculates a set of wavelengths at which the QE and
+	#	transmission curves will be interpolated and the planck function will
+	#	be evaluated. It takes the smallest and largest wavelength values 
+	#	between qe and tc and calculates a numpy arange between them with a
+	#	spacing of lambdaBinSize
 	#
 	#	Inputs:
-	#		
+	#		qe: qe dictionary input into camera object by user
+	#		tc: tc dictionary input into camera object by user
+	#		lambdaBinSize: lambdaBinSize input into camera object by user
+	#
 	#	Outputs:
+	#		lambdaSet: unified set of wavelengths for tc/qe/planck
 	#
 	#	Notes:
 	#
@@ -379,26 +411,30 @@ class camera:
 
 	###############################################################################
 	#
-	# interpolateLambdaDependent() 
+	# interpolateLambdaDependent() this function creates unified tc and qe curves
+	#	that can be multiplied simply to create a full sensitivity curve
 	#
 	#	Inputs:
-	#		
+	#		ex: tc or qe dictionary input into camera object by user
+	#		lambdaSet: unified lambda set (output of camera.findLambdaSet)
+	#
 	#	Outputs:
+	#		interpolatedSet: qe or tc dictionary evaluated at wavelength values
+	#			of lambdSet
 	#
 	#	Notes: I moved the actual funciton to util within the python framework
 	#		because it was useful elsewhere, too.
-	# 		I let the function defined within the camera object to keep this
-	#		architecture in place for when we port to C++.
 	#
 	###############################################################################
 
 	def interpolateLambdaDependent(self, ex,lambdaSet):
 		from util import interpolateLambdaDependent
-		return interpolateLambdaDependent(ex,lambdaSet)
+		interpolatedSet = interpolateLambdaDependent(ex,lambdaSet)
+		return interpolatedSet
 
 	###############################################################################
 	#
-	# hotDark() 
+	# hotDark() is not yet implemented.
 	#
 	#	Inputs:
 	#		
@@ -418,11 +454,15 @@ class camera:
 
 	###############################################################################
 	#
-	# updateState() 
+	# updateState() is the master function of the camera object. It reads
+	#		takeImage from the BSK messaging system and opens, closes, or updates
+	#		images appropraitely 
 	#
 	#	Inputs:
-	#		
+	#		None.
+	#
 	#	Outputs:
+	#		None.
 	#
 	#	Notes: 
 	#
@@ -483,15 +523,18 @@ class camera:
 #	methods:
 #
 #	User Variables:
-#		alpha, beta, gamme: angles for (3-1-3) Euler angle rotation from
-#			inertial from to camera frame. SEE NOTES!
-#		camera: The camera object that the image is tied to.
-#		msg: A dictionary used to control which parts of the code are run.
-#			the main purpose is to control with bodies are removed by 
-#			removeOccultations, but the user can also control how images
-#			are made in order to demo and debug the code in various ways
+#		None. All variables in the image object are added dynamically
 #
 #	Computed Variables:
+# 		imageOpen: boolean that keeps track of if the image is currently open
+# 		alpha: list of euler angle rotatons about axis 3 at each timestep
+# 		beta: list of euler angle rotatons about axis 2 at each timestep
+# 		gamma: list of euler angle rotatons about axis 1 at each timestep
+# 		camera: camera object representing the camera this was taken by
+# 		DCM: list of DCMs from intertial to camera frame at each timestep
+# 		scenes: list of scene objects
+# 		starID: list of IDs for each star that is visible at any time
+#			during exposure
 # 		RA: Similar to the RA varable that is held in the camera object,
 #			but with only stars/facets that are in the FOC of this image. 
 # 		DE: Similar to the DE varable that is held in the camera object,
@@ -506,20 +549,17 @@ class camera:
 #			but with only stars/facets that are in the FOC of this image.
 # 		BVT: Similar to the BVT varable that is held in the camera object,
 #			but with only stars/facets that are in the FOC of this image.
-# 		c1: Similar to the c1 varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this image.
-# 		c2: Similar to the c2 varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this image.
-# 		c3: Similar to the c3 varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this image.
-# 		pixel: Similar to the pixel varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this image.
-# 		line: Similar to the line varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this image.
-# 		color:
-#		detectorArray:
+# 		c1: 1st component of Camera frame unit vector of all stars visible
+#			at any time in this image
+# 		c2: 2nd component of Camera frame unit vector of all stars visible
+#			at any time in this image
+# 		c3: 3rd component of Camera frame unit vector of all stars visible
+#			at any time in this image
+#		detectorArray: array with summed intensities of light incident on
+#			each pixel
 #
 #	Keyword Arguments:
+#		None
 #
 #	Notes:
 #		-alpha, beta, gamma really need to be removed here. Although the
@@ -551,7 +591,6 @@ class image:
 		self.beta = []
 		self.gamma = []
 		self.camera = camera
-		self.msg = 0
 		self.RA = 0
 		self.DE = 0
 		self.n1 = 0
@@ -564,19 +603,29 @@ class image:
 		self.c3 = 0
 		self.DCM = []
 		self.scenes = []
-		self.frames = []
 		self.detectorArray = []
 		self.starID = []
 
 	###############################################################################
 	#
-	# updateState() 
+	# updateState() is the master function of the image object. It does one of
+	#		two things. If self.camera.msg['takeImage'] == 1, it will save the
+	#		current inertial to camera DCM to the DCM list. if  
+	#		self.camera.msg['takeImage'] == 0, then it will find all stars and
+	#		bodies that are visible at any time in the exposure and add them to 
+	#		attirbutes to be used when making scenes. Next, it takes each DCM,
+	#		calculates which stars and bodies are visible at each time step
+	#		and creates a scene.
 	#
 	#	Inputs:
-	#		
+	#		None.
+	#
 	#	Outputs:
+	#		None. Adds scenes to image object and updates most attributes of
+	#		the image.
 	#
 	#	Notes: 
+	#		None.
 	#
 	###############################################################################
 
@@ -587,7 +636,8 @@ class image:
 			#off a DCM for that scene. The image will only be created once
 			#self.camera.msg['takeImage'] is set to zero and
 			#image.updateState() is run.
-			self.DCM.append(self.camera.sc.attitudeDCM)
+			self.DCM.append(self.camera.body2cameraDCM.dot(
+				self.camera.sc.attitudeDCM))
 		else:
 			from scipy.linalg import inv
 			from numpy import arctan2, arcsin, array, zeros, pi, floor
@@ -619,7 +669,7 @@ class image:
 				self.beta.append(arcsin(self.DCM[i][0,2]))
 				self.gamma.append(arctan2(self.DCM[i][1,2],self.DCM[i][2,2]))
 
-			#this is getting sloppy... When we call findStarsInFOV()
+			#When we call findStarsInFOV()
 			#to find all the stars in the exposure at any time, we want
 			#to find all physical objects. This way we only render bodies
 			#once per exposure. All the rest is just filtering them out
@@ -650,7 +700,7 @@ class image:
 				self.camera.n1, self.camera.n2, self.camera.n3,
 				self.camera.VT, self.camera.BVT, self.camera.T,
 				self.camera.T, #spoof so the fcn won't break :-(
-				self.camera.reductionTerm,
+				self.camera.soldAngleSubtended,
 				self.camera.maxMag, 
 				self.camera.starID,
 				fullExposureMsg
@@ -666,7 +716,7 @@ class image:
 			self.c3 = FOV['c3']
 			self.T = FOV['T']
 			self.starID = FOV['starID']
-			self.reductionTerm = FOV['reductionTerm']
+			self.soldAngleSubtended = FOV['soldAngleSubtended']
 			I = []
 			import matplotlib.pyplot as plt
 
@@ -678,9 +728,9 @@ class image:
 					flux_per_m2_per_nm_per_sr_at_star = self.camera.solarBB
 				else:
 					flux_per_m2_per_nm_per_sr_at_star = planck(T,self.camera.lambdaSet*1e-9)
-				reductionTerm = self.reductionTerm[i]
+				soldAngleSubtended = self.soldAngleSubtended[i]
 				
-				flux_per_m2_per_nm_per_sr_at_obs = flux_per_m2_per_nm_per_sr_at_star*reductionTerm
+				flux_per_m2_per_nm_per_sr_at_obs = flux_per_m2_per_nm_per_sr_at_star*soldAngleSubtended
 				flux_per_m2_per_nm = pi*flux_per_m2_per_nm_per_sr_at_obs
 				flux_per_m2 = flux_per_m2_per_nm*self.camera.lambdaBinSize
 				flux = flux_per_m2*self.camera.effectiveArea
@@ -717,7 +767,7 @@ class image:
 					self.n1, self.n2, self.n3,
 					self.VT, self.BVT, self.T,
 					self.I,
-					self.reductionTerm,
+					self.soldAngleSubtended,
 					self.camera.maxMag, 
 					self.starID,
 					sceneMsg
@@ -740,7 +790,6 @@ class image:
 					)
 			i = 0
 			for eachScene in self.scenes:
-				print(i)
 				i+=1
 				if self.camera.msg['psf']:
 					psf = self.psf(1)
@@ -806,22 +855,49 @@ class image:
 	# findStarsInFOV() finds the pixel and line coordinates of a 
 	#
 	#	Inputs:
-	#		
+	#		alpha: euler angle rotation about axis 3 at t0
+	#		beta: euler angle rotation about axis 2 at t0
+	#		gamma: euler angle rotation about axis 1 at t0
+	#		alphaMax: largest  alpha at any time
+	#		betaMax: largest beta any time
+	#		alphaMin: smallest  alpha at any time
+	#		betaMin: smallest beta any time
+	#		halfAlpha: Half the angular height of the camera
+	#		halfBeta: Half the angular width of the camera
+	#		alphaResolution: resolution in the line dimension of the camera
+	#		betaResolution: resolution in the pixel dimension of the camera
+	#		RA: RA of all stars that may be in FOV
+	#		DE: DE of all stars that may be in FOV
+	#		n1: inertial coord n1 of all stars that may be in FOV
+	#		n2: inertial coord n2 of all stars that may be in FOV
+	#		n3: inertial coord n3 of all stars that may be in FOV
+	#		VT: Tycho visual magnitude of all stars that may be in FOV
+	#		BVT: Tycho color index of all stars that may be in FOV
+	#		T: Computed temperature of all stars that may be in FOV
+	#		I: Computed incident intensity of all stars that may be in FOV
+	#		soldAngleSubtended: soldAngleSubtended of all stars that may be in FOV
+	#		maxMag: maximum magnitude of camera
+	#		starIDs: starIDs of all stars that may be in FOV
+	#		msg: debug message passed from camera
+	#
 	#	Outputs:
 	#		A dict with the following entries:
-	# 			pixel:
-	# 			line:
-	# 			RA:
-	# 			DE:
-	# 			n1:
-	# 			n2:
-	# 			n3:
-	# 			VT:
-	# 			BVT:
-	# 			c1:
-	# 			c2:
-	# 			c3:
-	#
+	# 			pixel: pixel coord of all stars in FOV
+	# 			line: line cood of all stars in FOV
+	# 			RA: RA of all stars in FOV
+	# 			DE: DE of all stars in FOV
+	# 			n1: inertial coord n1 of all stars in FOV
+	# 			n2: inertial coord n2 of all stars in FOV
+	# 			n3: inertial coord n3 of all stars in FOV
+	# 			VT: Tycho visual magnitude of all stars in FOV
+	# 			BVT: Tycho color index magnitude of all stars in FOV
+	# 			c1: camera frame coord c1 of all stars that may be in FOV
+	# 			c2: camera frame coord c2 of all stars that may be in FOV
+	# 			c3: camera frame coord c3 of all stars that may be in FOV
+	#			starID : starID of all stars in FOV
+	#			I: Computed incident intensity of all stars in FOV
+	#			T: T of all stars in FOV
+	#			soldAngleSubtended': soldAngleSubtended of all stars in FOV
 	#	Notes:
 	#
 	###########################################################################
@@ -841,7 +917,7 @@ class image:
 		RA, DE, 
 		n1, n2, n3,
 		VT, BVT,T,I,
-		reductionTerm,
+		soldAngleSubtended,
 		maxMag, 
 		starIDs,
 		msg,
@@ -873,12 +949,11 @@ class image:
 					DE = DE[occCheck]
 					starIDs = starIDs[occCheck]
 					T = T[occCheck]
-					reductionTerm = reductionTerm[occCheck]
+					soldAngleSubtended = soldAngleSubtended[occCheck]
 					I = I[occCheck]
 
 
 				if msg['addBod']:
-					print(body.name)
 					from lightSimFunctions import lightSim
 					DCM = self.camera.body2cameraDCM.dot(self.camera.sc.attitudeDCM)
 					facets = lightSim(
@@ -933,24 +1008,21 @@ class image:
 					starIDs = append(starIDs, zeros(len(surf_n1)))
 
 					if len(surf_n1) > 1:
-						print('>1')
-						reductionTerm = append(
-							reductionTerm,
+						soldAngleSubtended = append(
+							soldAngleSubtended,
 							facets['netAlbedo']*\
 							facets['facetArea'])
 						I = append(I,
 							facets['netAlbedo']*\
 							facets['facetArea'])
 					else:
-						print('1')
-						reductionTerm = append(
-							reductionTerm,
+						soldAngleSubtended = append(
+							soldAngleSubtended,
 							sum(facets['netAlbedo']*\
 							facets['facetArea']))
 						I = append(I,
 							sum(facets['netAlbedo']*\
 							facets['facetArea']))
-						print('2')
 
 		c2_max = alphaMax + sin(deg2rad(halfAlpha))
 		c2_min = alphaMin - sin(deg2rad(halfAlpha))
@@ -1005,7 +1077,7 @@ class image:
 		c3 = c3[ind]
 		starIDs = starIDs[ind]
 		T = T[ind]
-		reductionTerm = reductionTerm[ind]
+		soldAngleSubtended = soldAngleSubtended[ind]
 		I = I[ind]
 
 		#using similar triangles
@@ -1031,7 +1103,7 @@ class image:
 			'starID' : starIDs,
 			'I': I,
 			'T': T,
-			'reductionTerm': reductionTerm
+			'soldAngleSubtended': soldAngleSubtended
 		}
 	###########################################################################
 	#
@@ -1083,24 +1155,33 @@ class image:
 
 	###########################################################################
 	#
-	# gaussian() 
+	# gaussian() calculates the value of a gaussian r away from the center
+	#	with standard deviation sigma. Assumes covariance is a multiple of
+	#	identity
 	#
 	#	Inputs:
+	#		r: distance of point in question from center of gaussian
+	#		sigma: standard deviation of gaussian
 	#
 	#	Outputs:
+	#		I: Intensity of gaussian
 	#
 	###########################################################################
 	def gaussian(self,r,sigma):
 		from numpy import exp
-		return exp(-r**2/(2*sigma**2))
+		I = exp(-r**2/(2*sigma**2))
+		return I
 
 	###########################################################################
 	#
-	# psf() 
+	# psf() computes the point spread function for point sources in an image
 	#
 	#	Inputs:
+	#		sigma: standard deviation of gaussian point spread.
 	#
 	#	Outputs:
+	#		psfDict: dictionary with x, y, and I values for PSF. x and y
+	#			convert to pixel/line, and I is intensity.
 	#
 	###########################################################################
 	def psf(self,sigma):
@@ -1121,15 +1202,27 @@ class image:
 			I = append(I,ones(len(theta))*self.gaussian(r,1))
 		I = I/sum(I)
 
-		return { "x":x, "y":y, "I":I }
+		psfDict = { "x":x, "y":y, "I":I }
+
+		return psfDict
 
 	###########################################################################
 	#
-	# rasterize() 
+	# rasterize() floors the pixel and line coordinates and the uses pandas
+	#		to sum all intensity that falls in the same bin.
 	#
 	#	Inputs:
+	#		pixelResolution: number of pixels in the width dimension of the
+	#			detector array
+	# 		lineResolution: number of pixels in the height dimension of the
+	#			detector array
+	# 		pixelCoord: x (pixel) coordinate of every point source in scene
+	# 		lineCoord: y (line) coordinate of every point source in scene
+	#		intensity: incident intensity of every point source in scene
 	#
 	#	Outputs:
+	#		detectorArray: array with summed intenisty for every pixel in
+	#			the detector array
 	#
 	###########################################################################
 	def rasterize(self,pixelResolution,lineResolution,pixelCoord,lineCoord,intensity):
@@ -1165,29 +1258,36 @@ class image:
 
 	###########################################################################
 	#
-	# addReadNoise() 
+	# addReadNoise() adds gaussian read noise. It is called once per image.
 	#
 	#	Inputs:
+	#		detectorArray: array that read noise is to be added to
+	#		sigma: standard deviation of the gaussian noise to be added
 	#
 	#	Outputs:
+	#		detectorArray: detectorArray with read noise added
 	#
 	###########################################################################
 	def addReadNoise(self,detectorArray,sigma):
 		from numpy.random import randn
-		return detectorArray + sigma*randn(len(detectorArray))
+		detectorArray = detectorArray + sigma*randn(len(detectorArray))
+		return detectorArray
 
 	###########################################################################
 	#
-	# addPoissonNoise() 
+	# addPoissonNoise() adds poisson noise
 	#
 	#	Inputs:
+	#		I: array of intensities to add poisson nouse to
 	#
 	#	Outputs:
+	#		I: intensity array with poisson noise added
 	#
 	###########################################################################
 	def addPoissonNoise(self, I):
 		from numpy.random import poisson
-		return I + poisson(I)
+		I = I + poisson(I)
+		return I
 
 	###########################################################################
 	#	planck() is a function that calculates a planck blackbody function
@@ -1235,11 +1335,15 @@ class image:
 		return sigma*T**4
 
 	###########################################################################
-	#	photonEnergy() 
+	#	photonEnergy() calculates the energy per photon at a wavelength lam.
+	#		it is used to convert how many photons are incident on the 
+	#		detector per joule of energy
 	#
 	#	Inputs:
+	#		lam: array of wavelength values to evaluate
 	#
 	#	Outputs:
+	#		photonEnergy: energy of a photon at each lam value
 	#
 	#	Notes:
 	#
@@ -1249,7 +1353,8 @@ class image:
 		from em import photonEnergy
 		return photonEnergy(lam)
 		from constants import h, c
-		return h*c/lam
+		photonEnergy = h*c/lam
+		return photonEnergy
 
 	###########################################################################
 	#	addZodiacalLight() 
@@ -1260,7 +1365,13 @@ class image:
 	#	Outputs:
 	#		zodiacalFlux: 
 	#
-	#	Notes:
+	#	Notes: the data represented in pioneer10BkdgStarLight comes from
+	#	Lienert's 1997 reference on diffuse night sky brightness on p39.
+	# 
+	#	Units for the array are S10_sun, given by leinart to be 1.28e-8*.156
+	#	W/m^2/sr
+	#
+	#	Rows of the array represent bins of declination.
 	#
 	# ###########################################################################
 	def addZodiacalLight(self):
@@ -1309,7 +1420,7 @@ class image:
 			[180, 166, 152, 139, 127, 116, 105, 82, 65, 56]
 		])
 
-		#zodiacalLight = zodiacalLight*1.28e-8*.156
+		zodiacalLight = zodiacalLight*1.18e-8*.156
 
 		return zodiacalLight[camRAbin,camDEbin]
 
@@ -1320,7 +1431,8 @@ class image:
 	#		attitudeDCM: DCM for the inertial to camera attitude.
 	#		
 	#	Outputs:
-	#		bkgdFlux: 
+	#		bkgdFlux: flux to be applied to every pixel in the detector array
+	#		representing the brightness of unresolved stars
 	#
 	#	Notes: the data represented in pioneer10BkdgStarLight comes from
 	#	Lienert's 1997 reference on diffuse night sky brightness on p78 and 79.
@@ -1337,8 +1449,11 @@ class image:
 
 		from numpy import array, arcsin, arctan2, rad2deg, deg2rad, flip
 
-		decBins = array([-80, -70, -60, -50, -40, -30, -24, -20, -16, -12, -8, -4, 0,4, 8, 12, 16, 20, 24, 30, 40, 50, 60, 70, 80])
-		raBins = array([0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,180,190,200,210,220,230,240,250,260,270,280,290,300,310,320,330,340,350])
+		decBins = array([-80, -70, -60, -50, -40, -30, -24, -20, -16, -12, -8, 
+			-4, 0,4, 8, 12, 16, 20, 24, 30, 40, 50, 60, 70, 80])
+		raBins = array([0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,
+			160,170,180,190,200,210,220,230,240,250,260,270,280,290,300,310,
+			320,330,340,350])
 
 		C12 = self.camera.sc.attitudeDCM[0,1]
 		C11 = self.camera.sc.attitudeDCM[0,0]
@@ -1362,54 +1477,126 @@ class image:
 
 
 		pioneer10BkdgStarLight = array([
-			[ 68,  55,  55,  56,  49,   35,  39,  40,  38,  42,  49,  46,  50,  56,  43,  51,  59,  56,  61,  71, 116, 192, 284, 162, 124],                  
-			[ 74,  74,  42,  38,  36,   35,  34,  43,  39,  34,  44,  45,  35,  48,  47,  51,  55,  52,  63,  64, 108, 181, 261, 185, 121],
-			[ 78,  67,  51,  44,  40,   31,  36,  40,  39,  39,  43,  38,  32,  53,  45,  40,  56,  58,  57,  79,  99, 158, 250, 176, 106],
-			[ 78,  53,  48,  44,  39,   38,  34,  46,  45,  41,  40,  51,  43,  47,  64,  56,  61,  56,  66,  82,  97, 187, 265, 157, 110],
-			[ 73,  69,  49,  42,  36,   36,  45,  42,  40,  44,  45,  48,  53,  49,  59,  54,  61,  62,  60,  74, 116, 177, 240, 150, 109],
-			[ 72,  63,  56,  41,  48,   50,  44,  41,  44,  51,  49,  56,  60,  59,  61,  70,  74,  79,  78,  85, 141, 168, 205, 140, 111],
-			[ 77,  71,  53,  52,  48,   50,  51,  52,  52,  57,  60,  68,  68,  73,  88,  85,  82,  90, 103, 108, 133, 183, 175, 128, 117],
-			[ 81,  90,  72,  62,  54,   58,  66,  64,  64,  74,  76,  75,  87,  82,  93,  95, 112, 122, 102, 104, 189, 164, 161, 137, 103],
-			[ 81, 341,  64,  72,  64,   63,  80,  84,  90, 115, 134, 131, 136, 135, 135, 125, 146, 143, 130, 179, 214, 284, 125, 115,  85],
-			[ 88, 226,  88,  93,  83,   90, 117, 123, 138, 147, 155, 158, 174, 174, 220, 238, 258, 218, 246, 227, 169, 137, 112,  91,  93],
-			[ 98, 107, 114, 116, 135,  176, 193, 248, 240, 248, 225, 253, 283, 280, 284, 263, 229, 233, 207, 210, 145, 119, 108,  77,  84],
-			[102, 111, 141, 182, 218,  315, 331, 321, 297, 312, 295, 267, 225, 206, 182, 184, 165, 135, 138, 105, 108,  93,  81,  73,  77],
-			[110, 141, 176, 275, 308,  385, 327, 288, 249, 200, 166, 178, 173, 167, 155,  -1,  -1,  -1,  -1, 105,  75,  63,  75,  79,  73],
-			[113, 142, 224, 337, 272,  274, 201, 156, 137,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  77,  52,  57,  74,  70],
-			[119, 206, 372, 294, 398,  175, 114, 116, 126, 109, 101,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  53,  57,  80,  65],
-			[116, 224, 490, 334, 193,  120, 104,  85,  72,  68,  65,  65,  66,  67,  68,  -1,  -1,  -1,  -1,  -1,  -1,  52,  55,  57,  55],
-			[116, 265, 846, 250, 156,  100,  75,  74,  62,  65,  57,  68,  71,  71,  65,  62,  59,  60,  58,  55,  52,  46,  52,  46,  49],
-			[141, 308, 744, 229, 116,   88,  76,  59,  63,  61,  56,  52,  55,  60,  68,  66,  58,  52,  52,  50,  60,  36,  51,  54,  52],
-			[145, 340, 632, 230,  99,   78,  61,  61,  57,  58,  54,  56,  54,  54,  41,  47,  50,  31,  45,  38,  37,  43,  45,  38,  52],
-			[137, 335, 450, 214, 120,   72,  67,  59,  63,  54,  51,  42,  43,  55,  45,  41,  41,  36,  41,  33,  37,  35,  42,  50,  51],
-			[145, 410, 565, 262, 115,   91,  77,  59,  53,  58,  51,  49,  44,  48,  40,  34,  39,  42,  38,  38,  34,  37,  45,  50,  58],
-			[154, 351, 516, 256, 144,   95,  73,  68,  66,  71,  58,  52,  47,  50,  49,  44,  57,  44,  40,  40,  40,  43,  43,  48,  59],
-			[153, 337, 559, 284, 173,  102,  87,  81,  80,  77,  54,  53,  58,  48,  53,  47,  42,  47,  54,  38,  35,  44,  40,  54,  61],
-			[156, 310, 538, 481, 249,  134, 110,  88,  97,  79,  77,  62,  71,  60,  54,  50,  52,  43,  46,  41,  55,  44,  49,  61,  69],
-			[146, 262, 537, 357, 242,  200, 152, 137, 106, 101,  82,  83,  77,  77,  64,  64,  54,  54,  55,  53,  47,  51,  53,  60,  68],
-			[128, 213, 373, 571, 485,  366, 217, 145, 141, 145, 108, 110, 101,  89,  87,  79,  75,  68,  67,  59,  57,  59,  56,  65,  71],
-			[127, 190, 284, 494, 550,  571, 344, 356, 301, 172, 144, 119, 136, 120, 123, 119, 116,  90,  85,  89,  81,  66,  64,  78,  75],
-			[115, 155, 205, 284, 626, 1393, 649, 498, 474, 261, 199, 162, 204, 225, 201, 166, 157, 148, 132, 120,  94,  96,  73,  82,  76],
-			[101, 106, 150, 135, 262,  461, 481, 534, 542, 515, 509, 343, 210, 254, 382, 341, 237, 218, 206, 176, 145, 111,  96,  91,  81],
-			[103, 113, 129, 191, 141,  183, 211, 246, 272, 274, 260, 257, 331, 366, 374, 271, 283, 250, 327, 387, 228, 168, 117,  90,  89],
-			[102, 107,  93,  99, 112,  112, 117, 134, 144, 143, 162, 149, 178, 215, 237, 323, 366, 407, 316, 421, 403, 245, 163, 102,  93],
-			[ 93,  88,  78,  80,  77,   81,  89,  85,  89,  91,  91, 109, 128, 138, 145, 174, 168, 227, 240, 288, 280, 292, 187, 133,  94],
-			[ 87,  81,  72,  65,  64,   73,  70,  73,  72,  77, 100,  75,  85,  93, 109, 107, 131, 119, 153, 192, 279, 286, 225, 136, 105],
-			[ 75,  76,  56,  54,  60,   42,  66,  60,  56,  67,  67,  63,  81,  78,  78, 103,  85,  93, 105, 142, 188, 384, 259, 167, 119],
-			[ 66,  69,  57,  52,  51,   53,  43,  48,  58,  64,  57,  47,  49,  67,  65,  58,  63,  76,  76,  97, 171, 268, 241, 178, 122],
-			[ 66,  64,  59,  43,  46,   56,  48,  49,  43,  50,  44,  47,  62,  48,  55,  59,  61,  69,  72,  84, 104, 203, 256, 166, 110] 
+			[ 68,  55,  55,  56,  49,   35,  39,  40,  38,  42,  49,  46,  50,
+			  56,  43,  51,  59,  56,  61,  71, 116, 192, 284, 162, 124],                  
+			[ 74,  74,  42,  38,  36,   35,  34,  43,  39,  34,  44,  45,  35,
+			  48,  47,  51,  55,  52,  63,  64, 108, 181, 261, 185, 121],
+			[ 78,  67,  51,  44,  40,   31,  36,  40,  39,  39,  43,  38,  32,
+			  53,  45,  40,  56,  58,  57,  79,  99, 158, 250, 176, 106],
+			[ 78,  53,  48,  44,  39,   38,  34,  46,  45,  41,  40,  51,  43,
+			  47,  64,  56,  61,  56,  66,  82,  97, 187, 265, 157, 110],
+			[ 73,  69,  49,  42,  36,   36,  45,  42,  40,  44,  45,  48,  53,
+			  49,  59,  54,  61,  62,  60,  74, 116, 177, 240, 150, 109],
+			[ 72,  63,  56,  41,  48,   50,  44,  41,  44,  51,  49,  56,  60,
+			  59,  61,  70,  74,  79,  78,  85, 141, 168, 205, 140, 111],
+			[ 77,  71,  53,  52,  48,   50,  51,  52,  52,  57,  60,  68,  68,
+			  73,  88,  85,  82,  90, 103, 108, 133, 183, 175, 128, 117],
+			[ 81,  90,  72,  62,  54,   58,  66,  64,  64,  74,  76,  75,  87,
+			  82,  93,  95, 112, 122, 102, 104, 189, 164, 161, 137, 103],
+			[ 81, 341,  64,  72,  64,   63,  80,  84,  90, 115, 134, 131, 136,
+			 135, 135, 125, 146, 143, 130, 179, 214, 284, 125, 115,  85],
+			[ 88, 226,  88,  93,  83,   90, 117, 123, 138, 147, 155, 158, 174,
+			 174, 220, 238, 258, 218, 246, 227, 169, 137, 112,  91,  93],
+			[ 98, 107, 114, 116, 135,  176, 193, 248, 240, 248, 225, 253, 283,
+			 280, 284, 263, 229, 233, 207, 210, 145, 119, 108,  77,  84],
+			[102, 111, 141, 182, 218,  315, 331, 321, 297, 312, 295, 267, 225,
+			 206, 182, 184, 165, 135, 138, 105, 108,  93,  81,  73,  77],
+			[110, 141, 176, 275, 308,  385, 327, 288, 249, 200, 166, 178, 173,
+			 167, 155,  -1,  -1,  -1,  -1, 105,  75,  63,  75,  79,  73],
+			[113, 142, 224, 337, 272,  274, 201, 156, 137,  -1,  -1,  -1,  -1,
+			  -1,  -1,  -1,  -1,  -1,  -1,  -1,  77,  52,  57,  74,  70],
+			[119, 206, 372, 294, 398,  175, 114, 116, 126, 109, 101,  -1,  -1,
+			  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  53,  57,  80,  65],
+			[116, 224, 490, 334, 193,  120, 104,  85,  72,  68,  65,  65,  66,
+			  67,  68,  -1,  -1,  -1,  -1,  -1,  -1,  52,  55,  57,  55],
+			[116, 265, 846, 250, 156,  100,  75,  74,  62,  65,  57,  68,  71,
+			  71,  65,  62,  59,  60,  58,  55,  52,  46,  52,  46,  49],
+			[141, 308, 744, 229, 116,   88,  76,  59,  63,  61,  56,  52,  55,
+			  60,  68,  66,  58,  52,  52,  50,  60,  36,  51,  54,  52],
+			[145, 340, 632, 230,  99,   78,  61,  61,  57,  58,  54,  56,  54,
+			  54,  41,  47,  50,  31,  45,  38,  37,  43,  45,  38,  52],
+			[137, 335, 450, 214, 120,   72,  67,  59,  63,  54,  51,  42,  43,
+			  55,  45,  41,  41,  36,  41,  33,  37,  35,  42,  50,  51],
+			[145, 410, 565, 262, 115,   91,  77,  59,  53,  58,  51,  49,  44,
+			  48,  40,  34,  39,  42,  38,  38,  34,  37,  45,  50,  58],
+			[154, 351, 516, 256, 144,   95,  73,  68,  66,  71,  58,  52,  47,
+			  50,  49,  44,  57,  44,  40,  40,  40,  43,  43,  48,  59],
+			[153, 337, 559, 284, 173,  102,  87,  81,  80,  77,  54,  53,  58,
+			  48,  53,  47,  42,  47,  54,  38,  35,  44,  40,  54,  61],
+			[156, 310, 538, 481, 249,  134, 110,  88,  97,  79,  77,  62,  71,
+			  60,  54,  50,  52,  43,  46,  41,  55,  44,  49,  61,  69],
+			[146, 262, 537, 357, 242,  200, 152, 137, 106, 101,  82,  83,  77,
+			  77,  64,  64,  54,  54,  55,  53,  47,  51,  53,  60,  68],
+			[128, 213, 373, 571, 485,  366, 217, 145, 141, 145, 108, 110, 101,
+			  89,  87,  79,  75,  68,  67,  59,  57,  59,  56,  65,  71],
+			[127, 190, 284, 494, 550,  571, 344, 356, 301, 172, 144, 119, 136,
+			 120, 123, 119, 116,  90,  85,  89,  81,  66,  64,  78,  75],
+			[115, 155, 205, 284, 626, 1393, 649, 498, 474, 261, 199, 162, 204,
+			 225, 201, 166, 157, 148, 132, 120,  94,  96,  73,  82,  76],
+			[101, 106, 150, 135, 262,  461, 481, 534, 542, 515, 509, 343, 210,
+			 254, 382, 341, 237, 218, 206, 176, 145, 111,  96,  91,  81],
+			[103, 113, 129, 191, 141,  183, 211, 246, 272, 274, 260, 257, 331,
+			 366, 374, 271, 283, 250, 327, 387, 228, 168, 117,  90,  89],
+			[102, 107,  93,  99, 112,  112, 117, 134, 144, 143, 162, 149, 178,
+			 215, 237, 323, 366, 407, 316, 421, 403, 245, 163, 102,  93],
+			[ 93,  88,  78,  80,  77,   81,  89,  85,  89,  91,  91, 109, 128,
+			 138, 145, 174, 168, 227, 240, 288, 280, 292, 187, 133,  94],
+			[ 87,  81,  72,  65,  64,   73,  70,  73,  72,  77, 100,  75,  85,
+			  93, 109, 107, 131, 119, 153, 192, 279, 286, 225, 136, 105],
+			[ 75,  76,  56,  54,  60,   42,  66,  60,  56,  67,  67,  63,  81,
+			  78,  78, 103,  85,  93, 105, 142, 188, 384, 259, 167, 119],
+			[ 66,  69,  57,  52,  51,   53,  43,  48,  58,  64,  57,  47,  49,
+			  67,  65,  58,  63,  76,  76,  97, 171, 268, 241, 178, 122],
+			[ 66,  64,  59,  43,  46,   56,  48,  49,  43,  50,  44,  47,  62,
+			  48,  55,  59,  61,  69,  72,  84, 104, 203, 256, 166, 110] 
 			])
 
 
+		bkgdFlux = pioneer10BkdgStarLight[camRAbin,camDEbin][0]*1.28e-8*.156
 
-		return pioneer10BkdgStarLight[camRAbin,camDEbin][0]
+		return bkgdFlux
 
 ###############################################################################
 #	scene is a class for collecting each integration step during an exposure.
 #	These will then be summed to make frames, which are the physically relevant
 #	unit of an image. frames are then summed to create the full images.
 #
+#	User Variables:
+#		None. All variables in the image object are added dynamically
 #
+#	Computed Variables:
+# 		starIDs: Similar to the starID varable that is held in the camera 
+#			object, but with only stars/facets that are in the FOC of 
+#			this scene. 
+# 		RA: Similar to the RA varable that is held in the camera object,
+#			but with only stars/facets that are in the FOC of this scene. 
+# 		DE: Similar to the DE varable that is held in the camera object,
+#			but with only stars/facets that are in the FOC of this scene.
+# 		n1: Similar to the n1 varable that is held in the camera object,
+#			but with only stars/facets that are in the FOC of this scene.
+# 		n2: Similar to the n2 varable that is held in the camera object,
+#			but with only stars/facets that are in the FOC of this scene.
+# 		n3: Similar to the n3 varable that is held in the camera object,
+#			but with only stars/facets that are in the FOC of this scene.
+# 		VT: Similar to the VT varable that is held in the camera object,
+#			but with only stars/facets that are in the FOC of this scene.
+# 		BVT: Similar to the BVT varable that is held in the camera object,
+#			but with only stars/facets that are in the FOC of this scene.
+# 		c1: Similar to the c1 varable that is held in the image object,
+#			but with only stars/facets that are in the FOC of this scene.
+# 		c2: Similar to the c2 varable that is held in the image object,
+#			but with only stars/facets that are in the FOC of this scene.
+# 		c3: Similar to the c3 varable that is held in the image object,
+#			but with only stars/facets that are in the FOC of this scene.
+# 		I: Similar to the I varable that is held in the image object,
+#			but with only stars/facets that are in the FOC of this scene.
+# 		pixel: Similar to the pixel varable that is held in the image object,
+#			but with only stars/facets that are in the FOC of this scene.
+# 		line: Similar to the line varable that is held in the image object,
+#			but with only stars/facets that are in the FOC of this scene.
+#		detectorArray: array of summed intensities on each pixel during
+#			the integration timestep of this scene. Does not include noise.
+#			Added by image.updateState()
 ###############################################################################
 
 class scene:
