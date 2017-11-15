@@ -31,10 +31,10 @@
 #	message read in from the navigation executive.
 #
 #	Methods:
-#		load_all_stars()
+#		loadAllStars()
 #		calculateFOV()
 #		findLambdaSet()
-#		interpolate_lambda()
+#		interpolateLambda()
 #		calculateHotDark()
 #		updateState()
 #
@@ -63,7 +63,7 @@
 #			percentages detected at the given 'lambda'. qe['lambda'] must
 #			be in nm, and qe['throughput'] should be a number between 0 and
 #			1. qe['lambda'] and tc['lambda'] do not necessarily need to
-#			match as interpolate_lambda will interpolate qe['throughput']
+#			match as interpolateLambda will interpolate qe['throughput']
 #			so that they do.
 #		tc: Transmission Curve as a dict of two numpy arrays. 
 #			One must be called 'lambda', and the other must be called 
@@ -72,10 +72,10 @@
 #			percentages transmitted at the given 'lambda'. tc['lambda'] must
 #			be in nm, and tc['throughput'] should be a number between 0 and
 #			1. qe['lambda'] and tc['lambda'] do not necessarily need to
-#			match as interpolate_lambda will interpolate tc['throughput']
+#			match as interpolateLambda will interpolate tc['throughput']
 #			so that they do.
 #		minLambdaBinSize: the width of bins in wavelength space to be
-#			returned from interpolate_lambda().
+#			returned from interpolateLambda().
 #		sc: Spacecraft object this camera is attached to
 #		hotDark: NOT YET IMPLEMENTED!
 #
@@ -85,11 +85,11 @@
 #		RA: Right ascension of all stars loaded from db
 #		DE: Declination of all stars loaded from db
 #		n1: First unit vector component in inertial space of all stars loaded 
-#			from db via load_all_stars()
+#			from db via loadAllStars()
 #		n2: Second unit vector component in inertial space of all stars loaded 
-#			from db via load_all_stars()
+#			from db via loadAllStars()
 #		n3: Third unit vector component in inertial space of all stars loaded 
-#			from db via load_all_stars()
+#			from db via loadAllStars()
 #		VT: Tycho Visual band magnitude of all stars loaded from db
 #		BVT: Tycho (B-V) color index of all stars loaded from db
 #
@@ -115,7 +115,7 @@ class camera:
 		lambdaBinSize,
 		effectiveArea,
 		darkCurrent,
-		read_sigma,
+		readSigma,
 		dnBinSize,
 		dnDepthMax,
 		sc,
@@ -144,12 +144,12 @@ class camera:
 			)
 
 		if msg['addStars']:
-			allstars = self.load_all_stars(db, maxMag, minMag, verbose=verbose)
+			allstars = self.loadAllStars(db, maxMag, minMag, verbose=verbose)
 		lambdaSet = self.findLambdaSet(qe, tc, lambdaBinSize)
 		qe = self.interpolateLambdaDependent(qe,lambdaSet)
 		tc = self.interpolateLambdaDependent(tc,lambdaSet) 
-		sensitivity_curve = qe['throughput']*tc['throughput']
-		lambdaSet = lambdaSet[sensitivity_curve != 0]
+		sensitivityCurve = qe['throughput']*tc['throughput']
+		lambdaSet = lambdaSet[sensitivityCurve != 0]
 
 		if msg['addStars']:
 			self.RA = allstars['RA']
@@ -176,7 +176,7 @@ class camera:
 
 		self.solar_bb = planck(5778,lambdaSet*1e-9)
 		self.lambdaSet = lambdaSet
-		self.sensitivity_curve = sensitivity_curve[sensitivity_curve != 0]
+		self.sensitivityCurve = sensitivityCurve[sensitivityCurve != 0]
 		self.qe = qe
 		self.tc = tc
 		self.lambdaBinSize = lambdaBinSize
@@ -191,7 +191,7 @@ class camera:
 		self.detectorHeight = detectorHeight
 		self.detectorWidth = detectorWidth
 		self.focalLength = focalLength
-		self.read_sigma = read_sigma
+		self.readSigma = readSigma
 		self.sc = sc
 		self.effectiveArea = effectiveArea
 		self.darkCurrent = darkCurrent
@@ -201,7 +201,7 @@ class camera:
 		self.dnDepthMax = dnDepthMax
 
 	###########################################################################
-	#	load_all_stars()
+	#	loadAllStars()
 	#
 	#		Inputs:
 	#			none
@@ -213,11 +213,11 @@ class camera:
 	#				in the DINO C-REx Image Generation documentation
 	#
 	#		Keyword Arguements:
-	#			verbose: boolean. If set to 1, load_all_stars will present
+	#			verbose: boolean. If set to 1, loadAllStars will present
 	#				the user with timings for the database call
 	#
 	###########################################################################
-	def load_all_stars(self,db, maxMag, minMag, **kwargs):
+	def loadAllStars(self,db, maxMag, minMag, **kwargs):
 		import sqlite3
 		from numpy import array, sin, cos, deg2rad, logical_and
 
@@ -488,7 +488,7 @@ class camera:
 #		camera: The camera object that the image is tied to.
 #		msg: A dictionary used to control which parts of the code are run.
 #			the main purpose is to control with bodies are removed by 
-#			remove_occultations, but the user can also control how images
+#			removeOccultations, but the user can also control how images
 #			are made in order to demo and debug the code in various ways
 #
 #	Computed Variables:
@@ -595,7 +595,7 @@ class image:
 			import pdb
 
 			#this finds a subset of stars that are in the FOV at some point
-			#during the exposure. Some functionality of find_stars_in_FOV()
+			#during the exposure. Some functionality of findStarsInFOV()
 			#is not needed in this step (like converting to pixel/line), 
 			#but it is done anyway so we can reuse the function.
 
@@ -619,7 +619,7 @@ class image:
 				self.beta.append(arcsin(self.DCM[i][0,2]))
 				self.gamma.append(arctan2(self.DCM[i][1,2],self.DCM[i][2,2]))
 
-			#this is getting sloppy... When we call find_stars_in_FOV()
+			#this is getting sloppy... When we call findStarsInFOV()
 			#to find all the stars in the exposure at any time, we want
 			#to find all physical objects. This way we only render bodies
 			#once per exposure. All the rest is just filtering them out
@@ -631,7 +631,7 @@ class image:
 			full_exposure_msg['dark'] = 0
 			full_exposure_msg['read'] = 0
 
-			FOV = self.find_stars_in_FOV(
+			FOV = self.findStarsInFOV(
 				alpha_0, #center Euler angle of First FOV of exposure
 				beta_0,  #center Euler angle of First FOV of exposure
 				gamma_0, #center Euler angle of First FOV of exposure
@@ -684,8 +684,8 @@ class image:
 				flux_per_m2_per_nm = pi*flux_per_m2_per_nm_per_sr_at_obs
 				flux_per_m2 = flux_per_m2_per_nm*self.camera.lambdaBinSize
 				flux = flux_per_m2*self.camera.effectiveArea
-				photons_per_sec = flux/self.photon_energy(self.camera.lambdaSet*1e-9)
-				electrons_per_sec = photons_per_sec*self.camera.sensitivity_curve
+				photons_per_sec = flux/self.photonEnergy(self.camera.lambdaSet*1e-9)
+				electrons_per_sec = photons_per_sec*self.camera.sensitivityCurve
 				I.append(sum(electrons_per_sec))
 			
 			self.I = array(I)
@@ -701,7 +701,7 @@ class image:
 			scene_msg['addBod'] = 0
 			#create one scene per DCM we collected above
 			for i in range(0,len(self.DCM)):
-				FOV = self.find_stars_in_FOV(
+				FOV = self.findStarsInFOV(
 					self.alpha[i] + alpha_0, 
 					self.beta[i] + beta_0, 
 					self.gamma[i] + gamma_0, 
@@ -756,7 +756,7 @@ class image:
 
 
 				if self.camera.msg['photon']:
-					each_scene.psf_I = self.add_poisson_noise(each_scene.psf_I)
+					each_scene.psf_I = self.addPoissonNoise(each_scene.psf_I)
 
 				if self.camera.msg['raster']:
 					each_scene.detectorArray = \
@@ -771,7 +771,7 @@ class image:
 					if self.camera.msg['dark']:
 						each_scene.detectorArray = \
 							each_scene.detectorArray + \
-							self.add_poisson_noise(
+							self.addPoissonNoise(
 								zeros(len(each_scene.detectorArray)) + \
 								self.camera.darkCurrent
 								)
@@ -781,9 +781,9 @@ class image:
 				self.detectorArray += each_scene.detectorArray
 
 			if self.camera.msg['read']:
-				self.detectorArray = self.add_read_noise(
+				self.detectorArray = self.addReadNoise(
 						self.detectorArray,
-						self.camera.read_sigma
+						self.camera.readSigma
 						)
 
 			self.detectorArray[self.detectorArray < 0] = 0
@@ -803,7 +803,7 @@ class image:
 
 	###########################################################################
 	#
-	# find_stars_in_FOV() finds the pixel and line coordinates of a 
+	# findStarsInFOV() finds the pixel and line coordinates of a 
 	#
 	#	Inputs:
 	#		
@@ -825,19 +825,19 @@ class image:
 	#	Notes:
 	#
 	###########################################################################
-	def find_stars_in_FOV(
+	def findStarsInFOV(
 		self, 
 		alpha, 
 		beta, 
 		gamma, 
-		alpha_max,
-		beta_max,
-		alpha_min,
-		beta_min,
-		half_alpha,
-		half_beta,
-		alpha_resolution, 
-		beta_resolution,
+		alphaMax,
+		betaMax,
+		alphaMin,
+		betaMin,
+		halfAlpha,
+		halfBeta,
+		alphaResolution, 
+		betaResolution,
 		RA, DE, 
 		n1, n2, n3,
 		VT, BVT,T,I,
@@ -865,16 +865,16 @@ class image:
 				n+=1
 				if body.name == 'SC': continue
 				if msg['rmOcc']:
-					occ_check = self.remove_occultations(body,n1,n2,n3)
-					n1 = n1[occ_check]
-					n2 = n2[occ_check]
-					n3 = n3[occ_check]
-					RA = RA[occ_check]
-					DE = DE[occ_check]
-					starIDs = starIDs[occ_check]
-					T = T[occ_check]
-					reductionTerm = reductionTerm[occ_check]
-					I = I[occ_check]
+					occCheck = self.removeOccultations(body,n1,n2,n3)
+					n1 = n1[occCheck]
+					n2 = n2[occCheck]
+					n3 = n3[occCheck]
+					RA = RA[occCheck]
+					DE = DE[occCheck]
+					starIDs = starIDs[occCheck]
+					T = T[occCheck]
+					reductionTerm = reductionTerm[occCheck]
+					I = I[occCheck]
 
 
 				if msg['addBod']:
@@ -952,10 +952,10 @@ class image:
 							facets['facetArea']))
 						print('2')
 
-		c2_max = alpha_max + sin(deg2rad(half_alpha))
-		c2_min = alpha_min - sin(deg2rad(half_alpha))
-		c3_max = beta_max + sin(deg2rad(half_beta))
-		c3_min = beta_min - sin(deg2rad(half_beta))
+		c2_max = alphaMax + sin(deg2rad(halfAlpha))
+		c2_min = alphaMin - sin(deg2rad(halfAlpha))
+		c3_max = betaMax + sin(deg2rad(halfBeta))
+		c3_min = betaMin - sin(deg2rad(halfBeta))
 
 		#rotate all stars into camera frame coordinates
 		#this can be done far more efficiently with a DCM
@@ -1010,12 +1010,12 @@ class image:
 
 		#using similar triangles
 		pixel = -self.camera.focalLength*c2/c1*\
-			beta_resolution/self.camera.detectorWidth + \
-			beta_resolution/2
+			betaResolution/self.camera.detectorWidth + \
+			betaResolution/2
 
 		line = -self.camera.focalLength*c3/c1*\
-			alpha_resolution/self.camera.detectorHeight + \
-			alpha_resolution/2
+			alphaResolution/self.camera.detectorHeight + \
+			alphaResolution/2
 
 		return {
 			'pixel': pixel,
@@ -1035,7 +1035,7 @@ class image:
 		}
 	###########################################################################
 	#
-	# remove_occultations() 
+	# removeOccultations() 
 	#
 	#	Inputs:
 	#		body: Object. Instantiation of the body class from bodies.py.
@@ -1049,10 +1049,10 @@ class image:
 	#
 	#
 	#	Outputs:
-	#		occ_check: Numpy Array. A list of booleans, each corresponding to 
+	#		occCheck: Numpy Array. A list of booleans, each corresponding to 
 	#
 	###########################################################################
-	def remove_occultations(self,body,n1,n2,n3):
+	def removeOccultations(self,body,n1,n2,n3):
 		from numpy import array, stack, einsum, logical_or
 		from numpy.linalg import norm
 		#this needs to be multiplied by a transformation matrix in order
@@ -1077,8 +1077,8 @@ class image:
 
 
 		discriminant = vTAy_0**2 - vTAv*(y_0TAy_0 - 1)
-		occ_check = logical_or(discriminant < 0,v.T.dot(y_0) > 0)
-		return occ_check
+		occCheck = logical_or(discriminant < 0,v.T.dot(y_0) > 0)
+		return occCheck
 
 
 	###########################################################################
@@ -1132,31 +1132,31 @@ class image:
 	#	Outputs:
 	#
 	###########################################################################
-	def rasterize(self,pixel_resolution,line_resolution,pixel_coord,line_coord,intensity):
+	def rasterize(self,pixelResolution,lineResolution,pixelCoord,lineCoord,intensity):
 		from numpy import floor, zeros, array, arange, append 
 		from numpy import concatenate, logical_and
 		from pandas import DataFrame
 
 		#adding PSF introduces some values that are not on the detector. Remove them here
 
-		positive_coords = logical_and(pixel_coord > 0, line_coord > 0)
-		pixel_coord = pixel_coord[positive_coords]
-		line_coord = line_coord[positive_coords]
-		intensity = intensity[positive_coords]
+		positiveCoords = logical_and(pixelCoord > 0, lineCoord > 0)
+		pixelCoord = pixelCoord[positiveCoords]
+		lineCoord = lineCoord[positiveCoords]
+		intensity = intensity[positiveCoords]
 
-		not_too_big = logical_and(pixel_coord < pixel_resolution, line_coord < line_resolution)
-		pixel_coord = pixel_coord[not_too_big]
-		line_coord = line_coord[not_too_big]
-		intensity = intensity[not_too_big]
+		notTooBig = logical_and(pixelCoord < pixelResolution, lineCoord < lineResolution)
+		pixelCoord = pixelCoord[notTooBig]
+		lineCoord = lineCoord[notTooBig]
+		intensity = intensity[notTooBig]
 
-		int_pix_coord = floor(pixel_coord).astype(int)
-		int_line_coord = floor(line_coord).astype(int)
+		intPixCoord = floor(pixelCoord).astype(int)
+		intLineCoord = floor(lineCoord).astype(int)
 
-		detector_position = (line_resolution*int_line_coord + int_pix_coord)
-		detector_position = append(detector_position,arange(pixel_resolution*line_resolution))
-		intensity = append(intensity,zeros(pixel_resolution*line_resolution))
+		detectorPosition = (lineResolution*intLineCoord + intPixCoord)
+		detectorPosition = append(detectorPosition,arange(pixelResolution*lineResolution))
+		intensity = append(intensity,zeros(pixelResolution*lineResolution))
 
-		data = concatenate([detector_position,intensity])
+		data = concatenate([detectorPosition,intensity])
 		data = data.reshape(2,int(len(data)/2)).T
 		df = DataFrame(data,columns = ["Position","Intensity"])
 		detectorArray = df.groupby("Position").sum().values.T[0]
@@ -1165,27 +1165,27 @@ class image:
 
 	###########################################################################
 	#
-	# add_read_noise() 
+	# addReadNoise() 
 	#
 	#	Inputs:
 	#
 	#	Outputs:
 	#
 	###########################################################################
-	def add_read_noise(self,detectorArray,sigma):
+	def addReadNoise(self,detectorArray,sigma):
 		from numpy.random import randn
 		return detectorArray + sigma*randn(len(detectorArray))
 
 	###########################################################################
 	#
-	# add_poisson_noise() 
+	# addPoissonNoise() 
 	#
 	#	Inputs:
 	#
 	#	Outputs:
 	#
 	###########################################################################
-	def add_poisson_noise(self, I):
+	def addPoissonNoise(self, I):
 		from numpy.random import poisson
 		return I + poisson(I)
 
@@ -1235,7 +1235,7 @@ class image:
 		return sigma*T**4
 
 	###########################################################################
-	#	photon_energy() 
+	#	photonEnergy() 
 	#
 	#	Inputs:
 	#
@@ -1245,9 +1245,9 @@ class image:
 	#
 	###########################################################################
 
-	def photon_energy(self, lam):
-		from em import photon_energy
-		return photon_energy(lam)
+	def photonEnergy(self, lam):
+		from em import photonEnergy
+		return photonEnergy(lam)
 		from constants import h, c
 		return h*c/lam
 
