@@ -83,50 +83,50 @@ msg = { 'bodies': [
 #create camera with no stars in it for tests that don't need them
 #They will run significantly faster without them.
 noStarCam = camera.camera(
-	2, 				#detectorHeight
-	2, 				#detectorWidth
-	5.0, 			#focalLength
-	512, 			#resolutionHeight
-	512,			#resolutionWidth
-	np.identity(3), #body2cameraDCM
-	1000,		    #maximum magnitude
-	-1000,			#minimum magnitude (for debugging)
-	qe,
-	tc,
-	1,
-	0.01**2, #effective area in m^2
-	100, #dark current in electrons per second
-	100, #std for read noise in electrons
-	100, #bin size
-	2**16, #max bin depth
-	sc,
-	msg,
-	db='../db/tycho.db'
+	2, 					#detectorHeight
+	2, 					#detectorWidth
+	5.0, 				#focalLength
+	512, 				#resolutionHeight
+	512,				#resolutionWidth
+	np.identity(3), 	#body2cameraDCM
+	1000,		   	 	#maximum magnitude
+	-1000,				#minimum magnitude (for debugging)
+	qe,					#quantum efficiency dictionary
+	tc,					#transmission curve dictionary
+	1,					#wavelength bin size in nm
+	0.01**2, 			#effective area in m^2
+	100, 				#dark current in electrons per second
+	100, 				#std for read noise in electrons
+	100, 				#bin size
+	2**16, 				#max bin depth
+	sc,					#spacecraft the camera is attached to
+	msg,				#debug message
+	db='../db/tycho.db'	#stellar database
 	)
 
 #now create a camera with stars in it for use in the tests that
 #actually need them.
 msg['addStars'] = 1
 starCam = camera.camera(
-	2, 				#detectorHeight
-	2, 				#detector_wiah
-	5.0, 			#focalLength
-	512, 			#resolutionHeight
-	512,			#resolutionWidth
-	np.identity(3), #body2cameraDCM
-	1000,		    #maximum magnitude
-	-1000,			#minimum magnitude (for debugging)
-	qe,
-	tc,
-	1,
-	0.01**2, #effective area in m^2
-	100, #dark current in electrons per second
-	100, #std for read noise in electrons
-	100, #bin size
-	2**16, #max bin depth
-	sc,
-	msg,
-	db='../db/tycho.db'
+	2, 					#detectorHeight
+	2, 					#detectorWidth
+	5.0, 				#focalLength
+	512, 				#resolutionHeight
+	512,				#resolutionWidth
+	np.identity(3), 	#body2cameraDCM
+	1000,		   	 	#maximum magnitude
+	-1000,				#minimum magnitude (for debugging)
+	qe,					#quantum efficiency dictionary
+	tc,					#transmission curve dictionary
+	1,					#wavelength bin size in nm
+	0.01**2, 			#effective area in m^2
+	100, 				#dark current in electrons per second
+	100, 				#std for read noise in electrons
+	100, 				#bin size
+	2**16, 				#max bin depth
+	sc,					#spacecraft the camera is attached to
+	msg,				#debug message
+	db='../db/tycho.db'	#stellar database
 	)
 sc.attitudeDCM = np.identity(3)
 
