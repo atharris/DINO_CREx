@@ -174,7 +174,7 @@ class camera:
 			self.T = array([])
 			self.reductionTerm = array([])
 
-		self.solar_bb = planck(5778,lambdaSet*1e-9)
+		self.solarBB = planck(5778,lambdaSet*1e-9)
 		self.lambdaSet = lambdaSet
 		self.sensitivityCurve = sensitivityCurve[sensitivityCurve != 0]
 		self.qe = qe
@@ -223,20 +223,20 @@ class camera:
 
 		try: 
 			verbose = kwargs['verbose']
-			start_time = datetime.now()
+			startTime = datetime.now()
 		except:
 			verbose = 0
 
 		conn = sqlite3.connect(db)
 		c = conn.cursor()
 
-		select_string = "SELECT RA, DE, VTmag, BTmag, id, reduction_term, " + \
+		selectString = "SELECT RA, DE, VTmag, BTmag, id, reduction_term, " + \
 			"computed_temperature from tycho_data"
-		c.execute(select_string)
+		c.execute(selectString)
 
 		if verbose:
-			print("DB Query: " + str(datetime.now() - start_time))
-			start_time = datetime.now()
+			print("DB Query: " + str(datetime.now() - startTime))
+			startTime = datetime.now()
 
 		RA = []
 		DE = []
@@ -411,10 +411,10 @@ class camera:
 	# def calculateHotDark(self):
 	# 	resolutionHeight = self.resolutionHeight
 	# 	resolutionWidth = self.resolutionWidth
-	# 	current_hotDark = self.hotDark
+	# 	currentHotDark = self.hotDark
 	# 	#do your thing here
 		
-	# 	self.hotDark_arr = hotDark_array
+	# 	self.hotDarkArr = hotDarkArray
 
 	###############################################################################
 	#
@@ -433,46 +433,46 @@ class camera:
 		# self.hotDark = self.calculateHotDark(dt)
 
 		#initialize a counter so we can check if we have open images
-		open_images = 0
+		openImages = 0
 		takeImage = self.msg['takeImage']
 		#loop through all images counting the ones that are open.
-		#if you find an open one, set its key to open_image_key.
+		#if you find an open one, set its key to openImageKey.
 		#if there's more than one open, the var will be overwritten, but
 		#that's OK since the code will error out later.
 		for key in self.images:
-			if self.images[key].image_open == 1: open_images +=1
-			open_image_key = key
+			if self.images[key].imageOpen == 1: openImages +=1
+			openImageKey = key
 
-		if open_images > 1.:
+		if openImages > 1.:
 			#we should never have more than one image open at a time, so
-			#if open_images > 1, we have a problem. Report an error and
+			#if openImages > 1, we have a problem. Report an error and
 			#return
 			print('ERROR: Camera Object Has Multiple Open Images!!!')
 			return
-		elif open_images == 1.:
+		elif openImages == 1.:
 			#if there is exactly one open image and we are still imaging
 			#we need to update the state.
 			if takeImage == 1:
-				self.images[open_image_key].updateState()
+				self.images[openImageKey].updateState()
 			#if there is exactly one open image but the exec has told the
 			#camera to stop imaging, just close it. We still neet do run
 			#the image's updateState() method in order to get it to actually
 			#create the image. It only collects attitude information until
 			#this step.
 			else:
-				self.images[open_image_key].image_open = 0
-				self.images[open_image_key].updateState()
+				self.images[openImageKey].imageOpen = 0
+				self.images[openImageKey].updateState()
 		else:
 			if takeImage == 1.:
 				#if we have no open image, count the number of open images
 				#and use that as the key for the next one (python indexes at
 				#zero, so if we want to index using autoincrementing numbers, 
 				#this will give us the next number).
-				new_key = len(self.images.keys())
+				newKey = len(self.images.keys())
 				#initialize the image.
-				self.images[new_key] = image(self,self.msg)
+				self.images[newKey] = image(self,self.msg)
 				#give the image its first update.
-				self.images[new_key].updateState()
+				self.images[newKey].updateState()
 
 		return
 
@@ -546,7 +546,7 @@ class image:
 		**kwargs
 		):
 
-		self.image_open = 1
+		self.imageOpen = 1
 		self.alpha = []
 		self.beta = []
 		self.gamma = []
@@ -624,12 +624,12 @@ class image:
 			#to find all physical objects. This way we only render bodies
 			#once per exposure. All the rest is just filtering them out
 			#per scene and adding psf/noise characteristics of the image.
-			full_exposure_msg = dict(self.camera.msg)
-			full_exposure_msg['psf'] = 0
-			full_exposure_msg['raster'] = 0
-			full_exposure_msg['photon'] = 0
-			full_exposure_msg['dark'] = 0
-			full_exposure_msg['read'] = 0
+			fullExposureMsg = dict(self.camera.msg)
+			fullExposureMsg['psf'] = 0
+			fullExposureMsg['raster'] = 0
+			fullExposureMsg['photon'] = 0
+			fullExposureMsg['dark'] = 0
+			fullExposureMsg['read'] = 0
 
 			FOV = self.findStarsInFOV(
 				alpha_0, #center Euler angle of First FOV of exposure
@@ -653,7 +653,7 @@ class image:
 				self.camera.reductionTerm,
 				self.camera.maxMag, 
 				self.camera.starID,
-				full_exposure_msg
+				fullExposureMsg
 				)
 
 			self.RA = FOV['RA']
@@ -675,7 +675,7 @@ class image:
 
 				T = self.T[i]
 				if T == 5778: 
-					flux_per_m2_per_nm_per_sr_at_star = self.camera.solar_bb
+					flux_per_m2_per_nm_per_sr_at_star = self.camera.solarBB
 				else:
 					flux_per_m2_per_nm_per_sr_at_star = planck(T,self.camera.lambdaSet*1e-9)
 				reductionTerm = self.reductionTerm[i]
@@ -696,9 +696,9 @@ class image:
 			#and adds body renderings, we don't need to do that
 			#all again here, so we force those parts of the msg
 			# to be zero.
-			scene_msg = dict(self.camera.msg) 
-			scene_msg['rmOcc'] = 0
-			scene_msg['addBod'] = 0
+			sceneMsg = dict(self.camera.msg) 
+			sceneMsg['rmOcc'] = 0
+			sceneMsg['addBod'] = 0
 			#create one scene per DCM we collected above
 			for i in range(0,len(self.DCM)):
 				FOV = self.findStarsInFOV(
@@ -720,7 +720,7 @@ class image:
 					self.reductionTerm,
 					self.camera.maxMag, 
 					self.starID,
-					scene_msg
+					sceneMsg
 					)
 				self.scenes.append(
 					scene(
@@ -739,46 +739,46 @@ class image:
 						)
 					)
 			i = 0
-			for each_scene in self.scenes:
+			for eachScene in self.scenes:
 				print(i)
 				i+=1
 				if self.camera.msg['psf']:
 					psf = self.psf(1)
 
-					pixel = psf['x'].reshape(len(psf['x']),1) + each_scene.pixel
-					line = psf['y'].reshape(len(psf['y']),1) + each_scene.line
-					I = psf['I'].reshape(len(psf['I']),1)*each_scene.I
+					pixel = psf['x'].reshape(len(psf['x']),1) + eachScene.pixel
+					line = psf['y'].reshape(len(psf['y']),1) + eachScene.line
+					I = psf['I'].reshape(len(psf['I']),1)*eachScene.I
 
-					each_scene.psf_pixel = pixel.reshape(len(each_scene.pixel)*len(psf['x']))
-					each_scene.psf_line = line.reshape(len(each_scene.line)*len(psf['y']))
+					eachScene.psfPixel = pixel.reshape(len(eachScene.pixel)*len(psf['x']))
+					eachScene.psfLine = line.reshape(len(eachScene.line)*len(psf['y']))
 
-					each_scene.psf_I = I.reshape(len(psf['I'])*len(each_scene.I))
+					eachScene.psfI = I.reshape(len(psf['I'])*len(eachScene.I))
 
 
 				if self.camera.msg['photon']:
-					each_scene.psf_I = self.addPoissonNoise(each_scene.psf_I)
+					eachScene.psfI = self.addPoissonNoise(eachScene.psfI)
 
 				if self.camera.msg['raster']:
-					each_scene.detectorArray = \
+					eachScene.detectorArray = \
 						self.rasterize(
 							self.camera.resolutionWidth,
 							self.camera.resolutionHeight,
-							each_scene.psf_pixel,
-							each_scene.psf_line,
-							each_scene.psf_I
+							eachScene.psfPixel,
+							eachScene.psfLine,
+							eachScene.psfI
 							)*self.camera.msg['dt']
 
 					if self.camera.msg['dark']:
-						each_scene.detectorArray = \
-							each_scene.detectorArray + \
+						eachScene.detectorArray = \
+							eachScene.detectorArray + \
 							self.addPoissonNoise(
-								zeros(len(each_scene.detectorArray)) + \
+								zeros(len(eachScene.detectorArray)) + \
 								self.camera.darkCurrent
 								)
 
 			self.detectorArray = 0
-			for each_scene in self.scenes:
-				self.detectorArray += each_scene.detectorArray
+			for eachScene in self.scenes:
+				self.detectorArray += eachScene.detectorArray
 
 			if self.camera.msg['read']:
 				self.detectorArray = self.addReadNoise(
@@ -1207,10 +1207,10 @@ class image:
 		from constants import h, c, k_B
 		from numpy import exp
 
-		top_part = 2*h*c**2
-		bottom_part = lam**5*(exp(h*c/(lam*k_B*T))-1)
+		topPart = 2*h*c**2
+		bottomPart = lam**5*(exp(h*c/(lam*k_B*T))-1)
 
-		I = top_part/bottom_part*1e-9 #1e-9 to convert to per nm
+		I = topPart/bottomPart*1e-9 #1e-9 to convert to per nm
 
 		return I
 
