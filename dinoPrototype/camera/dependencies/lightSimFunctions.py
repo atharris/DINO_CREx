@@ -147,7 +147,7 @@ def checkFoV(posCB, posObs, dcmBN, fov, radiusCB):
     """Check if celelstial body is in camera field of view
     :param posCB: position of celestial body in heliocentric coordinates [m]
     :param posObs: position of camera in heliocentric coordinates [m]
-    :param DCM_NB: direction cosine matrix of observer attitude [body to heliocentric coord. frame]
+    :param dcmNB: direction cosine matrix of observer attitude [body to heliocentric coord. frame]
     :param field of view tuple (horizontal, vertical) [degrees]
     :return: true if in field of view, false otherwise
     """
@@ -222,7 +222,7 @@ def lumos(posCB, posObs, albedoCB, radCB, latRes, longRes):
     jBodyHelio = jBodyHelio/ np.linalg.norm(jBodyHelio)
 
     # direction cosine matrix for body to helio coordinate frame
-    dcm_NB = (np.array([iBodyHelio,jBodyHelio,kBodyHelio])).T
+    dcmNB = (np.array([iBodyHelio,jBodyHelio,kBodyHelio])).T
 
     ####################################
     # Generate surface map of celestial body in body frame coordinates
@@ -256,14 +256,14 @@ def lumos(posCB, posObs, albedoCB, radCB, latRes, longRes):
     #     pts_eNormBody[ind_latlong,:] = [eNorm_iBody, eNorm_jBody, eNorm_kBody]
 
     # generate surface map of ijk heliocentric coordinates from center of celestial body
-    pts_helio = np.zeros((nLatLong,3))
+    ptsHelio = np.zeros((nLatLong,3))
 
     zbody = radCB*sin(deg2rad(latitudes))
     xybody = radCB*cos(deg2rad(latitudes))
     ybody = xybody*cos(deg2rad(longitudes))
     xbody = xybody*sin(deg2rad(longitudes))
     xyzbody = vstack([xbody,ybody,zbody]).T
-    pts_helio = np.matmul(dcm_NB,xyzbody.T).T
+    ptsHelio = np.matmul(dcmNB,xyzbody.T).T
     ind_pts = 0
 
     # for ind_latlong in range(nLatLong):
@@ -279,7 +279,7 @@ def lumos(posCB, posObs, albedoCB, radCB, latRes, longRes):
     #     xyzbody = np.array([xbody,ybody,zbody])
 
     #     # convert to heliocentric coordinates
-    #     pts_helio[ind_pts,:] = np.matmul(dcm_NB,xyzbody)
+    #     ptsHelio[ind_pts,:] = np.matmul(dcmNB,xyzbody)
 
     #     ind_pts += 1
 
@@ -288,11 +288,11 @@ def lumos(posCB, posObs, albedoCB, radCB, latRes, longRes):
 
     # calculate geometric albedo using cosine law
 
-    pts_albedo = np.zeros((nLatLong, 1))
-    pts_albedo = np.zeros(nLatLong)
-    pts_albedo[pts_eNormBody[:,0] > 0] = \
+    ptsAlbedo = np.zeros((nLatLong, 1))
+    ptsAlbedo = np.zeros(nLatLong)
+    ptsAlbedo[pts_eNormBody[:,0] > 0] = \
         pts_eNormBody[:,0][pts_eNormBody[:,0] > 0]
-    pts_albedo = pts_albedo.reshape(len(pts_albedo),1)*albedoCB
+    ptsAlbedo = ptsAlbedo.reshape(len(ptsAlbedo),1)*albedoCB
 
     # ind_latlong = 0
     # for  current_e_norm in pts_eNormBody:
@@ -300,31 +300,31 @@ def lumos(posCB, posObs, albedoCB, radCB, latRes, longRes):
     #     phase_solar = math.acos(np.dot([1,0,0],current_e_norm))
 
     #     if phase_solar > math.pi/2:
-    #         pts_albedo[ind_latlong] = 0.
+    #         ptsAlbedo[ind_latlong] = 0.
     #     else:
-    #         pts_albedo[ind_latlong] = math.cos(phase_solar)*albedoCB
+    #         ptsAlbedo[ind_latlong] = math.cos(phase_solar)*albedoCB
 
     #     ind_latlong += 1
 
     # calculate flux decay due to inverse square laws
-    flux_decay_sun2cb = (fluxRefDistance/distanceCB)**2
+    fluxDecaySun2cb = (fluxRefDistance/distanceCB)**2
     distanceCB2obs = np.linalg.norm(posCB-posObs)
-    flux_decay_cb2obs = (radCB/distanceCB2obs)**2
-    flux_decay_cb2obs = (1/distanceCB2obs)**2
-    flux_decay_net = flux_decay_sun2cb * pts_albedo * flux_decay_cb2obs
+    fluxDecayCB2obs = (radCB/distanceCB2obs)**2
+    fluxDecayCB2obs = (1/distanceCB2obs)**2
+    fluxDecayNet = fluxDecaySun2cb * ptsAlbedo * fluxDecayCB2obs
     print("lumos: " + str(datetime.now()-start))
-    return pts_helio, flux_decay_net, facetArea
+    return ptsHelio, fluxDecayNet, facetArea
 
 ###################################################
 ###################################################
 
 
-def project2CamView(posCB, posObs, attdeCam, xyz_helio, flux_decay, fov, facetArea):
+def project2CamView(posCB, posObs, attdeCam, xyzHelio, fluxDecay, fov, facetArea):
     """Remove celestial body surface map points that are out of the camera view and convert heliocentric cartesian
     coordinates to azimuth and elevation from camera point of view
     :param posCB: position of celestial body in heliocentric coordinates [m]
     :param posObs: position of camera in heliocentric coordinates [m]
-    :param DCM_NB: direction cosine matrix of observer attitude [body to heliocentric coord. frame]
+    :param dcmNB: direction cosine matrix of observer attitude [body to heliocentric coord. frame]
     :param field of view tuple (horizontal, vertical) [degrees]
     :param facetArea: area of single facet on spherical approximation [m^2]
     :return: array of azimuth elevation for each surface point (2 x N) [degrees]
@@ -340,53 +340,53 @@ def project2CamView(posCB, posObs, attdeCam, xyz_helio, flux_decay, fov, facetAr
     # compute position of celestial body relative to observer in body coordinates
     dcmBN = attdeCam
     posObs2cbHelio = (posCB-posObs)
-    e_obs2cb_helio = posObs2cbHelio / np.linalg.norm(posObs2cbHelio)
-    posObs2facet_helio = posObs2cbHelio + xyz_helio
-    r_ob2facet_helio =  sqrt(
-        posObs2facet_helio[:,0]**2+posObs2facet_helio[:,1]**2+posObs2facet_helio[:,2]**2
+    eObs2cbHelio = posObs2cbHelio / np.linalg.norm(posObs2cbHelio)
+    posObs2facetHelio = posObs2cbHelio + xyzHelio
+    rOb2facetHelio =  sqrt(
+        posObs2facetHelio[:,0]**2+posObs2facetHelio[:,1]**2+posObs2facetHelio[:,2]**2
         )
 
-    r_ob2facet_helio = r_ob2facet_helio.reshape(len(r_ob2facet_helio),1)
-    e_obs2facet_helio = posObs2facet_helio/r_ob2facet_helio
+    rOb2facetHelio = rOb2facetHelio.reshape(len(rOb2facetHelio),1)
+    eObs2facetHelio = posObs2facetHelio/rOb2facetHelio
     posObs2cbBody = np.matmul(dcmBN, posObs2cbHelio)
     # cycle through surface points and calculate dot product with unit vector from camera to CB
     # (in helio coordinates), input points with phase angle > 90 deg (visible to camera) in new arrays
 
-    horiz_camfov = fov[0] / 2.
-    vert_camfov = fov[1] / 2.
+    horizCamfov = fov[0] / 2.
+    vertCamfov = fov[1] / 2.
 
     # xyz_camview = np.empty((0,3), float)
     # xyz_camview_helio = np.empty((0,3), float)
     # facetAreaCamview = np.empty((0,1), float)
 
     # azel_pts = np.empty((0,2), float)
-    # flux_decay_out = np.empty((0,1), float)
+    # fluxDecay_out = np.empty((0,1), float)
     # xyz_vis_cam = np.empty((0,3), float)
 
 
-    r = sqrt(xyz_helio[:,0]**2+xyz_helio[:,1]**2+xyz_helio[:,2]**2).reshape(
-        len(xyz_helio),1)
-    e_xyz_helio = xyz_helio/r
-    # cos_cam_phase2 = np.dot(e_obs2cb_helio, e_xyz_helio.T)
-    cos_cam_phase = einsum('ij,ji->i',e_obs2facet_helio,e_xyz_helio.T)
+    r = sqrt(xyzHelio[:,0]**2+xyzHelio[:,1]**2+xyzHelio[:,2]**2).reshape(
+        len(xyzHelio),1)
+    e_xyzHelio = xyzHelio/r
+    # cos_cam_phase2 = np.dot(eObs2cbHelio, e_xyzHelio.T)
+    cos_cam_phase = einsum('ij,ji->i',eObs2facetHelio,e_xyzHelio.T)
 
     cam_phase = arccos(cos_cam_phase)
 
     # check if current facet is visible to observer
     ind = cam_phase > math.pi/2
-    e_xyz_helio = e_xyz_helio[ind]
+    e_xyzHelio = e_xyzHelio[ind]
     cos_cam_phase = cos_cam_phase[ind]
     cam_phase = cam_phase[ind]
-    xyz_helio = xyz_helio[ind]
-    xyz_body = np.matmul(dcmBN, xyz_helio.T)
+    xyzHelio = xyzHelio[ind]
+    xyz_body = np.matmul(dcmBN, xyzHelio.T)
     r_pt = posObs2cbHelio + xyz_body.T
     r_pt_norm = sqrt(r_pt[:,0]**2+r_pt[:,1]**2+r_pt[:,2]**2)
     az = rad2deg(arctan2(r_pt[:,1], r_pt[:,0]))
     el = rad2deg(arcsin(r_pt[:,2] / r_pt_norm))
     xyz_camview = xyz_body
-    xyz_camview_helio = xyz_helio
+    xyz_camview_helio = xyzHelio
     azel_pts = vstack((az,el)).T
-    flux_decay_out = flux_decay[ind]
+    fluxDecay_out = fluxDecay[ind]
     xyz_vis_cam = xyz_body.T
     # current_facet_proj_area = 
     facetAreaCamview = facetArea * -cos_cam_phase
@@ -399,16 +399,16 @@ def project2CamView(posCB, posObs, attdeCam, xyz_helio, flux_decay, fov, facetAr
     # plt.plot(-posObs2cbHelio[0],-posObs2cbHelio[1],'.')
 
     # ind_npts = 0
-    # for current_xyz_helio in xyz_helio:
+    # for current_xyzHelio in xyzHelio:
 
-    #     e_current_xyz_helio = current_xyz_helio / np.linalg.norm(current_xyz_helio)
-    #     cos_cam_phase = np.dot(e_obs2cb_helio, e_current_xyz_helio)
+    #     e_current_xyzHelio = current_xyzHelio / np.linalg.norm(current_xyzHelio)
+    #     cos_cam_phase = np.dot(eObs2cbHelio, e_current_xyzHelio)
     #     cam_phase = math.acos(cos_cam_phase)
 
     #     # check if current facet is visible to observer
     #     if cam_phase > math.pi/2:
 
-    #         xyz_body = np.matmul(dcmBN, current_xyz_helio.T)
+    #         xyz_body = np.matmul(dcmBN, current_xyzHelio.T)
 
     #         r_pt = posObs2cbBody + xyz_body
 
@@ -416,13 +416,13 @@ def project2CamView(posCB, posObs, attdeCam, xyz_helio, flux_decay, fov, facetAr
     #         el = math.degrees(math.asin(r_pt[2] / np.linalg.norm(r_pt)))
 
     #         # # check if current facet is in camera field of view
-    #         # if (abs(az) < horiz_camfov) & (abs(el) < vert_camfov):
+    #         # if (abs(az) < horizCamfov) & (abs(el) < vertCamfov):
 
     #         xyz_camview = np.vstack((xyz_camview, xyz_body))
-    #         xyz_camview_helio = np.vstack((xyz_camview_helio, current_xyz_helio))
+    #         xyz_camview_helio = np.vstack((xyz_camview_helio, current_xyzHelio))
 
     #         azel_pts = np.vstack((azel_pts, np.array([[az, el]])))
-    #         flux_decay_out = np.vstack((flux_decay_out, flux_decay[ind_npts]))
+    #         fluxDecay_out = np.vstack((fluxDecay_out, fluxDecay[ind_npts]))
     #         xyz_vis_cam = np.vstack((xyz_vis_cam, xyz_body))
 
     #         current_facet_proj_area = facetArea * -cos_cam_phase
@@ -431,7 +431,7 @@ def project2CamView(posCB, posObs, attdeCam, xyz_helio, flux_decay, fov, facetAr
     #     ind_npts +=1
     print("project2CamView: " + str(datetime.now() - start))
 
-    return azel_pts, xyz_camview_helio, xyz_vis_cam, flux_decay_out, facetAreaCamview
+    return azel_pts, xyz_camview_helio, xyz_vis_cam, fluxDecay_out, facetAreaCamview
 
 
 
