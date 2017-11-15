@@ -69,7 +69,7 @@ def stefanBoltzmann(T):
 	return sigma*T**4
 
 ###############################################################################
-#	photon_energy() calculates the energy for a photon of wavelength lambda.
+#	photonEnergy() calculates the energy for a photon of wavelength lambda.
 #
 #	Inputs:
 #		lam: wavelength (in meters!) of photon in question. May be scalar or numpy 
@@ -84,7 +84,7 @@ def stefanBoltzmann(T):
 #
 ###############################################################################
 
-def photon_energy(lam):
+def photonEnergy(lam):
 	from constants import h, c
 	return h*c/lam
 
