@@ -18,8 +18,18 @@
       <file leaf-file-name="init.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/P&amp;L/vanilla_pl/init.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-3285">
-              <caret line="35" column="0" lean-forward="false" selection-start-line="35" selection-start-column="0" selection-end-line="35" selection-end-column="0" />
+            <state relative-caret-position="233">
+              <caret line="85" column="10" lean-forward="false" selection-start-line="85" selection-start-column="4" selection-end-line="85" selection-end-column="10" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="test_A_Matrix.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/RngRngRate/_UnitTest/test_A_Matrix.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1230">
+              <caret line="82" column="11" lean-forward="false" selection-start-line="82" selection-start-column="11" selection-end-line="82" selection-end-column="11" />
               <folding />
             </state>
           </provider>
@@ -28,28 +38,58 @@
       <file leaf-file-name="init_acc.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/init_acc.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="30">
-              <caret line="282" column="26" lean-forward="false" selection-start-line="282" selection-start-column="26" selection-end-line="282" selection-end-column="26" />
+            <state relative-caret-position="379">
+              <caret line="233" column="4" lean-forward="false" selection-start-line="233" selection-start-column="4" selection-end-line="233" selection-end-column="21" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="beaconBinSPICE.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/beaconBinSPICE.py">
+      <file leaf-file-name="posVel.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/RngRngRate/posVel.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="345">
-              <caret line="48" column="40" lean-forward="false" selection-start-line="48" selection-start-column="40" selection-end-line="48" selection-end-column="40" />
+            <state relative-caret-position="-165">
+              <caret line="71" column="55" lean-forward="false" selection-start-line="71" selection-start-column="55" selection-end-line="71" selection-end-column="55" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="plotFilter.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="init.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/RngRngRate/init.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="233">
+              <caret line="81" column="10" lean-forward="false" selection-start-line="81" selection-start-column="4" selection-end-line="81" selection-end-column="10" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="batchFilterAcc.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/batchFilterAcc.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="554">
+              <caret line="251" column="28" lean-forward="false" selection-start-line="251" selection-start-column="28" selection-end-line="251" selection-end-column="28" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="posVelAcc.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/posVelAcc.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="600">
+              <caret line="77" column="0" lean-forward="true" selection-start-line="77" selection-start-column="0" selection-end-line="77" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="plotFilter.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/plotFilter.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="375">
-              <caret line="544" column="20" lean-forward="false" selection-start-line="544" selection-start-column="20" selection-end-line="544" selection-end-column="20" />
+            <state relative-caret-position="233">
+              <caret line="389" column="68" lean-forward="false" selection-start-line="389" selection-start-column="45" selection-end-line="389" selection-end-column="68" />
               <folding>
                 <element signature="e#375#406#0" expanded="true" />
               </folding>
@@ -61,14 +101,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>SPICE/de</find>
-      <find>iter</find>
-      <find>observation_uncertainty[1, 1]</find>
-      <find>State Errors and C</find>
-      <find>State Deviation Est T</find>
-      <find>iteration</find>
-      <find>est_State</find>
-      <find>x_bar</find>
       <find>spacecraft</find>
       <find>(true_ephem['spacecraft']</find>
       <find>ref</find>
@@ -91,6 +123,14 @@
       <find>getObs</find>
       <find>pdb</find>
       <find>covar</find>
+      <find>Cr</find>
+      <find>cR</find>
+      <find>matrixA</find>
+      <find>doUnit</find>
+      <find>postfit</find>
+      <find>observation_uncertainty</find>
+      <find>print</find>
+      <find>print</find>
     </findStrings>
     <replaceStrings>
       <replace>+=</replace>
@@ -109,15 +149,20 @@
         <option value="$PROJECT_DIR$/batchFilter.py" />
         <option value="$PROJECT_DIR$/RngRngRate/_UnitTest/test_fncg.py" />
         <option value="$PROJECT_DIR$/P&amp;L/vanilla_pl/init.py" />
-        <option value="$PROJECT_DIR$/P&amp;L/unmodeled_acc/init_acc.py" />
         <option value="$PROJECT_DIR$/P&amp;L/common_functions/beaconBinSPICE.py" />
         <option value="$PROJECT_DIR$/P&amp;L/common_functions/plotFilter.py" />
+        <option value="$PROJECT_DIR$/P&amp;L/unmodeled_acc/init_acc.py" />
+        <option value="$PROJECT_DIR$/RngRngRate/posVel.py" />
+        <option value="$PROJECT_DIR$/RngRngRate/_UnitTest/test_A_Matrix.py" />
+        <option value="$PROJECT_DIR$/../../Basilisk/SimScenarios/test_scenarioCSSFilters.py" />
+        <option value="$PROJECT_DIR$/P&amp;L/unmodeled_acc/batchFilterAcc.py" />
+        <option value="$PROJECT_DIR$/P&amp;L/unmodeled_acc/posVelAcc.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="-2489" />
-    <option name="y" value="-467" />
+    <option name="x" value="-2393" />
+    <option name="y" value="-519" />
     <option name="width" value="2098" />
     <option name="height" value="1104" />
   </component>
@@ -137,8 +182,8 @@
     </navigator>
     <panes>
       <pane id="Scratches" />
-      <pane id="Scope" />
       <pane id="ProjectPane" />
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -157,7 +202,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.init">
+  <component name="RunManager" selected="Python.init_acc">
     <configuration default="false" name="init" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -188,6 +233,40 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="DINObatch" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/P&amp;L/unmodeled_acc/init_acc.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="init (1)" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/RngRngRate" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="DINObatch" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RngRngRate/init.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="test_A_Matrix" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/RngRngRate/_UnitTest" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="DINObatch" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RngRngRate/_UnitTest/test_A_Matrix.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
@@ -326,14 +405,18 @@
       <option name="USE_KEYWORD" value="false" />
       <method />
     </configuration>
-    <list size="2">
+    <list size="4">
       <item index="0" class="java.lang.String" itemvalue="Python.init" />
       <item index="1" class="java.lang.String" itemvalue="Python.init_acc" />
+      <item index="2" class="java.lang.String" itemvalue="Python.init (1)" />
+      <item index="3" class="java.lang.String" itemvalue="Python.test_A_Matrix" />
     </list>
     <recent_temporary>
-      <list size="2">
-        <item index="0" class="java.lang.String" itemvalue="Python.init" />
-        <item index="1" class="java.lang.String" itemvalue="Python.init_acc" />
+      <list size="4">
+        <item index="0" class="java.lang.String" itemvalue="Python.init_acc" />
+        <item index="1" class="java.lang.String" itemvalue="Python.test_A_Matrix" />
+        <item index="2" class="java.lang.String" itemvalue="Python.init (1)" />
+        <item index="3" class="java.lang.String" itemvalue="Python.init" />
       </list>
     </recent_temporary>
   </component>
@@ -351,19 +434,19 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-2489" y="-467" width="2098" height="1104" extended-state="0" />
+    <frame x="-2393" y="-519" width="2098" height="1104" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.04957102" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.07435653" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.42222223" sideWeight="0.5019066" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.26956522" sideWeight="0.22545281" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.42222223" sideWeight="0.49809343" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.26956522" sideWeight="0.77454716" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33887467" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33785823" sideWeight="0.496875" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -379,18 +462,25 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
-      <option name="time" value="6" />
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/posVelAcc.py</url>
+          <line>84</line>
+          <option name="timeStamp" value="6" />
+        </line-breakpoint>
+      </breakpoints>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
+      <option name="time" value="8" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/rngRngRtBatch.py" />
-    <entry file="file://$PROJECT_DIR$/init.py" />
-    <entry file="file://$PROJECT_DIR$/posVel.py" />
-    <entry file="file://$PROJECT_DIR$/data_generation.py" />
-    <entry file="file://$PROJECT_DIR$/rngRngRt.py" />
-    <entry file="file://$PROJECT_DIR$/batchFilter.py" />
-    <entry file="file://$PROJECT_DIR$/beaconBinSPICE.py" />
     <entry file="file://$PROJECT_DIR$/rngRngRtBatch.py" />
     <entry file="file://$PROJECT_DIR$/init.py" />
     <entry file="file://$PROJECT_DIR$/posVel.py" />
@@ -431,23 +521,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1080">
           <caret line="72" column="20" lean-forward="false" selection-start-line="72" selection-start-column="20" selection-end-line="72" selection-end-column="20" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/RngRngRate/_UnitTest/test_fncg.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="480">
-          <caret line="32" column="27" lean-forward="false" selection-start-line="32" selection-start-column="27" selection-end-line="32" selection-end-column="27" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/P&amp;L/vanilla_pl/init.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-3285">
-          <caret line="35" column="0" lean-forward="false" selection-start-line="35" selection-start-column="0" selection-end-line="35" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -455,15 +528,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/beaconBinSPICE.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="345">
-          <caret line="48" column="40" lean-forward="false" selection-start-line="48" selection-start-column="40" selection-end-line="48" selection-end-column="40" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -471,25 +535,104 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RngRngRate/data_generation.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/init_acc.py">
+    <entry file="file://$PROJECT_DIR$/RngRngRate/_UnitTest/test_fncg.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="30">
-          <caret line="282" column="26" lean-forward="false" selection-start-line="282" selection-start-column="26" selection-end-line="282" selection-end-column="26" />
+        <state relative-caret-position="326">
+          <caret line="32" column="27" lean-forward="false" selection-start-line="32" selection-start-column="27" selection-end-line="32" selection-end-column="27" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../Basilisk/SimScenarios/test_scenarioCSSFilters.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-331">
+          <caret line="622" column="0" lean-forward="true" selection-start-line="622" selection-start-column="0" selection-end-line="622" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/plotFilter.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="375">
-          <caret line="544" column="20" lean-forward="false" selection-start-line="544" selection-start-column="20" selection-end-line="544" selection-end-column="20" />
+        <state relative-caret-position="233">
+          <caret line="389" column="68" lean-forward="false" selection-start-line="389" selection-start-column="45" selection-end-line="389" selection-end-column="68" />
           <folding>
             <element signature="e#375#406#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/P&amp;L/vanilla_pl/init.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="233">
+          <caret line="85" column="10" lean-forward="false" selection-start-line="85" selection-start-column="4" selection-end-line="85" selection-end-column="10" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RngRngRate/_UnitTest/test_A_Matrix.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1230">
+          <caret line="82" column="11" lean-forward="false" selection-start-line="82" selection-start-column="11" selection-end-line="82" selection-end-column="11" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/init_acc.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="379">
+          <caret line="233" column="4" lean-forward="false" selection-start-line="233" selection-start-column="4" selection-end-line="233" selection-end-column="21" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RngRngRate/posVel.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-165">
+          <caret line="71" column="55" lean-forward="false" selection-start-line="71" selection-start-column="55" selection-end-line="71" selection-end-column="55" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RngRngRate/init.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="233">
+          <caret line="81" column="10" lean-forward="false" selection-start-line="81" selection-start-column="4" selection-end-line="81" selection-end-column="10" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/beaconBinSPICE.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1935">
+          <caret line="131" column="19" lean-forward="false" selection-start-line="131" selection-start-column="14" selection-end-line="131" selection-end-column="19" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/batchFilterAcc.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="554">
+          <caret line="251" column="28" lean-forward="false" selection-start-line="251" selection-start-column="28" selection-end-line="251" selection-end-column="28" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/posVelAcc.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="600">
+          <caret line="77" column="0" lean-forward="true" selection-start-line="77" selection-start-column="0" selection-end-line="77" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>

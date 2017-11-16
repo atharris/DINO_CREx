@@ -527,9 +527,6 @@ def plotFunction(data_dict):
         VelCovarNormMax[i] = VelErrorNorm[i] + np.sqrt(stand_devs[i,3]**2 + stand_devs[i,4]**2 + stand_devs[i,5]**2)/30.
         VelCovarNormMin[i] = VelErrorNorm[i] - np.sqrt(stand_devs[i,3]**2 + stand_devs[i,4]**2 + stand_devs[i,5]**2)/30.
 
-    n_PosMin = PosErrorNorm.argmax()
-    n_VelMin = VelErrorNorm.argmax()
-
     plt.subplot(121)
     plt.plot(t_span,PosErrorNorm, 'b')
     plt.plot(t_span,PosCovarNormMax, 'r--', label= '$\sigma$/10')

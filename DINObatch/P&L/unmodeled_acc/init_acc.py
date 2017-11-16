@@ -230,6 +230,10 @@ def main():
     # Are we using the real dynamics for the ref or the trueData
     extras['realData']= 'ON'
 
+    # Add anomaly detection parameters
+    extras['anomaly']= False
+    extras['anomaly_num'] = 0
+
     ##################################################################################
 
     # Get Observation Times and Ephemerides. This outputs a full data set that is not
