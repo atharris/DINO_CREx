@@ -45,6 +45,7 @@ from batchFilterAcc import run_batch
 import data_generation as dg
 from plotFilter import plotFunction as PF
 from beaconBinSPICE import getObs
+import pickle
 
 import pdb
 ################################################################################
@@ -207,6 +208,9 @@ def main():
 
     # Initializing the error
     extras['x_hat_0'] = 0
+
+    # rng seed for debugging purposes
+    extras['seed'] = 5
 
 
     ##################################################################################
@@ -429,6 +433,15 @@ def main():
         print '**********************************************************'
         print anomaly_num, 'Residuals out of bounds'
 
+
+        #  Write the output to the pickle file
+        fileTag = 'nominal'
+        file = dirIt+'/'+fileTag+'_data.pkl'
+        pklFile = open( file, 'wb')
+        pickle.dump( plot_data, pklFile, -1 )
+        pklFile.flush()
+
+        pklFile.close()
 
     return
 

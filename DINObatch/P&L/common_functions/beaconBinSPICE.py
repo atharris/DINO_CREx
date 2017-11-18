@@ -44,6 +44,9 @@ def getObs(input):
 
     # create noise for the estimated observations
     # np.random.seed(42)
+    if 'seed' in extras:
+      np.random.seed(extras['seed'])
+
     observation_noise = np.zeros([n_samples, 2])
     observation_noise[:,0] = rndNrm(0., observation_uncertainty[0,0] , n_samples)
     observation_noise[:,1] = rndNrm(0., observation_uncertainty[1,1] , n_samples)
