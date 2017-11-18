@@ -6,6 +6,7 @@
 import math         #common math functions
 import numpy as np  #matrix algebra
 import matplotlib.pyplot as plt
+import sqlite3 as sql
 import cv2
 
 ##################################################
@@ -208,33 +209,39 @@ def apply_ROI_border(pixel_map, ROI_parameters):
     num_rows, num_cols = pixel_map.shape
     num_pixels_border = border_ROI*2*num_rows + border_ROI*2*num_cols - 4*border_ROI**2
 
-    #print "Map"
-    #print pixel_map
+    # print '\nCurrent ROI Pixel Map'
+    # print pixel_map
 
     ##############################################
     # find total value of all pixels in ROI border
-    sum_pixels_border = 0
 
-    for ind_col in range(1, num_cols+1):
-        if ind_col <= border_ROI or ind_col > num_cols-border_ROI:
-            for ind_row in range(1, border_ROI*2+1):
-                sum_pixels_border = sum_pixels_border + pixel_map[ind_row-1, ind_col-1]
-        else:
-            for ind_row in range(1, border_ROI+1):
-                sum_pixels_border = sum_pixels_border + pixel_map[ind_row - 1, ind_col - 1]
-            for ind_row in range(num_rows - border_ROI+1, num_rows):
-                sum_pixels_border = sum_pixels_border + pixel_map[ind_row - 1, ind_col - 1]
+    if pixel_map.shape[0] >= 2*border_ROI or pixel_map.shape[1] >= 2*border_ROI:
 
-    ave_border = sum_pixels_border/num_pixels_border
+        sum_pixels_border = 0
 
-    pixel_map_corrected = np.empty([num_rows, num_cols])
-    for ind_col in range(0, num_cols):
-        for ind_row in range(0, num_rows):
-            newvalue = pixel_map[ind_row, ind_col] - ave_border
-            if newvalue >= 0:
-                pixel_map_corrected[ind_row, ind_col] = newvalue
+        for ind_col in range(1, num_cols+1):
+            if ind_col <= border_ROI or ind_col > num_cols-border_ROI:
+                for ind_row in range(1, border_ROI*2+1):
+                    sum_pixels_border = sum_pixels_border + pixel_map[ind_row-1, ind_col-1]
             else:
-                pixel_map_corrected[ind_row, ind_col] = 0
+                for ind_row in range(1, border_ROI+1):
+                    sum_pixels_border = sum_pixels_border + pixel_map[ind_row - 1, ind_col - 1]
+                for ind_row in range(num_rows - border_ROI+1, num_rows):
+                    sum_pixels_border = sum_pixels_border + pixel_map[ind_row - 1, ind_col - 1]
+
+        ave_border = sum_pixels_border/num_pixels_border
+
+        pixel_map_corrected = np.empty([num_rows, num_cols])
+        for ind_col in range(0, num_cols):
+            for ind_row in range(0, num_rows):
+                newvalue = pixel_map[ind_row, ind_col] - ave_border
+                if newvalue >= 0:
+                    pixel_map_corrected[ind_row, ind_col] = newvalue
+                else:
+                    pixel_map_corrected[ind_row, ind_col] = 0
+
+    else:
+        pixel_map_corrected = pixel_map
 
     return pixel_map_corrected
 
@@ -252,8 +259,6 @@ def find_centroid(pixel_map, corner_ROI, ROI_parameters):
 
     border_ROI = ROI_parameters['ROI_border_width']
     num_rows, num_col = pixel_map.shape
-
-    print '\nROI Shape: ', num_rows, num_col
 
     #pixel_map_ROI = pixel_map[border_ROI:num_rows-border_ROI, border_ROI:num_col-border_ROI]
     pixel_map_ROI = pixel_map
@@ -278,13 +283,13 @@ def find_centroid(pixel_map, corner_ROI, ROI_parameters):
     loc_centroid_col = DN_row/DN
     loc_centroid = (loc_centroid_row + corner_ROI[1], loc_centroid_col + corner_ROI[0])
 
-    do_plots = True
+    do_plots = False
     if do_plots == True:
-        print '\nCurrent pixel_map_ROI Size: ', pixel_map_ROI.shape
-        print pixel_map_ROI
-        print loc_centroid_row, loc_centroid_col
+        # print '\nCurrent pixel_map_ROI Size: ', pixel_map_ROI.shape
+        # print pixel_map_ROI
+        # print loc_centroid_row, loc_centroid_col
         plt.imshow(pixel_map_ROI, interpolation='none', cmap='viridis')
-        plt.scatter(loc_centroid_row, loc_centroid_col, marker='x', s=150, linewidth=2, c='r')
+        # plt.scatter(loc_centroid_row, loc_centroid_col, marker='x', s=150, linewidth=2, c='r')
         plt.show()
         #plt.suptitle('Search Region with Centroid Marked', fontsize=12, fontweight='bold')
 
@@ -347,7 +352,7 @@ def find_highest_pixel(initial_pixel_loc, pixel_map, threshold):
 
     # Continue trying to find a pixel farther up until we have found the uppermost pixel and next_y is not at the top
     # of the map
-    while (not found_upper_pixel) and current_y < max_y:
+    while (not found_upper_pixel) and current_y < max_y-1:
         # Save the next values because we now know they are on and farther up than the previous values.
         next_y = current_y + 1
 
@@ -449,7 +454,7 @@ def find_right_pixel(initial_pixel_loc, pixel_map, threshold):
 
     # Continue trying to find a pixel farther up until we have found the uppermost pixel and current_y is not at the top
     # of the map
-    while (not found_right_pixel) and current_x < max_x:
+    while (not found_right_pixel) and current_x < max_x-1:
         # Save the next values because we now know they are on and farther up than the previous values.
         next_x = current_x + 1
 
@@ -553,6 +558,8 @@ def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18
     img = np.uint8(img)
 
     if show_img:
+        cv2.namedWindow('before', cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('before', 600, 600)
         cv2.imshow('before', img)
         cv2.imwrite('beacon_orig.png', img)
         cv2.waitKey(0)
@@ -565,30 +572,26 @@ def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18
     cv2.GaussianBlur(img, (blur, blur), 0)
     #cv2.imwrite('beacon_orig_blur.png', img)
 
-    # if show_img:
-    #     cv2.imshow('blur', img)
-    #     cv2.waitKey(0)
-    #     cv2.destroyAllWindows()
+    if show_img:
+        cv2.namedWindow('blur', cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('blur', 600, 600)
+        cv2.imshow('blur', img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     if show_img:
         canny_img = cv2.Canny(img, canny_thresh, canny_thresh / 15)
-
+        cv2.namedWindow('canny', cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('canny', 600, 600)
         cv2.imshow('canny', canny_img)
         cv2.waitKey(0)
         cv2.imwrite('beacon_orig_canny.png', canny_img)
         cv2.destroyAllWindows()
 
-    print "\n\nCircles debug"
-    print img
-    print cv2.HOUGH_GRADIENT
-    print dp
-    print center_dist
-
-
     circles = cv2.HoughCircles(img, cv2.HOUGH_GRADIENT, dp, center_dist,
                                param1=canny_thresh, param2=accum, minRadius=min_rad,
                                maxRadius=max_rad)
-    #if len(circles) < 0:
+
     if circles is None:
         print "unable to find any circles"
         return None
@@ -602,22 +605,27 @@ def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18
             cv2.circle(orrig_img, (i[0], i[1]), i[2], (0, 255, 0), 2)
             cv2.circle(orrig_img, (i[0], i[1]), 2, (0, 0, 255), 3)
 
-        img_circle = cv2.imshow('Detected circles', orrig_img)
-        cv2.imwrite('beacon_orig_circle.png', orrig_img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.namedWindow('Detected circles', cv2.WINDOW_NORMAL)
+        # cv2.resizeWindow('Detected circles', 600, 600)
+        # img_circle = cv2.imshow('Detected circles', orrig_img)
+        # cv2.imwrite('beacon_orig_circle.png', img_circle)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
 
     circles = np.squeeze(circles)
 
-    do_plots = True
+    do_plots = False
     if do_plots == True:
         print '\nInternal Hough Transform Output: ', circles
         fig, ax = plt.subplots(1)
         plt.imshow(img, interpolation='none', cmap='viridis')
-        plt.scatter(circles[0], circles[1], marker='x', s=150, linewidth=2, c='r')
-        circ = plt.Circle((circles[0], circles[1]), circles[2], color='w', fill=False)
-        ax.add_patch(circ)
+        # plt.scatter(circles[0], circles[1], marker='x', s=150, linewidth=2, c='r')
+        # circ = plt.Circle((circles[0], circles[1]), circles[2], color='w', fill=False)
+        # ax.add_patch(circ)
+        # plt.savefig('centerfinding_roi.png')
         plt.show()
+
+    print 'LOCAL MAX: ', np.amax(img)
 
     return circles
 
@@ -628,20 +636,18 @@ def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18
 # Output:   loc_centroid        (x, y) pixel/line coordinate of centroid locations
 #           DN                  total signal count of ROI
 
-def find_centroid_point_source(pixel_map, pixel_line_beacon_i, ROI_parameters, num_beacons):
+def find_centroid_point_source(pixel_map, pixel_line_beacon_i, ROI_parameters):
 
-    loc_centroid = np.empty([num_beacons], dtype=tuple)
-    DN = np.empty([num_beacons], dtype=int)
+    loc_centroid = np.empty([len(pixel_line_beacon_i)], dtype=tuple)
+    DN = np.empty([len(pixel_line_beacon_i)], dtype=int)
 
     # crop original image to an ROI based on initial
     corner_ROI, image_ROI = generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters)
 
-    for i in range(0, num_beacons):
+    for i in range(0, len(image_ROI)):
+
         # determine average value of region of interest border, subtract from rest of pixel map
         image_ROI[i] = apply_ROI_border(image_ROI[i], ROI_parameters)
-
-        #plt.savefig('saved_output/cropped_image_' + str(i) + '.png')
-        #np.savez('saved_output/cropped_image_' + str(i)  + '.npz')
 
         # calculate centroid position and ROI brightness value <-- centroid location is pixel number not index value
         # (starts with 1)
@@ -664,27 +670,28 @@ def find_center_resolved_body(pixel_map, pixel_line_beacon_i, ROI_parameters):
     # crop original image to an ROI based on initial
     corner_ROI, image_ROI = generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters)
 
-    print "\n\nIMAGE ROI: ", len(image_ROI)
 
     for i in range(0, len(image_ROI)):
+
         # determine average value of region of interest border, subtract from rest of pixel map
         image_ROI[i] = apply_ROI_border(image_ROI[i], ROI_parameters)
 
-        #plt.savefig('saved_output/cropped_image_' + str(i) + '.png')
-        #np.savez('saved_output/cropped_image_' + str(i)  + '.npz')
 
-        # calculate centroid position and ROI brightness value <-- centroid location is pixel number not index value
-        # (starts with 1)
-        # loc_centroid[i], DN[i] = find_centroid(image_ROI[i], corner_ROI[i], ROI_parameters)
+        # plt.savefig('saved_output/cropped_image_' + str(i) + '.png')
+        # np.savez('saved_output/cropped_image_' + str(i)  + '.npz')
 
-        print "\n\nImage ROI size: ", image_ROI[i].shape
+        maxROIvalue = np.amax(image_ROI[i])
+        print maxROIvalue
 
-        center = hough_circles(image_ROI[i], center_dist=1E5, canny_thresh= 250, blur=1, accum=5, show_img=False)
-        print 'CHECK Center-finding ', center
-        print center.shape
-        print 'CHECK corner ROI ', corner_ROI[i]
-        print len(corner_ROI[i])
-        loc_center[i] = (center[0] + corner_ROI[i][1], center[1] + corner_ROI[i][0])
+        # normalize ROI for center-finding function
+        currentROI = (image_ROI[i]/maxROIvalue) * 255.
+
+        center = hough_circles(currentROI, center_dist=50, canny_thresh=175, blur=5, accum=5, show_img=False)
+
+        if center is not None:
+            loc_center[i] = (center[0] + corner_ROI[i][1], center[1] + corner_ROI[i][0])
+        else:
+            loc_center = None
 
     return loc_center, DN
 

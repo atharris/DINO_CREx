@@ -38,8 +38,6 @@ def initial_beacons_estimate(pos_beacon, pos_sc, attde_sc, cam_res, cam_focal_le
     for ind_beacon in range(n_beacons):
 
         # compute unit direction from s/c to beacon in camera body coordinates
-        print ind_beacon
-        print pos_beacon[ind_beacon, :]
         current_pos_beacon = pos_beacon[ind_beacon, :]
         pos_sc2beacon = current_pos_beacon - pos_sc
         e_sc2beacon = pos_sc2beacon / np.linalg.norm(pos_sc2beacon)
@@ -52,10 +50,6 @@ def initial_beacons_estimate(pos_beacon, pos_sc, attde_sc, cam_res, cam_focal_le
         # convert to pixel units
         current_pixel = x_focal / cam_pixel_size[0]
         current_line = y_focal / cam_pixel_size[1]
-
-        print '\nS/C to Beacon Unit Vector (HCI): ', e_sc2beacon
-        print 'S/C to Beacon Unit Vector (body coord): ',e_sc2beacon_cam
-        print 'Pixel/Line Location: ', current_pixel, current_line
 
         # check to see if beacon is in field of view
         if current_pixel >= 0 and current_pixel <= cam_res[0] and \
@@ -79,7 +73,6 @@ def initial_beacons_estimate(pos_beacon, pos_sc, attde_sc, cam_res, cam_focal_le
 
 # Function to convert s/c state and beacon position to initial estimate of beacon centroid pixel/line location
 # (may not be necessary if pixel line location can be directly provided by navigation module)
-# NOTE CURRENTLY BROKEN FOR HORIZONTAL FIELDS OF VIEW!!!!!!!!!!!!!!!
 # Input:
 #           attde_sc                BN direction cosine matrix of s/c attitude
 #                                   (b1 = camera boresight, b2 = left, b3 = up)
@@ -88,7 +81,7 @@ def initial_beacons_estimate(pos_beacon, pos_sc, attde_sc, cam_res, cam_focal_le
 #           cam_pixel_size          Camera pixel size (width, height) [mm]
 #           fname_catalog           Filename for star catalog file to be used
 # Output:
-#           (pixel, line)           Tuple of 1D arrays of pixel and line coordinates
+#           (pixel, line, catalog_ID)           Tuple of 1D lists of pixel and line coordinates and IDs
 
 def initial_stars_estimate(attde_sc, cam_res, cam_focal_length, cam_pixel_size, fname_catalog):
 
@@ -99,7 +92,7 @@ def initial_stars_estimate(attde_sc, cam_res, cam_focal_length, cam_pixel_size, 
     cam_fov = (2 * math.degrees(math.atan2(cam_sensor_size[0] / 2., cam_focal_length)),
                2 * math.degrees(math.atan2(cam_sensor_size[1] / 2., cam_focal_length)))
 
-    print 'Cam FoV (Initial Star Estimate Function): ', cam_fov
+    # print 'Cam FoV (Initial Star Estimate Function): ', cam_fov
 
     # calculate unit vectors to four corners of camera field of view in camera body frame
     hplane = math.cos(math.radians(cam_fov[1]/2.))      # projection of unit vector on horizontal plane
@@ -113,16 +106,6 @@ def initial_stars_estimate(attde_sc, cam_res, cam_focal_length, cam_pixel_size, 
     upperright = np.array([e1, -e2, e3])
     lowerleft = np.array([e1, e2, -e3])
     lowerright = np.array([e1, -e2, -e3])
-
-    # print '\nFoV Corner Unit Vectors (body coord.):'
-    # print upperleft, np.linalg.norm(upperleft)
-    # print upperright, np.linalg.norm(upperright)
-    # print lowerleft, np.linalg.norm(lowerleft)
-    # print lowerright, np.linalg.norm(lowerright)
-    # print 'Upper Corner Angular Separation: ', math.degrees(math.acos(np.dot(upperleft, upperright)))
-    # print 'Lower Corner Angular Separation: ', math.degrees(math.acos(np.dot(lowerleft, lowerright)))
-    # print 'Right Side Angular Separation: ', math.degrees(math.acos(np.dot(upperright, lowerright)))
-    # print 'Left Side Angular Separation: ', math.degrees(math.acos(np.dot(upperleft, lowerleft)))
 
     # convert unit vectors from body frame to heliocentric inertial frame
     ul_helio = np.matmul(attde_sc.T, upperleft)
@@ -164,10 +147,13 @@ def initial_stars_estimate(attde_sc, cam_res, cam_focal_length, cam_pixel_size, 
         radec_stars, attde_sc, cam_res, cam_focal_length, cam_pixel_size)
 
     n_stars = len(pixel)
-    pixel_out = np.resize(pixel, (1, n_stars))
-    line_out = np.resize(line, (1, n_stars))
+    # pixel_out = np.resize(pixel, (1, n_stars))
+    # line_out = np.resize(line, (1, n_stars))
+    pixel_out = pixel
+    line_out = line
+    catalog_id = radec_stars[2]
 
-    return (pixel_out, line_out, radec_stars)
+    return (pixel_out, line_out, catalog_id)
 
 
 ##################################################
@@ -226,8 +212,8 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
     rows = s.fetchall()
     n_stars = len(rows)
 
-    print '\nRA and Dec limits ', (ra_min, ra_max), (dec_min, dec_max)
-    print 'Number of catalog entries: ', n_stars
+    # print '\nRA and Dec limits ', (ra_min, ra_max), (dec_min, dec_max)
+    # print 'Number of catalog entries: ', n_stars
 
     # generate numpy array of results
     ra = []
@@ -237,8 +223,6 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
         ra.append(rows[ind][1])
         dec.append(rows[ind][2])
         id.append(rows[ind][0])
-        if ind < 4:
-            print rows[ind][0], rows[ind][1], rows[ind][2], rows[ind][3]
 
     radec_inertial = (ra, dec, id)
 
@@ -304,8 +288,8 @@ def radec_to_pixelline(radec_inertial, attde_sc, cam_res, cam_focal_length, cam_
             line.append(current_line)
             #print 'STAR IN FIELD OF VIEW FOUND'
 
-    pixel_out = np.resize(pixel, (1, n_stars))
-    line_out = np.resize(line, (1, n_stars))
+    # pixel_out = np.resize(pixel, (1, n_stars))
+    # line_out = np.resize(line, (1, n_stars))
 
     return (pixel, line)
 
