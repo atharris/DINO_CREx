@@ -34,17 +34,13 @@ sys.path.append(bskPath + 'PythonModules')
 sys.path.append(dinoSpicePath)
 sys.path.append(dinoCommonPath)
 
-try:
-    import pyswice
-except ImportError:
-    from Basilisk import pyswice
-    bskSpicePath = splitPath[0] + bskName + '/supportData/EphemerisData/'
+import pyswice
 import numpy as np
-from batchFilter import run_batch
+from batchFilterDebug import run_batch
 import data_generation as dg
 from plotFilter import plotFunction as PF
 from beaconBinSPICE import getObs
-import pickle
+import pickle 
 
 import pdb
 ################################################################################
@@ -236,11 +232,6 @@ def main():
     # Are we using the real dynamics for the ref or the trueData
     extras['realData']= 'OFF'
 
-    # Add anomaly detection parameters
-    extras['anomaly']= False
-    extras['anomaly_num'] = 0
-    extras['anomaly_threshold'] = 4
-
     ##################################################################################
 
     # Get Observation Times and Ephemerides. This outputs a full data set that is not
@@ -256,9 +247,7 @@ def main():
 
     tt_switch = 5
 
-    print '------------------'
-    print 'Filter Image Span : ' ,(t_span[-1] - t_span[0])/(60*60*24), 'days'
-    print '------------------'
+
 
     # number and keys of beacons. note that the true ephem is going to have one spot for the
     # sun, which in NOT a beacon. These are used in beaconBinSPICE. 
@@ -364,16 +353,6 @@ def main():
         ref_state, est_state, extra_data = run_batch(filter_inputs)
         extras['oldPost'] = extra_data['postfit residuals']
 
-        # Check for anomaly:
-
-        [anomaly_bool , anomaly_num] = extra_data['anomaly_detected']
-        if anomaly_bool == True:
-            print '**********************************************************'
-            print 'Anomaly Detected - Estimates are not to be trusted'
-            print '**********************************************************'
-            print anomaly_num, 'Residuals out of bounds'
-            return
-
         # save all outputs into the dictionary with a name associated with the iteration
         filter_outputs[str(itr)] = {}
         filter_outputs[str(itr)]['ref_state'] = ref_state
@@ -420,7 +399,7 @@ def main():
         PF( plot_data )
 
         #  Write the output to the pickle file
-        fileTag = 'nominal'
+        fileTag = 'debug'
         file = dirIt+'/'+fileTag+'_data.pkl'
         pklFile = open( file, 'wb')
         pickle.dump( plot_data, pklFile, -1 )
