@@ -110,43 +110,89 @@ def main() :
     #
     ###########################################################
 
-    debug_residual   = np.zeros( (2,len(t_span)) ) # R[pos,vel] C[length]
-    nominal_residual = np.zeros( (2,len(t_span)) ) # R[pos,vel] C[length]
+    debug_abs_residual   = np.zeros( (2,len(t_span)) ) # R[pos,vel] C[length]
+    nominal_abs_residual = np.zeros( (2,len(t_span)) ) # R[pos,vel] C[length]
+    debug_rel_residual   = np.zeros( (2,len(t_span)) ) # R[pos,vel] C[length]
+    nominal_rel_residual = np.zeros( (2,len(t_span)) ) # R[pos,vel] C[length]
+    pdb.set_trace()
+    debug_rel_residual[0,:] = np.divide(\
+                          np.array([posErrNormDbgVanilla-posErrNormDbgUnmodeledAcc]),\
+                          np.array(posErrNormDbgVanilla))
+    debug_rel_residual[1,:] = np.divide(\
+                          np.array([velErrNormDbgVanilla-velErrNormDbgUnmodeledAcc]),\
+                          np.array(velErrNormDbgVanilla))
 
-    debug_residual[0,:] = np.array([posErrNormDbgVanilla-posErrNormDbgUnmodeledAcc])
-    debug_residual[1,:] = np.array([velErrNormDbgVanilla-velErrNormDbgUnmodeledAcc])
+    nominal_rel_residual[0,:] = np.divide(\
+                          np.array([posErrNormNmnlVanilla-posErrNormNmnlUnmodeledAcc]),\
+                          np.array(posErrNormNmnlVanilla))
+    nominal_rel_residual[1,:] = np.divide(\
+                          np.array([velErrNormNmnlVanilla-velErrNormNmnlUnmodeledAcc]),\
+                          np.array(velErrNormNmnlVanilla))
 
-    nominal_residual[0,:] = np.array([posErrNormNmnlVanilla-posErrNormNmnlUnmodeledAcc])
-    nominal_residual[1,:] = np.array([velErrNormNmnlVanilla-velErrNormNmnlUnmodeledAcc])
+    debug_abs_residual[0,:] = np.array([posErrNormDbgVanilla-posErrNormDbgUnmodeledAcc])
+    debug_abs_residual[1,:] = np.array([velErrNormDbgVanilla-velErrNormDbgUnmodeledAcc])
+
+    nominal_abs_residual[0,:] = np.array([posErrNormNmnlVanilla-posErrNormNmnlUnmodeledAcc])
+    nominal_abs_residual[1,:] = np.array([velErrNormNmnlVanilla-velErrNormNmnlUnmodeledAcc])
 
     plt.subplot(121)
-    plt.plot(t_span/t_span[-1],np.abs(debug_residual[0,:]), 'b', label='W/O SRP EOM')
-    plt.plot(t_span/t_span[-1],np.abs(nominal_residual[0,:]), 'r', label='With SRP EOM')
-    plt.ylabel('km')
+    plt.plot(t_span/t_span[-1],np.abs(debug_rel_residual[0,:]), 'b', label='W/O SRP EOM')
+    plt.plot(t_span/t_span[-1],np.abs(nominal_rel_residual[0,:]), 'r', label='With SRP EOM')
+    plt.ylabel('N/A')
     #plt.yticks(np.linspace(PosCovarNormMax.max(), PosCovarNormMin.min(), 12))
     plt.xticks([])
     ax = plt.gca()
     #ax.set_xticklabels(['t_0', 't_f'])
-    leg = ax.legend(loc=1,bbox_to_anchor=(.95,.95)) 
-    plt.title('Absolute Position Residuals')
+    #leg = ax.legend(loc=1,bbox_to_anchor=(.95,.95)) 
+    plt.title('Relative Position Residuals')
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(122)
-    plt.plot(t_span/t_span[-1],np.abs(debug_residual[1,:]), 'b', label='W/O SRP EOM')
-    plt.plot(t_span/t_span[-1],np.abs(nominal_residual[1,:]), 'r', label='With SRP EOM')
-    plt.ylabel('km/s')
+    plt.plot(t_span/t_span[-1],np.abs(debug_rel_residual[1,:]), 'b', label='W/O SRP EOM')
+    plt.plot(t_span/t_span[-1],np.abs(nominal_rel_residual[1,:]), 'r', label='With SRP EOM')
+    #plt.ylabel('km/s')
     #plt.yticks(np.linspace(VelCovarNormMax.max(), VelCovarNormMin.min(), 12))
     plt.xticks([])
     ax = plt.gca()
     #ax.set_xticklabels(['t_0', 't_f'])
-    leg = ax.legend(loc=1,bbox_to_anchor=(.95,.95)) 
-    plt.title('Absolute Velocity Residuals')
+    leg = ax.legend(loc=1,bbox_to_anchor=(.99,.99)) 
+    plt.title('Relative Velocity Residuals')
     # plt.ylim((-ymax, ymax))
 
     plt.suptitle('Residual Comparison')
     plt.tight_layout()
     plt.subplots_adjust(top=.9)
-    plt.savefig(path + '/errorComparison.png', dpi=300, format='png')
+    plt.savefig(path + '/errorRelativeComparison.png', dpi=300, format='png')
+    plt.close()
+
+    plt.subplot(121)
+    plt.plot(t_span/t_span[-1],np.abs(debug_abs_residual[0,:]), 'b', label='W/O SRP EOM')
+    plt.plot(t_span/t_span[-1],np.abs(nominal_abs_residual[0,:]), 'r', label='With SRP EOM')
+    plt.ylabel('km')
+    #plt.yticks(np.linspace(PosCovarNormMax.max(), PosCovarNormMin.min(), 12))
+    plt.xticks([])
+    ax = plt.gca()
+    #ax.set_xticklabels(['t_0', 't_f'])
+    #leg = ax.legend(loc=1,bbox_to_anchor=(.95,.95)) 
+    plt.title('Relative Position Residuals')
+    # plt.ylim((-ymax, ymax))
+
+    plt.subplot(122)
+    plt.plot(t_span/t_span[-1],np.abs(debug_abs_residual[1,:]), 'b', label='W/O SRP EOM')
+    plt.plot(t_span/t_span[-1],np.abs(nominal_abs_residual[1,:]), 'r', label='With SRP EOM')
+    plt.ylabel('km/s')
+    #plt.yticks(np.linspace(VelCovarNormMax.max(), VelCovarNormMin.min(), 12))
+    plt.xticks([])
+    ax = plt.gca()
+    #ax.set_xticklabels(['t_0', 't_f'])
+    leg = ax.legend(loc=1,bbox_to_anchor=(.99,.99)) 
+    plt.title('Relative Velocity Residuals')
+    # plt.ylim((-ymax, ymax))
+
+    plt.suptitle('Residual Comparison')
+    plt.tight_layout()
+    plt.subplots_adjust(top=.9)
+    plt.savefig(path + '/errorAbsoluteComparison.png', dpi=300, format='png')
 
     ############################################################
     #
