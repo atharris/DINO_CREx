@@ -56,8 +56,20 @@ def errorNorm( truth, estimate ):
 
 # -------------------------------------------------------------------------------
 def main() :
-    nominal_path = 'Batch_Iteration3/nominal_data.pkl'
-    debug_path   = 'Batch_Iteration3/debug_data.pkl'
+
+  for ii in xrange(3):
+    itr = ii+1
+    print 'Iteration ' + str(itr)
+    # Iteration Directory
+    dirIt = 'Batch_Iteration' + str(itr)
+    saveDir = 'comparison_figures/'+dirIt
+
+    # Make directory for the iterations
+    if not os.path.exists(saveDir):
+        os.makedirs(saveDir)
+
+    nominal_path = dirIt+'/nominal_data.pkl'
+    debug_path   = dirIt+'/debug_data.pkl'
 
     nominal_vanilla_data_path = path + '/vanilla_pl/' + nominal_path
     nominal_vanilla_file      = open( nominal_vanilla_data_path, 'rb' )
@@ -106,15 +118,27 @@ def main() :
 
     ###########################################################
     # 
-    # RESIDUAL WORK
+    # DYNAMICS WORK
     #
     ###########################################################
 
+    refState_nominal = nominal_vanilla['ref_state']
+
+    refState_debug   = debug_vanilla['ref_state']
+
+    refDifference    = refState_nominal.T - refState_debug.T
+
+    ###########################################################
+    # 
+    # RESIDUAL WORK
+    #
+    ###########################################################
+   
     debug_abs_residual   = np.zeros( (2,len(t_span)) ) # R[pos,vel] C[length]
     nominal_abs_residual = np.zeros( (2,len(t_span)) ) # R[pos,vel] C[length]
     debug_rel_residual   = np.zeros( (2,len(t_span)) ) # R[pos,vel] C[length]
     nominal_rel_residual = np.zeros( (2,len(t_span)) ) # R[pos,vel] C[length]
-    pdb.set_trace()
+
     debug_rel_residual[0,:] = np.divide(\
                           np.array([posErrNormDbgVanilla-posErrNormDbgUnmodeledAcc]),\
                           np.array(posErrNormDbgVanilla))
@@ -134,6 +158,12 @@ def main() :
 
     nominal_abs_residual[0,:] = np.array([posErrNormNmnlVanilla-posErrNormNmnlUnmodeledAcc])
     nominal_abs_residual[1,:] = np.array([velErrNormNmnlVanilla-velErrNormNmnlUnmodeledAcc])
+
+    ###########################################################
+    # 
+    # PLOT WORK
+    #
+    ###########################################################
 
     plt.subplot(121)
     plt.plot(t_span/t_span[-1],np.abs(debug_rel_residual[0,:]), 'b', label='W/O SRP EOM')
@@ -159,11 +189,13 @@ def main() :
     plt.title('Relative Velocity Residuals')
     # plt.ylim((-ymax, ymax))
 
-    plt.suptitle('Residual Comparison')
+    plt.suptitle('Relative Residual Comparison (wrt vanilla)')
     plt.tight_layout()
     plt.subplots_adjust(top=.9)
-    plt.savefig(path + '/errorRelativeComparison.png', dpi=300, format='png')
+    plt.savefig(saveDir + '/errorRelativeComparison.png', dpi=300, format='png')
     plt.close()
+
+    ####################################################################################
 
     plt.subplot(121)
     plt.plot(t_span/t_span[-1],np.abs(debug_abs_residual[0,:]), 'b', label='W/O SRP EOM')
@@ -174,7 +206,7 @@ def main() :
     ax = plt.gca()
     #ax.set_xticklabels(['t_0', 't_f'])
     #leg = ax.legend(loc=1,bbox_to_anchor=(.95,.95)) 
-    plt.title('Relative Position Residuals')
+    plt.title('Absolute Position Residuals')
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(122)
@@ -186,13 +218,88 @@ def main() :
     ax = plt.gca()
     #ax.set_xticklabels(['t_0', 't_f'])
     leg = ax.legend(loc=1,bbox_to_anchor=(.99,.99)) 
-    plt.title('Relative Velocity Residuals')
+    plt.title('Absolute Velocity Residuals')
     # plt.ylim((-ymax, ymax))
 
-    plt.suptitle('Residual Comparison')
+    plt.suptitle('Absolute Residual Comparison')
     plt.tight_layout()
     plt.subplots_adjust(top=.9)
-    plt.savefig(path + '/errorAbsoluteComparison.png', dpi=300, format='png')
+    plt.savefig(saveDir + '/errorAbsoluteComparison.png', dpi=300, format='png')
+    plt.close()
+
+    ####################################################################################
+
+    plt.subplot(121)
+    plt.plot(t_span/t_span[-1],refDifference[0,:], 'b', label='X')
+    plt.plot(t_span/t_span[-1],refDifference[1,:], 'r', label='Y')
+    plt.plot(t_span/t_span[-1],refDifference[2,:], 'g', label='Z')
+    plt.ylabel('km')
+    #plt.yticks(np.linspace(PosCovarNormMax.max(), PosCovarNormMin.min(), 12))
+    plt.xticks([])
+    ax = plt.gca()
+    #ax.set_xticklabels(['t_0', 't_f'])
+    leg = ax.legend(loc=1,bbox_to_anchor=(.99,.99)) 
+    plt.title('Position Difference')
+    # plt.ylim((-ymax, ymax))
+
+    plt.subplot(122)
+    plt.plot(t_span/t_span[-1],refDifference[3,:], 'b', label='$\dot{X}$')
+    plt.plot(t_span/t_span[-1],refDifference[4,:], 'r', label='$\dot{Y}$')
+    plt.plot(t_span/t_span[-1],refDifference[5,:], 'g', label='$\dot{Z}$')
+    plt.ylabel('km/s')
+    #plt.yticks(np.linspace(VelCovarNormMax.max(), VelCovarNormMin.min(), 12))
+    plt.xticks([])
+    ax = plt.gca()
+    #ax.set_xticklabels(['t_0', 't_f'])
+    leg = ax.legend(loc=1,bbox_to_anchor=(.99,.99)) 
+    plt.title('Velocity Difference')
+    # plt.ylim((-ymax, ymax))
+
+    plt.suptitle('Reference Difference (vanilla)')
+    plt.tight_layout()
+    plt.subplots_adjust(top=.9)
+    plt.savefig(saveDir + '/refDifferenceComparison.png', dpi=300, format='png')
+    plt.close()
+
+    ####################################################################################
+
+    plt.subplot(121)
+    plt.plot(t_span/t_span[-1],nominal_vanilla['states'][:,0], 'b', label='$X_{vanilla}$')
+    #plt.plot(t_span/t_span[-1],nominal_vanilla['states'][:,1], 'r', label='$Y_{vanilla}$')
+    #plt.plot(t_span/t_span[-1],nominal_vanilla['states'][:,2], 'g', label='$Z_{vanilla}$')
+    plt.plot(t_span/t_span[-1],nominal_unmodeled_acc['states'][:,0], 'b--', label='$X_{acc}$')
+    plt.plot(t_span/t_span[-1],true_ephem['spacecraft'][0,:], 'r--', label='$X_{truth}$')
+    #plt.plot(t_span/t_span[-1],nominal_unmodeled_acc['states'][:,1], 'r--', label='$Y_{acc}$')
+    #plt.plot(t_span/t_span[-1],nominal_unmodeled_acc['states'][:,2], 'g--', label='$Z_{acc}$')
+    plt.ylabel('km')
+    #plt.yticks(np.linspace(PosCovarNormMax.max(), PosCovarNormMin.min(), 12))
+    plt.xticks([])
+    ax = plt.gca()
+    #ax.set_xticklabels(['t_0', 't_f'])
+    leg = ax.legend(loc=1,bbox_to_anchor=(.99,.99)) 
+    plt.title('Position')
+    # plt.ylim((-ymax, ymax))
+
+    plt.subplot(122)
+    plt.plot(t_span/t_span[-1],nominal_vanilla['states'][:,3], 'b', label='$\dot{X}_{vanilla}$')
+    plt.plot(t_span/t_span[-1],nominal_unmodeled_acc['states'][:,3], 'b', label='$\dot{X}_{acc}$')
+    plt.plot(t_span/t_span[-1],true_ephem['spacecraft'][3,:], 'r--', label='$X_{truth}$')
+    #plt.plot(t_span/t_span[-1],refDifference[4,:], 'r', label='$\dot{Y}$')
+    #plt.plot(t_span/t_span[-1],refDifference[5,:], 'g', label='$\dot{Z}$')
+    plt.ylabel('km/s')
+    #plt.yticks(np.linspace(VelCovarNormMax.max(), VelCovarNormMin.min(), 12))
+    plt.xticks([])
+    ax = plt.gca()
+    #ax.set_xticklabels(['t_0', 't_f'])
+    leg = ax.legend(loc=1,bbox_to_anchor=(.99,.99)) 
+    plt.title('Velocity')
+    # plt.ylim((-ymax, ymax))
+
+    plt.suptitle('Reference Trajectories vs Truth')
+    plt.tight_layout()
+    plt.subplots_adjust(top=.9)
+    plt.savefig(saveDir + '/refComparison.png', dpi=300, format='png')
+    plt.close()
 
     ############################################################
     #
@@ -224,7 +331,7 @@ def main() :
     print 'With SRP EOM, velocity vanilla/unmodeled'
     print nominal_rms[1,0]/nominal_rms[1,1]
 
-    return
+  return
 
 
 if __name__ == "__main__":

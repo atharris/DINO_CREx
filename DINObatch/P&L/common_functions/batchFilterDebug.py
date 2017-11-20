@@ -88,7 +88,7 @@ def runRef( input ) :
 
   # propagate the IC and STM 
   state  = integ.odeint( EOM, IC, t_span, args )
-
+  pdb.set_trace()
   return state 
 
 def run_batch( input ) :
