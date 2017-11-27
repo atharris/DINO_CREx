@@ -99,6 +99,7 @@ noStarCam = camera.camera(
 	100, 				#std for read noise in electrons
 	100, 				#bin size
 	2**16, 				#max bin depth
+	1,					#sigma for gaussian psf
 	sc,					#spacecraft the camera is attached to
 	msg,				#debug message
 	db='../db/tycho.db'	#stellar database
@@ -124,6 +125,7 @@ starCam = camera.camera(
 	100, 				#std for read noise in electrons
 	100, 				#bin size
 	2**16, 				#max bin depth
+	1,					#sigma for gaussian psf
 	sc,					#spacecraft the camera is attached to
 	msg,				#debug message
 	db='../db/tycho.db'	#stellar database
