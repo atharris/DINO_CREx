@@ -99,7 +99,7 @@
 #		BVT: Tycho (B-V) color index of all stars loaded from db
 #		starID: DINO C-REx catalog number loaded from db
 #		T: Estimated stellar temperature loaded from db
-#		soldAngleSubtended: estimated solid angle subtended by each star.
+#		solidAngleSubtended: estimated solid angle subtended by each star.
 #			loaded from db.
 #		angularHeight: Angular height of the detector field of view. 
 #			Calculated using calculateFOV()
@@ -118,12 +118,14 @@
 #		images: dictionary to hold images
 #
 #	Keyword Arguments:
-#		verbose: print more to standard out for debugging. Mostly timings.
 #		db: File path to a stellar database file. If not provided, 
 #			db/tycho_small.db is used.
-#
+# 
 ###############################################################################
 class camera:
+	"""!
+	@param asdfasdf asdfasdf
+	"""
 	def __init__(
 		self, 
 		detectorHeight, 
@@ -142,6 +144,7 @@ class camera:
 		readSigma,
 		dnBinSize,
 		dnDepthMax,
+		psfSigma,
 		sc,
 		msg,
 		**kwargs
@@ -149,11 +152,6 @@ class camera:
 
 		from em import planck
 		from numpy import pi, array
-
-		try:
-			verbose = kwargs['verbose']
-		except:
-			verbose = 0
 
 		try: 
 			db = kwargs['db']
@@ -164,11 +162,10 @@ class camera:
 			focalLength,
 			detectorHeight, 
 			detectorWidth,
-			verbose=verbose
 			)
 
 		if msg['addStars']:
-			allstars = self.loadAllStars(db, maxMag, minMag, verbose=verbose)
+			allstars = self.loadAllStars(db, maxMag, minMag)
 		lambdaSet = self.findLambdaSet(qe, tc, lambdaBinSize)
 		qe = self.interpolateLambdaDependent(qe,lambdaSet)
 		tc = self.interpolateLambdaDependent(tc,lambdaSet) 
@@ -185,19 +182,31 @@ class camera:
 			self.BVT = allstars['BVT']
 			self.starID = allstars['starID']
 			self.T = allstars['T']
-			self.soldAngleSubtended = allstars['soldAngleSubtended']
+			self.solidAngleSubtended = allstars['solidAngleSubtended']
 		else:
-			self.RA = array([])
-			self.DE = array([])
-			self.n1 = array([])
-			self.n2 = array([])
-			self.n3 = array([])
+			## Numpy array of right ascensions of all stars loaded into camera
+			self.RA = array([]) 
+			## Numpy array of declinations of all stars loaded into camera
+			self.DE = array([]) 
+			## Numpy array of 1st inertial unit vector coordinate of all stars loaded into camera
+			self.n1 = array([]) 
+			## Numpy array of 2nd inertial unit vector coordinate of all stars loaded into camera
+			self.n2 = array([]) 
+			## Numpy array of 3rd inertial unit vector coordinate of all stars loaded into camera
+			self.n3 = array([]) 
+			## Numpy array of Tycho visual magnitude of all stars loaded into camera
 			self.VT = array([])
+			## Numpy array of Tycho color index of all stars loaded into camera
 			self.BVT = array([])
+			## Numpy array of DINO db star id of all stars loaded into camera
 			self.starID = array([])
+			## Numpy array of computed temperatures of all stars loaded into camera
 			self.T = array([])
-			self.soldAngleSubtended = array([])
+			## Numpy array of solid angle subtended of all stars loaded into camera
+			self.solidAngleSubtended = array([])
 
+		## Numpy array solar flux values (W/m^2/sr) evaluated at each
+		## wavelength in lambdaSet
 		self.solarBB = planck(5778,lambdaSet*1e-9)
 		self.lambdaSet = lambdaSet
 		self.sensitivityCurve = sensitivityCurve[sensitivityCurve != 0]
@@ -223,33 +232,36 @@ class camera:
 		self.msg = msg
 		self.dnBinSize = dnBinSize
 		self.dnDepthMax = dnDepthMax
+		self.psfSigma = psfSigma
 
 	###########################################################################
-	#	loadAllStars()
-	#
-	#		Inputs:
-	#			none
-	#		Outputs:
-	#			allstars: A dict with RA, DE, inertial position vector, 
-	#				Johnson V magnitude and Johnson (B-V) color index for
-	#				all stars in the given database
-	#			db: string. The database to pull star data from. Format is 
-	#				in the DINO C-REx Image Generation documentation
-	#
-	#		Keyword Arguements:
-	#			verbose: boolean. If set to 1, loadAllStars will present
-	#				the user with timings for the database call
-	#
+	#	loadAllStars() is used to load stellar data from a database (nominally
+	# 	db/tycho.db into a camera instance).
 	###########################################################################
-	def loadAllStars(self,db, maxMag, minMag, **kwargs):
+	def loadAllStars(self,db, maxMag, minMag):
+		"""!
+		@param db: database to load stars from. If camera object is initialized 
+		nominally, this will be db/tycho.db. db can be changed by initializing
+		camera with the db kwarg.
+		@param maxMag: maximum magnitude to load into camera. Can be used when
+		modeling a noisy camera. Images are created more quickly when fewer stars
+		are present, so cutting out dimmer stars may be desirable
+		@param minMag: minum magnitude to load into camera. WARNING: Setting this
+		value to anything greater than -2 is physically unrealistic as it will remove
+		all of the brightest stars! Parameter is included for debugging purposes
+		@return RA: Right ascension of all stars in db within magnitude bounds
+		@return DE: Declination of all stars in db within magnitude bounds
+		@return VT: Tycho visual magnitude of all stars in db within magnitude bounds
+		@return BVT: Tycho color index of all stars in db within magnitude bounds
+		@return n1: 1st coordinate of intertial unit vector of all stars in db within magnitude bounds
+		@return n2: 2nd coordinate of intertial unit vector of all stars in db within magnitude bounds
+		@return n3: 3rd coordinate of intertial unit vector of all stars in db within magnitude bounds
+		@return starID: Right ascension of all stars in db within magnitude bounds
+		@return solidAngleSubtended: Right ascension of all stars in db within magnitude bounds
+		@return T: Right ascension of all stars in db within magnitude bounds
+		"""
 		import sqlite3
 		from numpy import array, sin, cos, deg2rad, logical_and
-
-		try: 
-			verbose = kwargs['verbose']
-			startTime = datetime.now()
-		except:
-			verbose = 0
 
 		conn = sqlite3.connect(db)
 		c = conn.cursor()
@@ -258,9 +270,6 @@ class camera:
 			"computed_temperature from tycho_data"
 		c.execute(selectString)
 
-		if verbose:
-			print("DB Query: " + str(datetime.now() - startTime))
-			startTime = datetime.now()
 
 		RA = []
 		DE = []
@@ -269,7 +278,7 @@ class camera:
 		phi = []
 		theta = []
 		starID = []
-		soldAngleSubtended = []
+		solidAngleSubtended = []
 		T = []
 
 		for row in c:
@@ -294,9 +303,9 @@ class camera:
 			#it yet. The temp doesn't matter if the reduction
 			#term is zero
 			try:
-				soldAngleSubtended.append(float(row[5]))
+				solidAngleSubtended.append(float(row[5]))
 			except:
-				soldAngleSubtended.append(float(0))
+				solidAngleSubtended.append(float(0))
 			try:
 				T.append(float(row[6]))
 			except:
@@ -310,7 +319,7 @@ class camera:
 		phi = array(phi)
 		theta = array(theta)
 		starID = array(starID)
-		soldAngleSubtended = array(soldAngleSubtended)
+		solidAngleSubtended = array(solidAngleSubtended)
 		T = array(T)
 
 		ind = VT < maxMag
@@ -323,7 +332,7 @@ class camera:
 		phi = phi[ind]
 		starID = starID[ind]
 		T = T[ind]
-		soldAngleSubtended = soldAngleSubtended[ind]
+		solidAngleSubtended = solidAngleSubtended[ind]
 		#convert spherical coordinates to cartesian in inertial
 		n1 = sin(deg2rad(phi))*cos(deg2rad(theta))
 		n2 = sin(deg2rad(phi))*sin(deg2rad(theta))
@@ -338,7 +347,7 @@ class camera:
 			'n2': n2,
 			'n3': n3,
 			'starID': starID,
-			'soldAngleSubtended': soldAngleSubtended,
+			'solidAngleSubtended': solidAngleSubtended,
 			'T': T	
 			}
 
@@ -365,9 +374,9 @@ class camera:
 
 	def calculateFOV(self, focalLength, detectorHeight, detectorWidth, **kwargs):
 		from numpy import sqrt, arctan2, rad2deg
-		f = focalLength
-		a = detectorHeight
-		b = detectorWidth
+		f = float(focalLength)
+		a = float(detectorHeight)
+		b = float(detectorWidth)
 		c = sqrt(a**2 + b**2)
 
 		#angular distance of diagonal of FOV
@@ -700,7 +709,7 @@ class image:
 				self.camera.n1, self.camera.n2, self.camera.n3,
 				self.camera.VT, self.camera.BVT, self.camera.T,
 				self.camera.T, #spoof so the fcn won't break :-(
-				self.camera.soldAngleSubtended,
+				self.camera.solidAngleSubtended,
 				self.camera.maxMag, 
 				self.camera.starID,
 				fullExposureMsg
@@ -716,7 +725,7 @@ class image:
 			self.c3 = FOV['c3']
 			self.T = FOV['T']
 			self.starID = FOV['starID']
-			self.soldAngleSubtended = FOV['soldAngleSubtended']
+			self.solidAngleSubtended = FOV['solidAngleSubtended']
 			I = []
 			import matplotlib.pyplot as plt
 
@@ -728,9 +737,9 @@ class image:
 					flux_per_m2_per_nm_per_sr_at_star = self.camera.solarBB
 				else:
 					flux_per_m2_per_nm_per_sr_at_star = planck(T,self.camera.lambdaSet*1e-9)
-				soldAngleSubtended = self.soldAngleSubtended[i]
+				solidAngleSubtended = self.solidAngleSubtended[i]
 				
-				flux_per_m2_per_nm_per_sr_at_obs = flux_per_m2_per_nm_per_sr_at_star*soldAngleSubtended
+				flux_per_m2_per_nm_per_sr_at_obs = flux_per_m2_per_nm_per_sr_at_star*solidAngleSubtended
 				flux_per_m2_per_nm = pi*flux_per_m2_per_nm_per_sr_at_obs
 				flux_per_m2 = flux_per_m2_per_nm*self.camera.lambdaBinSize
 				flux = flux_per_m2*self.camera.effectiveArea
@@ -767,7 +776,7 @@ class image:
 					self.n1, self.n2, self.n3,
 					self.VT, self.BVT, self.T,
 					self.I,
-					self.soldAngleSubtended,
+					self.solidAngleSubtended,
 					self.camera.maxMag, 
 					self.starID,
 					sceneMsg
@@ -789,11 +798,11 @@ class image:
 						)
 					)
 			i = 0
+			if self.camera.msg['psf']:
+					psf = self.psf(self.camera.psfSigma)
 			for eachScene in self.scenes:
 				i+=1
 				if self.camera.msg['psf']:
-					psf = self.psf(1)
-
 					pixel = psf['x'].reshape(len(psf['x']),1) + eachScene.pixel
 					line = psf['y'].reshape(len(psf['y']),1) + eachScene.line
 					I = psf['I'].reshape(len(psf['I']),1)*eachScene.I
@@ -875,7 +884,7 @@ class image:
 	#		BVT: Tycho color index of all stars that may be in FOV
 	#		T: Computed temperature of all stars that may be in FOV
 	#		I: Computed incident intensity of all stars that may be in FOV
-	#		soldAngleSubtended: soldAngleSubtended of all stars that may be in FOV
+	#		solidAngleSubtended: solidAngleSubtended of all stars that may be in FOV
 	#		maxMag: maximum magnitude of camera
 	#		starIDs: starIDs of all stars that may be in FOV
 	#		msg: debug message passed from camera
@@ -897,7 +906,7 @@ class image:
 	#			starID : starID of all stars in FOV
 	#			I: Computed incident intensity of all stars in FOV
 	#			T: T of all stars in FOV
-	#			soldAngleSubtended': soldAngleSubtended of all stars in FOV
+	#			solidAngleSubtended': solidAngleSubtended of all stars in FOV
 	#	Notes:
 	#
 	###########################################################################
@@ -917,7 +926,7 @@ class image:
 		RA, DE, 
 		n1, n2, n3,
 		VT, BVT,T,I,
-		soldAngleSubtended,
+		solidAngleSubtended,
 		maxMag, 
 		starIDs,
 		msg,
@@ -949,7 +958,7 @@ class image:
 					DE = DE[occCheck]
 					starIDs = starIDs[occCheck]
 					T = T[occCheck]
-					soldAngleSubtended = soldAngleSubtended[occCheck]
+					solidAngleSubtended = solidAngleSubtended[occCheck]
 					I = I[occCheck]
 
 
@@ -1008,16 +1017,16 @@ class image:
 					starIDs = append(starIDs, zeros(len(surf_n1)))
 
 					if len(surf_n1) > 1:
-						soldAngleSubtended = append(
-							soldAngleSubtended,
+						solidAngleSubtended = append(
+							solidAngleSubtended,
 							facets['netAlbedo']*\
 							facets['facetArea'])
 						I = append(I,
 							facets['netAlbedo']*\
 							facets['facetArea'])
 					else:
-						soldAngleSubtended = append(
-							soldAngleSubtended,
+						solidAngleSubtended = append(
+							solidAngleSubtended,
 							sum(facets['netAlbedo']*\
 							facets['facetArea']))
 						I = append(I,
@@ -1077,7 +1086,7 @@ class image:
 		c3 = c3[ind]
 		starIDs = starIDs[ind]
 		T = T[ind]
-		soldAngleSubtended = soldAngleSubtended[ind]
+		solidAngleSubtended = solidAngleSubtended[ind]
 		I = I[ind]
 
 		#using similar triangles
@@ -1103,7 +1112,7 @@ class image:
 			'starID' : starIDs,
 			'I': I,
 			'T': T,
-			'soldAngleSubtended': soldAngleSubtended
+			'solidAngleSubtended': solidAngleSubtended
 		}
 	###########################################################################
 	#
