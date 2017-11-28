@@ -78,6 +78,7 @@ def main() :
 
     true_ephem = nominal_vanilla['true_ephem']
     est_states = nominal_vanilla['states']
+    covar_vanilla = np.array([[np.sum(nominal_vanilla['P_array'][0:3,0:3]), 0.], [0.,np.sum(nominal_vanilla['P_array'][3:6,3:6]) ]])
     t_span     = nominal_vanilla['t_span']
     
     posErrNormNmnlVanilla, velErrNormNmnlVanilla = \
@@ -90,9 +91,11 @@ def main() :
 
     true_ephem = debug_vanilla['true_ephem']
     est_states = debug_vanilla['states']
+    covar_vanilla_debug = np.array([[np.sum(debug_vanilla['P_array'][0:3,0:3]), 0.], [0.,np.sum(debug_vanilla['P_array'][3:6,3:6]) ]])
     
     posErrNormDbgVanilla, velErrNormDbgVanilla = \
         errorNorm( true_ephem['spacecraft'], est_states )
+
 
     nominal_unmodeled_acc_data_path = path + '/unmodeled_acc/' + nominal_path
     nominal_unmodeled_acc_file      = open( nominal_unmodeled_acc_data_path, 'rb' )
@@ -101,6 +104,7 @@ def main() :
 
     true_ephem = nominal_unmodeled_acc['true_ephem']
     est_states = nominal_unmodeled_acc['states']
+    covar_unmodeledAcc = np.array([[np.sum(nominal_unmodeled_acc['P_array'][0:3,0:3]), 0.], [0.,np.sum(nominal_unmodeled_acc['P_array'][3:6,3:6]) ]])
     
     posErrNormNmnlUnmodeledAcc, velErrNormNmnlUnmodeledAcc = \
         errorNorm( true_ephem['spacecraft'], est_states )
@@ -112,7 +116,8 @@ def main() :
 
     true_ephem = debug_unmodeled_acc['true_ephem']
     est_states = debug_unmodeled_acc['states']
-    
+    covar_unmodeledAcc_debug = np.array([[np.sum(debug_unmodeled_acc['P_array'][0:3,0:3]), 0.], [0.,np.sum(debug_unmodeled_acc['P_array'][3:6,3:6]) ]])
+
     posErrNormDbgUnmodeledAcc, velErrNormDbgUnmodeledAcc = \
         errorNorm( true_ephem['spacecraft'], est_states )
 
@@ -164,6 +169,89 @@ def main() :
     # PLOT WORK
     #
     ###########################################################
+
+
+
+    plt.subplot(121)
+    plt.plot(t_span/t_span[-1],posErrNormDbgUnmodeledAcc, 'b', label='W/O SRP EOM')
+    plt.plot(t_span / t_span[-1], posErrNormDbgUnmodeledAcc + 0.1*np.sqrt(covar_unmodeledAcc_debug[0,0]**2), 'b--')
+    plt.plot(t_span / t_span[-1], posErrNormDbgUnmodeledAcc - 0.1*np.sqrt(covar_unmodeledAcc_debug[0,0]**2), 'b--')
+    plt.plot(t_span/t_span[-1],posErrNormNmnlUnmodeledAcc, 'r', label='With SRP EOM')
+    plt.plot(t_span / t_span[-1], posErrNormNmnlUnmodeledAcc + 0.1*np.sqrt(covar_unmodeledAcc[0,0]**2), 'r--')
+    plt.plot(t_span / t_span[-1], posErrNormNmnlUnmodeledAcc - 0.1*np.sqrt(covar_unmodeledAcc[0,0]**2), 'r--')
+    # plt.ylabel('N/A')
+    #plt.yticks(np.linspace(PosCovarNormMax.max(), PosCovarNormMin.min(), 12))
+    plt.xticks([])
+    ax = plt.gca()
+    #ax.set_xticklabels(['t_0', 't_f'])
+    #leg = ax.legend(loc=1,bbox_to_anchor=(.95,.95))
+    plt.title('Position Error')
+    # plt.ylim((-ymax, ymax))
+
+    plt.subplot(122)
+    plt.plot(t_span/t_span[-1],velErrNormDbgUnmodeledAcc, 'b', label='W/O SRP EOM')
+    plt.plot(t_span / t_span[-1], velErrNormDbgUnmodeledAcc + 0.1*np.sqrt(covar_unmodeledAcc_debug[1,1]**2), 'b--')
+    plt.plot(t_span / t_span[-1], velErrNormDbgUnmodeledAcc - 0.1*np.sqrt(covar_unmodeledAcc_debug[1,1]**2), 'b--')
+    plt.plot(t_span/t_span[-1],velErrNormNmnlUnmodeledAcc, 'r', label='With SRP EOM')
+    plt.plot(t_span / t_span[-1], velErrNormNmnlUnmodeledAcc + 0.1*np.sqrt(covar_unmodeledAcc[1,1]**2), 'r--')
+    plt.plot(t_span / t_span[-1], velErrNormNmnlUnmodeledAcc - 0.1*np.sqrt(covar_unmodeledAcc[1,1]**2), 'r--')
+    #plt.ylabel('km/s')
+    #plt.yticks(np.linspace(VelCovarNormMax.max(), VelCovarNormMin.min(), 12))
+    plt.xticks([])
+    ax = plt.gca()
+    #ax.set_xticklabels(['t_0', 't_f'])
+    leg = ax.legend(loc=1,bbox_to_anchor=(.99,.99))
+    plt.title('Velocity Error')
+    # plt.ylim((-ymax, ymax))
+
+    plt.suptitle('Error wrt truth un-modeled acc filter')
+    plt.tight_layout()
+    plt.subplots_adjust(top=.9)
+    plt.savefig(saveDir + '/errorTruthUnmodeledAcc.png', dpi=300, format='png')
+    plt.close()
+
+    ####################################################################################
+
+
+    plt.subplot(121)
+    plt.plot(t_span/t_span[-1],posErrNormDbgVanilla, 'b', label='W/O SRP EOM')
+    plt.plot(t_span / t_span[-1], posErrNormDbgVanilla + 0.1*np.sqrt(covar_vanilla_debug[0,0]**2), 'b--')
+    plt.plot(t_span / t_span[-1], posErrNormDbgVanilla - 0.1*np.sqrt(covar_vanilla_debug[0,0]**2), 'b--')
+    plt.plot(t_span/t_span[-1],posErrNormNmnlVanilla, 'r', label='With SRP EOM')
+    plt.plot(t_span / t_span[-1], posErrNormNmnlVanilla + 0.1*np.sqrt(covar_vanilla[0,0]**2), 'r--')
+    plt.plot(t_span / t_span[-1], posErrNormNmnlVanilla - 0.1*np.sqrt(covar_vanilla[0,0]**2), 'r--')
+    # plt.ylabel('N/A')
+    #plt.yticks(np.linspace(PosCovarNormMax.max(), PosCovarNormMin.min(), 12))
+    plt.xticks([])
+    ax = plt.gca()
+    #ax.set_xticklabels(['t_0', 't_f'])
+    #leg = ax.legend(loc=1,bbox_to_anchor=(.95,.95))
+    plt.title('Position Error')
+    # plt.ylim((-ymax, ymax))
+
+    plt.subplot(122)
+    plt.plot(t_span/t_span[-1],velErrNormDbgVanilla, 'b', label='W/O SRP EOM')
+    plt.plot(t_span / t_span[-1], velErrNormDbgVanilla + 0.1*np.sqrt(covar_vanilla_debug[1,1]**2), 'b--')
+    plt.plot(t_span / t_span[-1], velErrNormDbgVanilla - 0.1*np.sqrt(covar_vanilla_debug[1,1]**2), 'b--')
+    plt.plot(t_span/t_span[-1],velErrNormNmnlVanilla, 'r', label='With SRP EOM')
+    plt.plot(t_span / t_span[-1], velErrNormNmnlVanilla + 0.1*np.sqrt(covar_vanilla[1,1]**2), 'r--')
+    plt.plot(t_span / t_span[-1], velErrNormNmnlVanilla - 0.1*np.sqrt(covar_vanilla[1,1]**2), 'r--')
+    #plt.ylabel('km/s')
+    #plt.yticks(np.linspace(VelCovarNormMax.max(), VelCovarNormMin.min(), 12))
+    plt.xticks([])
+    ax = plt.gca()
+    #ax.set_xticklabels(['t_0', 't_f'])
+    leg = ax.legend(loc=1,bbox_to_anchor=(.99,.99))
+    plt.title('Velocity Error')
+    # plt.ylim((-ymax, ymax))
+
+    plt.suptitle('Error wrt truth vanilla filter')
+    plt.tight_layout()
+    plt.subplots_adjust(top=.9)
+    plt.savefig(saveDir + '/errorTruthVanilla.png', dpi=300, format='png')
+    plt.close()
+
+    ####################################################################################
 
     plt.subplot(121)
     plt.plot(t_span/t_span[-1],np.abs(debug_rel_residual[0,:]), 'b', label='W/O SRP EOM')
