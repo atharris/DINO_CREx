@@ -45,6 +45,8 @@ def rk4(a, bb, x, m, sbr, wbr):
     y = np.column_stack((x0, CC))
 
     for jj in range(m):
+
+        # Basic Runge-Kutta algorithim
         yjj = y[0:6, jj].transpose()
         k1 = h*feval(yjj, sbr, wbr)
 
@@ -56,9 +58,9 @@ def rk4(a, bb, x, m, sbr, wbr):
 
         y[0:6, jj+1] = yjj + (k1 + 2 * k2 + 2 * k3 + k4) / 6
 
+        # Checking the magnitude and switching to the shadow set if needed
         s = norm(y[0:3, jj+1])
         if s > 1:
             y[0:3, jj+1] = -y[0:3, jj+1] / (s**2)
 
-
-    return y[..., jj+1]
+        return y[..., jj+1]
