@@ -18,6 +18,7 @@ __date__ = '$Date$'[7:26]
 
 import scipy.integrate as integ
 import numpy as np
+import pdb
 
 from rngRngRtBatch import fncH
 from rngRngRtBatch import fncG
@@ -86,7 +87,7 @@ def runRef( input ) :
 
   # propagate the IC and STM 
   state  = integ.odeint( EOM, IC, t_span, args )
-
+  pdb.set_trace()
   return state 
 
 def run_batch( input ) :

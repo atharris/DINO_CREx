@@ -18,7 +18,7 @@ __date__ = '$Date$'[7:26]
 
 
 import sys, os, inspect
-
+import pdb
 filename = inspect.getframeinfo(inspect.currentframe()).filename
 path = os.path.dirname(os.path.abspath(filename))
 path2 = os.path.dirname(os.path.abspath(filename))
@@ -211,7 +211,7 @@ def main():
     extras['beacons'] = beacon_names
     extras['n_beacons'] = len(beacon_names)
 
-
+    pdb.set_trace()
 
     ##################################################################################
     #

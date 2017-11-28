@@ -36,6 +36,7 @@ sys.path.append(dinoSpicePath)
 
 import numpy as np
 import pyswice
+import pdb
 
 
 ################################################################################
@@ -174,7 +175,7 @@ def EOM(state, et, primary_index, secondary_indices, n_secondaries, mu_primary, 
     # acceleration vector to be returned to the integrator
     dState = [state[3], state[4], state[5], f[0], f[1], f[2]]
     dState += list(dPhi)
-
+    pdb.set_trace()
     return dState
 
 
