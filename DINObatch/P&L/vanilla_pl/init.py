@@ -56,6 +56,8 @@ def norm(input):
     norm = np.sqrt(sum(np.square(input)))
     return norm
 
+# This function writes out the outputs in a text file
+
 def writingText(itr, ref_state, est_state, true_ephem, extra_data, position_error , velocity_error):
     # calculate the difference between the perturbed reference and true trajectories: reference state errors
     err = ref_state[:, 0:6] - true_ephem['spacecraft'].T
