@@ -297,8 +297,6 @@ def create_noisyMeasurements(X, H, v_samp, k):
     sigma_meas = np.dot(H, X) + v_samp[k, :]
     return sigma_meas
 
-
-
 def create_gyroObservations(B0, omega_true, cov_ARW, cov_RRW, dt, k, omega_obs_vec):
     N_v = np.random.multivariate_normal(np.zeros(3), np.identity(3))
     N_u = np.random.multivariate_normal(np.zeros(3), np.identity(3))
