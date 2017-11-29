@@ -62,9 +62,14 @@ def norm(input):
   norm = np.sqrt(sum(np.square(input)))
   return norm
 
+
 # Defining inputs coming in from the Spice data of the beacons and the spacecraft
 input1 = np.array([[RadSat, VelSat], [sigobj, sigsat]])
 input2 = np.array([[RadObj, VelObj]])
+
+# Gains for the Control Law
+K = 10.
+P = 10.
 
 rsat = input1[0, 0]
 vsat = input1[0, 1]
@@ -126,10 +131,6 @@ for jj in range(len(input2)):
 
     x = np.concatenate((sBN, wBN))
 
-    # Gains for the Control Law
-    K = 10.
-    P = 10.
-
     # Time for the spacecraft to sweep to desired attitude (seconds)
     t = 130
 
@@ -140,9 +141,7 @@ for jj in range(len(input2)):
     wbn = wBN
 
     # Initializing Arrays
-    sbrkp = np.zeros([t, 3])
-    sbnkp = np.zeros([t, 3])
-    wsckp = np.zeros([t, 3])
+    control_torque = np.zeros([t, 3])
 
     for ii in xrange(t):
 
@@ -199,7 +198,7 @@ for jj in range(len(input2)):
         m = 1
 
         # Outputs from Runge-Kutta
-        x = rk4(a, bb, x, m, sbr, wbr)
+        x = rk4(a, bb, x, m, sbr, wbr, K, P)
 
         # Update all previous values for next iteration
 
@@ -219,11 +218,9 @@ for jj in range(len(input2)):
             sbr = - sbr/(s**2)
 
         # "Output" Values for the Executive Branch
-        sbrkp[ii, ...] = sbr
-        sbnkp[ii, ...] = sbn
-        wsckp[ii, ...] = wbn
+        control_torque[ii, ...] = (-K*sbr - P*sbr)
 
-    print(sbrkp)
+    print(control_torque)
 
 
 

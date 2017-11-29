@@ -5,8 +5,7 @@
 
 import numpy as np
 import pdb
-K = 10 
-P = 10 
+
 
 # Inertia Matrix of the Spacecraft - Body
 Ibody = np.array([[10, 0, 0], [0, 5, 0],  [0, 0, 7.5]])
@@ -16,7 +15,7 @@ Q = np.zeros([3, 3])
 ds = np.zeros(6)
 
 
-def scfun(yjj, sbr, wbr):
+def scfun(yjj, sbr, wbr, K, P):
 
     # Body-Inertial MRPs
     sig = yjj[0:3]

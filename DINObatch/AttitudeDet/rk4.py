@@ -28,7 +28,7 @@ def norm( input ):
 feval = scfun
 
 
-def rk4(a, bb, x, m, sbr, wbr):
+def rk4(a, bb, x, m, sbr, wbr, K, P):
     a = a
     b = bb
     x0 = x.reshape(6)
@@ -48,13 +48,13 @@ def rk4(a, bb, x, m, sbr, wbr):
 
         # Basic Runge-Kutta algorithim
         yjj = y[0:6, jj].transpose()
-        k1 = h*feval(yjj, sbr, wbr)
+        k1 = h*feval(yjj, sbr, wbr, K, P)
 
-        k2 = h * feval(yjj+k1/2, sbr, wbr)
+        k2 = h * feval(yjj+k1/2, sbr, wbr, K, P)
 
-        k3 = h * feval(yjj+k2/2, sbr, wbr)
+        k3 = h * feval(yjj+k2/2, sbr, wbr, K, P)
 
-        k4 = h * feval(yjj+k3, sbr, wbr)
+        k4 = h * feval(yjj+k3, sbr, wbr, K, P)
 
         y[0:6, jj+1] = yjj + (k1 + 2 * k2 + 2 * k3 + k4) / 6
 
