@@ -34,7 +34,11 @@ sys.path.append(bskPath + 'PythonModules')
 sys.path.append(dinoSpicePath)
 sys.path.append(dinoCommonPath)
 
-import pyswice
+try:
+    import pyswice
+except ImportError:
+    from Basilisk import pyswice
+    bskSpicePath = splitPath[0] + bskName + '/supportData/EphemerisData/'
 import numpy as np
 import matplotlib.pyplot as plt
 from batchFilterAcc import run_batch
@@ -233,6 +237,7 @@ def main():
     # Add anomaly detection parameters
     extras['anomaly']= False
     extras['anomaly_num'] = 0
+    extras['anomaly_threshold'] = 4
 
     ##################################################################################
 
@@ -363,6 +368,15 @@ def main():
                          P_bar, observation_uncertainty, x_bar, extras)
         # run filter function
         ref_state, est_state, extra_data = run_batch(filter_inputs)
+
+        [anomaly_bool , anomaly_num] = extra_data['anomaly_detected']
+        if anomaly_bool == True:
+            print '**********************************************************'
+            print 'Anomaly Detected - Estimates are not to be trusted'
+            print '**********************************************************'
+            print anomaly_num, 'Residuals out of bounds'
+            return
+
 
         extras['oldPost'] = extra_data['postfit residuals']
         # save all outputs into the dictionary with a name associated with the iteration

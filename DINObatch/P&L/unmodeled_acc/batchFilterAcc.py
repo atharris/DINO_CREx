@@ -248,7 +248,7 @@ def run_batch( input ) :
         extras['anomaly_num']+=1
         print 'Anomalous measurement detected at time ' , ii , 'on measurement type ', jj
 
-  if extras['anomaly_num'] > 5:
+  if extras['anomaly_num'] > extras['anomaly_threshold']:
     extras['anomaly'] = True
 
   prefits = np.zeros([np.shape(x_hat_array)[0], np.shape(y)[1]])
@@ -266,6 +266,8 @@ def run_batch( input ) :
   # is this legacy code?
   extras['x_hat_0']               += x_hat
   extra_data['x_hat_0']           = extras['x_hat_0']
+  extra_data['anomaly_detected']  = [extras['anomaly'], extras['anomaly_num']]
+
 
 
   return ref_state, est_state, extra_data

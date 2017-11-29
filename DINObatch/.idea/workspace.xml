@@ -15,11 +15,21 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="init.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="init.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/P&amp;L/vanilla_pl/init.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="233">
-              <caret line="85" column="10" lean-forward="false" selection-start-line="85" selection-start-column="4" selection-end-line="85" selection-end-column="10" />
+            <state relative-caret-position="445">
+              <caret line="379" column="28" lean-forward="false" selection-start-line="379" selection-start-column="28" selection-end-line="379" selection-end-column="28" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="batchFilter.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/batchFilter.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="328">
+              <caret line="266" column="32" lean-forward="false" selection-start-line="266" selection-start-column="2" selection-end-line="266" selection-end-column="32" />
               <folding />
             </state>
           </provider>
@@ -38,28 +48,8 @@
       <file leaf-file-name="init_acc.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/init_acc.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="379">
-              <caret line="233" column="4" lean-forward="false" selection-start-line="233" selection-start-column="4" selection-end-line="233" selection-end-column="21" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="posVel.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/RngRngRate/posVel.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-165">
-              <caret line="71" column="55" lean-forward="false" selection-start-line="71" selection-start-column="55" selection-end-line="71" selection-end-column="55" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="init.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/RngRngRate/init.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="233">
-              <caret line="81" column="10" lean-forward="false" selection-start-line="81" selection-start-column="4" selection-end-line="81" selection-end-column="10" />
+            <state relative-caret-position="205">
+              <caret line="370" column="0" lean-forward="false" selection-start-line="370" selection-start-column="0" selection-end-line="370" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -68,31 +58,51 @@
       <file leaf-file-name="batchFilterAcc.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/batchFilterAcc.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="554">
-              <caret line="251" column="28" lean-forward="false" selection-start-line="251" selection-start-column="28" selection-end-line="251" selection-end-column="28" />
-              <folding />
+            <state relative-caret-position="157">
+              <caret line="269" column="0" lean-forward="false" selection-start-line="269" selection-start-column="0" selection-end-line="269" selection-end-column="0" />
+              <folding>
+                <element signature="e#404#435#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="posVelAcc.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="posVelAcc.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/posVelAcc.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="600">
-              <caret line="77" column="0" lean-forward="true" selection-start-line="77" selection-start-column="0" selection-end-line="77" selection-end-column="0" />
+            <state relative-caret-position="353">
+              <caret line="41" column="27" lean-forward="false" selection-start-line="41" selection-start-column="0" selection-end-line="42" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="plotFilter.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/plotFilter.py">
+      <file leaf-file-name="beaconPropagator.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/beaconPropagator.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="233">
-              <caret line="389" column="68" lean-forward="false" selection-start-line="389" selection-start-column="45" selection-end-line="389" selection-end-column="68" />
-              <folding>
-                <element signature="e#375#406#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="212">
+              <caret line="36" column="73" lean-forward="false" selection-start-line="36" selection-start-column="73" selection-end-line="36" selection-end-column="73" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="data_generation.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/data_generation.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="212">
+              <caret line="22" column="73" lean-forward="false" selection-start-line="22" selection-start-column="73" selection-end-line="22" selection-end-column="73" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="posVel.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/posVel.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="600">
+              <caret line="40" column="32" lean-forward="false" selection-start-line="40" selection-start-column="32" selection-end-line="40" selection-end-column="32" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -101,10 +111,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>spacecraft</find>
-      <find>(true_ephem['spacecraft']</find>
-      <find>ref</find>
-      <find>setRandomWalk</find>
       <find>.append(</find>
       <find>format</find>
       <find>path</find>
@@ -130,7 +136,11 @@
       <find>postfit</find>
       <find>observation_uncertainty</find>
       <find>print</find>
-      <find>print</find>
+      <find>anomaly</find>
+      <find>bskSP</find>
+      <find>prefits</find>
+      <find>realD</find>
+      <find>bskSpice</find>
     </findStrings>
     <replaceStrings>
       <replace>+=</replace>
@@ -148,23 +158,27 @@
         <option value="$PROJECT_DIR$/beaconBinSPICE.py" />
         <option value="$PROJECT_DIR$/batchFilter.py" />
         <option value="$PROJECT_DIR$/RngRngRate/_UnitTest/test_fncg.py" />
-        <option value="$PROJECT_DIR$/P&amp;L/vanilla_pl/init.py" />
         <option value="$PROJECT_DIR$/P&amp;L/common_functions/beaconBinSPICE.py" />
         <option value="$PROJECT_DIR$/P&amp;L/common_functions/plotFilter.py" />
-        <option value="$PROJECT_DIR$/P&amp;L/unmodeled_acc/init_acc.py" />
         <option value="$PROJECT_DIR$/RngRngRate/posVel.py" />
         <option value="$PROJECT_DIR$/RngRngRate/_UnitTest/test_A_Matrix.py" />
         <option value="$PROJECT_DIR$/../../Basilisk/SimScenarios/test_scenarioCSSFilters.py" />
-        <option value="$PROJECT_DIR$/P&amp;L/unmodeled_acc/batchFilterAcc.py" />
+        <option value="$PROJECT_DIR$/P&amp;L/common_functions/posVel.py" />
         <option value="$PROJECT_DIR$/P&amp;L/unmodeled_acc/posVelAcc.py" />
+        <option value="$PROJECT_DIR$/P&amp;L/common_functions/beaconPropagator.py" />
+        <option value="$PROJECT_DIR$/P&amp;L/common_functions/data_generation.py" />
+        <option value="$PROJECT_DIR$/P&amp;L/common_functions/batchFilter.py" />
+        <option value="$PROJECT_DIR$/P&amp;L/unmodeled_acc/batchFilterAcc.py" />
+        <option value="$PROJECT_DIR$/P&amp;L/vanilla_pl/init.py" />
+        <option value="$PROJECT_DIR$/P&amp;L/unmodeled_acc/init_acc.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="-2393" />
-    <option name="y" value="-519" />
-    <option name="width" value="2098" />
-    <option name="height" value="1104" />
+    <option name="x" value="18" />
+    <option name="y" value="23" />
+    <option name="width" value="1261" />
+    <option name="height" value="732" />
   </component>
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1">
@@ -182,8 +196,8 @@
     </navigator>
     <panes>
       <pane id="Scratches" />
-      <pane id="ProjectPane" />
       <pane id="Scope" />
+      <pane id="ProjectPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -202,7 +216,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.init_acc">
+  <component name="RunManager" selected="Python.init">
     <configuration default="false" name="init" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -413,10 +427,10 @@
     </list>
     <recent_temporary>
       <list size="4">
-        <item index="0" class="java.lang.String" itemvalue="Python.init_acc" />
-        <item index="1" class="java.lang.String" itemvalue="Python.test_A_Matrix" />
-        <item index="2" class="java.lang.String" itemvalue="Python.init (1)" />
-        <item index="3" class="java.lang.String" itemvalue="Python.init" />
+        <item index="0" class="java.lang.String" itemvalue="Python.init" />
+        <item index="1" class="java.lang.String" itemvalue="Python.init_acc" />
+        <item index="2" class="java.lang.String" itemvalue="Python.test_A_Matrix" />
+        <item index="3" class="java.lang.String" itemvalue="Python.init (1)" />
       </list>
     </recent_temporary>
   </component>
@@ -434,15 +448,15 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-2393" y="-519" width="2098" height="1104" extended-state="0" />
+    <frame x="18" y="23" width="1261" height="732" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.07435653" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.07375099" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.26956522" sideWeight="0.22545281" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.26847664" sideWeight="0.2299762" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.26956522" sideWeight="0.77454716" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.26847664" sideWeight="0.77002376" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
@@ -465,7 +479,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/posVelAcc.py</url>
-          <line>84</line>
+          <line>88</line>
           <option name="timeStamp" value="6" />
         </line-breakpoint>
       </breakpoints>
@@ -481,9 +495,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/rngRngRtBatch.py" />
-    <entry file="file://$PROJECT_DIR$/init.py" />
-    <entry file="file://$PROJECT_DIR$/posVel.py" />
     <entry file="file://$PROJECT_DIR$/data_generation.py" />
     <entry file="file://$PROJECT_DIR$/rngRngRt.py" />
     <entry file="file://$PROJECT_DIR$/batchFilter.py" />
@@ -524,13 +535,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/batchFilter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/beaconSPICE.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -542,7 +546,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -550,21 +553,13 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="326">
           <caret line="32" column="27" lean-forward="false" selection-start-line="32" selection-start-column="27" selection-end-line="32" selection-end-column="27" />
-          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../Basilisk/SimScenarios/test_scenarioCSSFilters.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-331">
-          <caret line="622" column="0" lean-forward="true" selection-start-line="622" selection-start-column="0" selection-end-line="622" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/../../Basilisk/SimScenarios/test_scenarioCSSFilters.py" />
     <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/plotFilter.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="233">
+        <state relative-caret-position="5835">
           <caret line="389" column="68" lean-forward="false" selection-start-line="389" selection-start-column="45" selection-end-line="389" selection-end-column="68" />
           <folding>
             <element signature="e#375#406#0" expanded="true" />
@@ -572,42 +567,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/P&amp;L/vanilla_pl/init.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="233">
-          <caret line="85" column="10" lean-forward="false" selection-start-line="85" selection-start-column="4" selection-end-line="85" selection-end-column="10" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/RngRngRate/_UnitTest/test_A_Matrix.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1230">
           <caret line="82" column="11" lean-forward="false" selection-start-line="82" selection-start-column="11" selection-end-line="82" selection-end-column="11" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/init_acc.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="379">
-          <caret line="233" column="4" lean-forward="false" selection-start-line="233" selection-start-column="4" selection-end-line="233" selection-end-column="21" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/RngRngRate/posVel.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-165">
-          <caret line="71" column="55" lean-forward="false" selection-start-line="71" selection-start-column="55" selection-end-line="71" selection-end-column="55" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/RngRngRate/init.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="233">
-          <caret line="81" column="10" lean-forward="false" selection-start-line="81" selection-start-column="4" selection-end-line="81" selection-end-column="10" />
           <folding />
         </state>
       </provider>
@@ -620,18 +583,84 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/batchFilterAcc.py">
+    <entry file="file://$PROJECT_DIR$/RngRngRate/init.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="554">
-          <caret line="251" column="28" lean-forward="false" selection-start-line="251" selection-start-column="28" selection-end-line="251" selection-end-column="28" />
+        <state relative-caret-position="143">
+          <caret line="140" column="15" lean-forward="false" selection-start-line="140" selection-start-column="13" selection-end-line="140" selection-end-column="15" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RngRngRate/posVel.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="15">
+          <caret line="71" column="55" lean-forward="false" selection-start-line="71" selection-start-column="55" selection-end-line="71" selection-end-column="55" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/posVelAcc.py">
       <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="353">
+          <caret line="41" column="27" lean-forward="false" selection-start-line="41" selection-start-column="0" selection-end-line="42" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/beaconPropagator.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="212">
+          <caret line="36" column="73" lean-forward="false" selection-start-line="36" selection-start-column="73" selection-end-line="36" selection-end-column="73" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/data_generation.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="212">
+          <caret line="22" column="73" lean-forward="false" selection-start-line="22" selection-start-column="73" selection-end-line="22" selection-end-column="73" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/posVel.py">
+      <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="600">
-          <caret line="77" column="0" lean-forward="true" selection-start-line="77" selection-start-column="0" selection-end-line="77" selection-end-column="0" />
+          <caret line="40" column="32" lean-forward="false" selection-start-line="40" selection-start-column="32" selection-end-line="40" selection-end-column="32" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/batchFilterAcc.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="157">
+          <caret line="269" column="0" lean-forward="false" selection-start-line="269" selection-start-column="0" selection-end-line="269" selection-end-column="0" />
+          <folding>
+            <element signature="e#404#435#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/P&amp;L/common_functions/batchFilter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="328">
+          <caret line="266" column="32" lean-forward="false" selection-start-line="266" selection-start-column="2" selection-end-line="266" selection-end-column="32" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/P&amp;L/unmodeled_acc/init_acc.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="205">
+          <caret line="370" column="0" lean-forward="false" selection-start-line="370" selection-start-column="0" selection-end-line="370" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/P&amp;L/vanilla_pl/init.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="445">
+          <caret line="379" column="28" lean-forward="false" selection-start-line="379" selection-start-column="28" selection-end-line="379" selection-end-column="28" />
           <folding />
         </state>
       </provider>

@@ -35,7 +35,10 @@ sys.path.append(dinoSpicePath)
 
 
 import numpy as np
-import pyswice
+try:
+    import pyswice
+except ImportError:
+    from Basilisk import pyswice
 
 
 ################################################################################
