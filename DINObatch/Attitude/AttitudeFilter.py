@@ -41,11 +41,11 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         super(AttitudeFilter, self).__init__(modelName, modelActive, modelPriority)
 
         ## Input gyro, star tracker message names
-        self.inputStName = ""
-        self.inputIMUName = ""
+        self.inputStMsgName = "st_output_data"
+        self.inputIMUMsgName = "gyro_output_data"
 
         ## Output body torque message name
-        self.outputMsgName = ""
+        self.outputMsgName = "aekf_output_data"
 
         ## Input message ID (initialized to -1 to break messaging if unset)
         self.inputStMsgID = -1
@@ -55,11 +55,11 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         self.outputMsgID = -1
 
         ## Input IMU, Star Tracker structures
-        self.inputIMUData = imu_sensor.ImuSensor.sensedValues
-        self.inputStData = star_tracker.StarTracker.sensedValues
+        self.inputIMUMsgData = imu_sensor.IMUSensorIntMsg()
+        self.inputStMsgData = star_tracker.STSensorIntMsg()
 
         ## Output navigation estimate structure.
-        self.outputMsgData = simple_nav.SimpleNav.estAttState
+        self.outputMsgData = simple_nav.NavAttIntMsg()
 
         ##  Define Estimate variables
         self.stateEst = np.zeros([6,]) #    state estimate is 3 delta MRPs, 3 bias states
@@ -82,8 +82,12 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
     # It is important that ALL outputs are initialized here so that other models can
     # subscribe to these messages in their crossInit method.
     def selfInit(self):
+        print "selfing:"
+        print self.outputMsgName
+        print self.moduleID
         self.outputMsgID = simulationArchTypes.CreateNewMessage(self.outputMsgName, self.outputMsgData,
                                                                  self.moduleID)
+        print "Output AEKF ID:", self.outputMsgID
         return
 
     ## The crossInit method is used to initialize all of the input messages of a class.
@@ -92,6 +96,9 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
     def crossInit(self):
         self.inputStMsgID = simulationArchTypes.SubscribeToMessage(self.inputStMsgName, self.inputStMsgData, self.moduleID)
         self.inputIMUMsgID = simulationArchTypes.SubscribeToMessage(self.inputIMUMsgName, self.inputIMUMsgData, self.moduleID)
+
+        print "Input ST ID:", self.inputStMsgID
+        print "Input IMU ID:", self.inputIMUMsgID
         return
 
     ## The reset method is used to clear out any persistent variables that need to get changed
@@ -107,7 +114,8 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
     def kalmanStep(self):
         #   Prediction Step: predict the new mean and covariance based on the assumed model
         self.predOptions.omega_bn_meas = self.gyroMeas
-        F, G = ekf.linearizeSystem(self.estState, self.propOptions)
+        print "State Estimate:", self.stateEst
+        F, G = ekf.linearizeSystem(self.stateEst, self.predOptions)
         self.predOptions.F = F
         self.predOptions.G = G
         self.predOptions.Q = self.stateNoise
@@ -147,10 +155,10 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
     def updateState(self, currentTime):
         #   First, read messages we've subscribed to:
         simulationArchTypes.ReadMessage(self.inputStMsgID, self.inputStMsgData, self.moduleID)
-        simulationArchTypes.ReadMessage(self.inputIMUMsgID, self.inputIMUData, self.moduleID)
+        simulationArchTypes.ReadMessage(self.inputIMUMsgID, self.inputIMUMsgData, self.moduleID)
 
         self.stMeas = rbk.EP2MRP(self.inputStMsgData.qInrtl2Case)
-        self.gyroMeas =  self.inputIMUData.AngVelPlatform
+        self.gyroMeas =  self.inputIMUMsgData.AngVelPlatform
         #   Next, implement your routines or functions to process the input data and store it:
         self.kalmanStep()
 

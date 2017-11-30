@@ -61,9 +61,9 @@ class DynamicsClass():
         SimBase.AddModelToTask(self.taskName, self.gyroModel,None,7)
 
         beaconInd = 21
-        for beacon in self.beaconList:
-            SimBase.AddModelToTask(self.taskName, beacon, None, beaconInd)
-            beaconInd = beaconInd+1
+#        for beacon in self.beaconList:
+#            SimBase.AddModelToTask(self.taskName, beacon, None, beaconInd)
+#            beaconInd = beaconInd+1
 
     # ------------------------------------------------------------------------------------------- #
     # These are module-initialization methods
@@ -247,6 +247,6 @@ class DynamicsClass():
         self.SetSpiceObject()
         self.SetEphemerisConverter()
         self.SetSRPModel()
-        self.SetBeacons()
+        #self.SetBeacons()
         self.AddStarTracker()
         self.AddGyro()

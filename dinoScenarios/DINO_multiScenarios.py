@@ -24,10 +24,10 @@ def log_DynCelestialOutputs(TheDynSim, samplingTime):
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.marsGravBody.bodyInMsgName, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.sunGravBody.bodyInMsgName, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.moonGravBody.bodyInMsgName, samplingTime)
-    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.gyroModel.OutputDataMsg, samplingTime)
-    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.starTracker.outputStateMessage, samplingTime)
-    for ind in range(0,len(TheDynSim.DynClass.beaconList)):
-        TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.beaconList[ind].scStateOutMsgName, samplingTime)
+#    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.gyroModel.OutputDataMsg, samplingTime)
+#    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.starTracker.outputStateMessage, samplingTime)
+#    for ind in range(0,len(TheDynSim.DynClass.beaconList)):
+#        TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.beaconList[ind].scStateOutMsgName, samplingTime)
 
     return
 
@@ -37,7 +37,8 @@ def log_DynOutputs(TheBSKSim, samplingTime):
     return
 
 def log_aekfOutputs(TheBskSim, samplingTime):
-    TheBskSim.TotalSim.logThisMessage(TheBskSim.FswClass.attFilter.outputMsgName, samplingTime)
+#    print "Att filter msg name:", TheBskSim.FSWClass.attFilter.outputMsgName
+#    TheBskSim.TotalSim.logThisMessage(TheBskSim.FSWClass.attFilter.outputMsgName, samplingTime)
     return
 
 def log_FSWOutputs(TheBSKSim, samplingTime):
@@ -156,8 +157,8 @@ def pull_senseOutputs(TheBSKSim):
 
 def pull_aekfOutputs(TheBSKSim):
     # Pull Dyn Outputs
-    sigma_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FswClass.attFilter.outputStateMessage + '.sigma_BN', range(3))
-    omega_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.DynClass.gyroModel.OutputDataMsg + '.omega_BN_B', range(3))
+    sigma_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgData+ '.sigma_BN', range(3))
+    omega_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWclass.attFilter.outputMsgData+ '.omega_BN_B', range(3))
 
 
     # Print Dyn Outputs
@@ -388,7 +389,7 @@ def attFilter_dynScenario(TheDynSim):
 
     # Pull data for post-processing and plotting
     pull_DynOutputs(TheDynSim)
-    pull_senseOutputs(TheDynSim)
+    #pull_senseOutputs(TheDynSim)
     pull_aekfOutputs(TheDynSim)
     #pull_DynCelestialOutputs(TheDynSim)
     plt.show()

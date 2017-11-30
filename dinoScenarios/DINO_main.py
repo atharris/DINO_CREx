@@ -18,9 +18,11 @@ class DINO_DynSim(SimulationBaseClass.SimBaseClass):
         # Create simulation process names
         self.DynamicsProcessName = "DynamicsProcess"
         self.FSWProcessName = "FSWProcess"
+        self.FSWPyProcessName = "FSWPyProcess"
         # Create processes
         self.dynProc = self.CreateNewProcess(self.DynamicsProcessName)
         self.fswProc = self.CreateNewProcess(self.FSWProcessName)
+        self.fswPyProc = self.CreateNewPythonProcess(self.FSWPyProcessName)
         # Crate sim subclasses
         self.DynClass = DINO_DKE.DynamicsClass(self)
         self.FSWClass = DINO_FSW.FSWClass(self)
