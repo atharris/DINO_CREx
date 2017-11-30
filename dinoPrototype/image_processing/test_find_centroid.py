@@ -10,60 +10,55 @@ import matplotlib.pyplot as plt
 import image_processing_functions as imfunc
 import search_location_functions as locfunc
 # import object_id_functions as idfunc
-import dynamics as dyn
+
 
 
 ##################################################
 ##################################################
-
-# inputs to measurement generation module
-
-# camera parameters
-cam_res = (2000, 1000)            # horizontal, vertical [pixels]
-cam_focal_length = 100.         # [mm]
-cam_pixel_size = (.2, .2)       # horizontal, vertical [mm]
-
-cam_sensor_size = (cam_res[0]*cam_pixel_size[0], cam_res[1]*cam_pixel_size[1])  # [mm]
-cam_fov = (2 * math.degrees(math.atan2(cam_sensor_size[0]/2., cam_focal_length)),
-           2 * math.degrees(math.atan2(cam_sensor_size[1]/2., cam_focal_length)))
-
 # Nav module inputs
 pos_beacon = np.array([[10100, 10000, 0]])
 pos_sc = np.array([10000, 0, 0])
 
-# Euler 321 DCM (90 deg, 0, 22.5)
-attde_sc = dyn.eulerDCM_321(math.pi/2, 0, math.pi/8)
+# signal_threshold, noise_threshold, ROI_size (n x n pixel border), single side ROI_border_width
+ROI_parameters = {}
+ROI_parameters['signal_threshold'] = 1.5
+ROI_parameters['noise_threshold'] = 1E-6
+ROI_parameters['ROI_size'] = 100
+ROI_parameters['ROI_border_width'] = 1
+ROI_parameters['max_search_dist'] = 50
 
-# Euler 313 DCM (90 deg, 90 deg, 45 deg) (midway polar example)
-#attde_sc = dyn.eulerDCM_313(math.pi/2, math.pi/2, math.pi/8)
+# reference star catalog filename
+fname_catalog = 'star_catalog/tycho_BTmag_cutoff.db'
 
-# 90 Deg Rotation about 3rd axis
-#attde_sc = dyn.eulerDCM_313(math.pi/2, 0, 0)
+# select which scenario to run
+do_CDR_stars = True
+do_CDR_beacon = False
 
-# BCT NSC1 example image (may be -65.2 for final rotation)
-attde_sc = dyn.eulerDCM_321(math.radians(251.115), math.radians(-32.842), math.radians(65.2))
-
+doplot_centroid = True
+doplot_isearch = True
 
 ##################################################
 ##################################################
 
-# load example image to use
 # note: image map is in the (line, pixel) format ... same as (row, column) .... (y, x)
 
+<<<<<<< HEAD
 # load example image from image generation module
 do_CDR_beacon = False
+=======
+>>>>>>> 1f40f9d9c73aa748727f11d3fba27871f6641b19
 if do_CDR_beacon:
-    file_in = np.load('CDR_save_files/90_deg_orig.npz')
+    file_in = np.load('CDR_save_files/90_deg.npz')
     pos_beacon = np.vstack((file_in['earth_pos'], file_in['moon_pos']))
     pos_sc = file_in['sc_pos']
     attde_sc = file_in['sc_dcm']
     # attde_sc = np.matmul(attde_sc, dyn.eulerDCM_313(math.radians(1), math.radians(1), 0))
     print attde_sc
     ex_image = file_in['detector_array']
-    ex_image = (ex_image / max(ex_image)) * 256
+    ex_image = (ex_image / max(ex_image)) * 512
     ex_image = ex_image.reshape(512, 512)
-    # plt.imshow(ex_image)
-    # plt.show()
+    plt.imshow(ex_image)
+    plt.show()
     cam_res = (512, 512)
     cam_pixel_size = (39E-6, 39E-6)         # horizontal, vertical [m]
     cam_focal_length = .05                  # [m]
@@ -72,9 +67,26 @@ if do_CDR_beacon:
     cam_fov = ( 2 * math.degrees(math.atan2(cam_sensor_size[0]/2., cam_focal_length)),
                 2 * math.degrees(math.atan2(cam_sensor_size[1]/2., cam_focal_length)))
 
+<<<<<<< HEAD
 do_CDR_stars = True
+=======
+    # generate pixel line estimates for beacons in camera field of view
+    pixel_line_beacon_i = locfunc.initial_beacons_estimate(
+        pos_beacon, pos_sc, attde_sc, cam_res, cam_focal_length, cam_pixel_size)
+
+    # pass in three initial estimates to test ROI generation logic
+    pixel_truth = np.array([256, 394.99206801, 240])
+    line_truth = np.array([256, 256, 245])
+    ROI_estimates = []
+    for ind in range(len(pixel_truth)):
+        ROI_estimates.append((pixel_truth[ind], line_truth[ind]))
+
+    pixel_line_center, DN = imfunc.find_center_resolved_body(ex_image, ROI_estimates, ROI_parameters)
+
+
+>>>>>>> 1f40f9d9c73aa748727f11d3fba27871f6641b19
 if do_CDR_stars:
-    file_in = np.load('CDR_save_files/stars_only.npz')
+    file_in = np.load('CDR_save_files/stars_only_cdr.npz')
 
     pos_sc = file_in['sc_pos']
     attde_sc = file_in['sc_dcm']
@@ -82,7 +94,7 @@ if do_CDR_stars:
 
     ex_image = file_in['detector_array']
     ex_image = (ex_image/np.amax(ex_image)) * 255
-    ex_image = ex_image.reshape(512,512)
+    ex_image = ex_image.reshape(512, 512)
 
     cam_res = (512, 512)
     cam_pixel_size = (39E-6, 39E-6)         # horizontal, vertical [m]
@@ -90,26 +102,8 @@ if do_CDR_stars:
     cam_sensor_size = (cam_res[0] * cam_pixel_size[0], cam_res[1] * cam_pixel_size[1])  # [m]
     cam_fov = ( 2 * math.degrees(math.atan2(cam_sensor_size[0]/2., cam_focal_length)),
                 2 * math.degrees(math.atan2(cam_sensor_size[1]/2., cam_focal_length)))
-    # fig1 = plt.figure(1)
-    # plt.imshow(ex_image)
-    # plt.colorbar()
-    # fig1.suptitle('Original Image', fontsize=12, fontweight='bold')
-    # plt.show()
-    # plt.savefig('CDR_save_files/stars_only.png')
 
-
-do_CDR_stars2 = False
-if do_CDR_stars2:
-    ex_image = misc.imread('psf_examples/bct_nsc1.png')
-    print ex_image.shape
-
-    attde_sc = dyn.eulerDCM_321(math.radians(251.115), math.radians(-32.842), math.radians(-65.2))
-
-    cam_res = (868, 725)
-    cam_fov = (14.4, 12)
-    cam_pixel_size = (1E-6, 1E-6)         # horizontal, vertical [m]
-    cam_focal_length = (cam_res[0] * cam_pixel_size[0]) / math.tan(math.radians(cam_fov[0]))
-
+<<<<<<< HEAD
     cam_sensor_size = (2 * cam_focal_length * math.tan(cam_fov[0]/2.),
                        2 * cam_focal_length * math.tan(cam_fov[1]/2.))
     cam_fov = ( 2 * math.degrees(math.atan2(cam_sensor_size[0]/2., cam_focal_length)),
@@ -128,7 +122,19 @@ ROI_parameters['noise_threshold'] = 1E-6
 ROI_parameters['ROI_size'] = 100
 ROI_parameters['ROI_border_width'] = 1
 ROI_parameters['max_search_dist'] = 50
+=======
+    # generate pixel line estimates for stars in camera field of view
+    pixel_truth, line_star, star_catalog = locfunc.initial_stars_estimate(
+        attde_sc, cam_res, cam_focal_length, cam_pixel_size, fname_catalog)
+>>>>>>> 1f40f9d9c73aa748727f11d3fba27871f6641b19
 
+    # find centroid
+    pixel_truth = np.array([443.71657484, 493.96318093, 95.3500384])
+    line_truth = np.array([103.55964507, 105.8875924, 152.30559197])
+    ROI_estimates = []
+    for ind in range(len(pixel_truth)):
+        ROI_estimates.append((pixel_truth[ind], line_truth[ind]))
+    pixel_line_center, DN = imfunc.find_centroid_point_source(ex_image, ROI_estimates, ROI_parameters)
 
 ##################################################
 ##################################################
@@ -143,52 +149,23 @@ print 'sensor size [mm]: ', cam_sensor_size
 print 'field of view [deg]: ', cam_fov
 print '\nInitial Image Shape'
 print ex_image.shape
-
-print '\nS/C and Beacon Parameters'
-print 'S/C Position (HCI [km]): ', pos_sc
-print 'Beacon Position (HCI [km]): '
-for current_beacon in pos_beacon:
-    print current_beacon
 print 'S/C Attitude (BN DCM): \n', attde_sc
 
+if do_CDR_beacon:
 
-##################################################
-##################################################
+    print '\nS/C and Beacon Parameters'
+    print 'S/C Position (HCI [km]): ', pos_sc
+    print 'Beacon Position (HCI [km]): '
 
-# Run Image Processing Module
+    for current_beacon in pos_beacon:
+        print current_beacon
 
-# generate pixel line estimates for beacons in camera field of view
-pixel_line_beacon_i = locfunc.initial_beacons_estimate(
-    pos_beacon, pos_sc, attde_sc, cam_res, cam_focal_length, cam_pixel_size)
+    print '\n\nInitial Beacon Location Estimate'
+    print 'Beacon Location (pixel/line coord.): ', pixel_line_beacon_i
 
-print '\nInitial Beacon Location Estimate'
-print 'Beacon Location (pixel/line coord.): ',pixel_line_beacon_i
+if do_CDR_stars:
 
-# placeholder below places initial estimate in the center of the image
-#ex_res = ex_image.shape
-#pixel_line_beacon_i = (int(round(ex_res[0]*0.5)), int(round(ex_res[1]*.5)))
-#pixel_line_beacon_i = (400, 800)
-
-# geenrate pixel line estimates for stars in camera field of view
-pixel_star, line_star, star_catalog = locfunc.initial_stars_estimate(
-    attde_sc, cam_res, cam_focal_length, cam_pixel_size, fname_catalog)
-
-print '\nInitial Star Location Estimate:'
-n_star = pixel_star.shape[1]
-print 'stars in field of view: ', n_star
-print 'min/max pixel coord.: ', np.amin(pixel_star, 1), np.amax(pixel_star, 1)
-print 'min/max line coord.: ', np.amin(line_star, 1), np.amax(line_star, 1)
-print '3 Brightest Stars: '
-for ind in range(4):
-    print pixel_star[0,ind], line_star[0,ind], star_catalog[0][ind], star_catalog[1][ind], star_catalog[2][ind]
-
-# pixel_line_star_i = (5,10)
-# pixel_line_estimate_i = np.vstack((pixel_line_beacon_i, pixel_line_star_i))
-
-
-# PLACEHOLDER ---- ONLY DO ONE BEACON AT A TIME
-# pixel_line_beacon_i[0]
-
+<<<<<<< HEAD
 # find centroid
 pixel_line_centroid, DN = imfunc.find_centroid_point_source(ex_image, ((101, 453),(282, 122), (330, 112)), ROI_parameters)
 pixel_line_centroid, DN = imfunc.find_centroid_point_source(ex_image, ((pixel_star[0, 0], line_star[0, 0]),
@@ -199,22 +176,26 @@ pixel_line_centroid, DN = imfunc.find_centroid_point_source(ex_image, ((pixel_st
 # PLACEHOLDER ---- Included (240, 245) to check for finding same beacon twice
 #ROI_estimates = ((256, 256), (390, 256), (240, 245))
 #pixel_line_centroid, DN = imfunc.find_center_resolved_body(ex_image, ROI_estimates, ROI_parameters)
+=======
+    print '\n\nInitial Star Location Estimate:'
+    print pixel_truth
+    n_star = len(pixel_truth)
+    print 'stars in field of view: ', n_star
+    print 'min/max pixel coord.: ', min(pixel_truth), max(pixel_truth)
+    print 'min/max line coord.: ', min(line_truth), max(line_truth)
+    print '3 Brightest Stars: '
+    for ind in range(3):
+        print pixel_truth[ind], line_truth[ind], star_catalog[ind], star_catalog[ind], star_catalog[ind]
 
-print '\nPixel Line Centroid Locations:'
-# pixel_line_centroid = (0, 0)
-# DN = 0
-print pixel_line_centroid
-print pixel_line_centroid.shape
+    print '\nPixel Line Centroid Locations:'
+    print pixel_line_center
+    print pixel_line_center.shape
+>>>>>>> 1f40f9d9c73aa748727f11d3fba27871f6641b19
+
 
 ##################################################
 ##################################################
 
-# Display Results
-
-#print '\nCentroid Location: ','%.2f' % pixel_line_centroid[0], '%.2f' % pixel_line_centroid[1]
-#print 'DN Value: ', DN
-
-doplot_isearch = True
 if doplot_isearch == True:
     fig1 = plt.figure(1)
     # plt.imshow(ex_image, cmap='gray')
@@ -228,42 +209,73 @@ if doplot_isearch == True:
 
         #plt.savefig('CDR_save_files/90_deg_orig_initial_estimate.png')
 
-    if do_CDR_stars or do_CDR_stars2:
+    if do_CDR_stars:
 
-        # for ind in range(pixel_line_star_i[0].shape[1]):
-        for ind in range(20):
-            plt.scatter(pixel_star[0, ind], line_star[0, ind], color='r', marker='+', s=30)
-            fig1.suptitle('Original Image with Initial Beacon Location Estimate', fontsize=12, fontweight='bold')
+        # for ind in range(pixel_line_truth_i[0].shape[1]):
+        for ind in range(3):
+            plt.scatter(pixel_truth[ind], line_truth[ind], color='r', marker='+', s=30)
+            fig1.suptitle('Original Image with Initial Beacon Location Estimate',
+                          fontsize=12, fontweight='bold')
             #plt.savefig('CDR_save_files/stars_only_initial_estimate.png')
 
     fig1.suptitle('Original Image with Initial Beacon Location Estimate', fontsize=12, fontweight='bold')
     plt.show()
 
-    # roi1 = ex_image[450:455, 98:105]
-    # print '\nROI 1 Post-Processed Plot Shape:'
-    # print roi1.shape
-    # plt.imshow(roi1, interpolation='none')
-    # # plt.scatter(pixel_star[0, 0], line_star[0, 1], color='r', marker='+', s=30)
-    # plt.scatter(2.7, 1.8, color='r', marker='+', s=30)
-    # plt.show()
+
+if doplot_centroid == True and do_CDR_stars == True:
+
+    for ind_cent in range(n_star):
+
+        if pixel_line_center is not None:
+
+            crop_center = (int(round(pixel_line_center[ind_cent][0]/1, 1)),
+                               int(round(pixel_line_center[ind_cent][1]/1, 1)))
+            print '\nSubplot Center Coordinate'
+            print crop_center
+            crop_box = 5
+            plt.imshow(ex_image[crop_center[1]-crop_box:crop_center[1]+crop_box,
+                      crop_center[0]-crop_box:crop_center[0]+crop_box],
+                      interpolation='none', cmap='viridis')
+
+            # plot measured centroid location
+            plt.scatter(pixel_line_center[ind_cent][0]-crop_center[0]+crop_box,
+                       pixel_line_center[ind_cent][1]-crop_center[1]+crop_box,
+                            color='r', marker='x', s=75)
+
+            # plot truth value
+            plt.scatter(pixel_truth[ind_cent]-crop_center[0]+crop_box-.5,
+                            line_truth[ind_cent]-crop_center[1]+crop_box-.5,
+                            color='b', marker='+', s=75)
+            # plt.scatter(0, 0, color='w', marker='+', s=75)
+            plt.show()
 
 
-doplot_centroid = False
-if doplot_centroid == True:
-    fig1 = plt.figure()
-    # plt.imshow(ex_image, cmap='gray')
-    # plt.scatter(loc_centroid[0], loc_centroid[1], color='r', marker='x', s=50)
-    plt.imshow(ex_image)
+if doplot_centroid == True and do_CDR_beacon == True:
 
-    for ind_cent in range(len(pixel_line_centroid)):
-        plt.scatter(pixel_line_centroid[ind_cent][0], pixel_line_centroid[ind_cent][1], color='r', marker='x', s=75)
+    for ind_cent in range(len(pixel_line_center)):
 
-    plt.show()
-    fig1.suptitle('Original Image with Centroid Marked', fontsize=12, fontweight='bold')
+        if pixel_line_center[ind_cent] is not None:
 
-#plt.figure(2)
-#plt.imshow(ex_rast)
-#plt.show()
+            crop_center = (int(round(pixel_line_center[ind_cent][0], 1)), \
+                           int(round(pixel_line_center[ind_cent][1], 1)))
 
-# circ = imfunc.hough_circles(ex_image, center_dist=50, blur=1, accum=5, show_img=False)
-# print '\nFull Image Hough Transform Results: ', circ
+            print '\nSubplot Center Coordinate'
+            print crop_center
+            crop_box = 30
+
+            plt.imshow(ex_image[crop_center[1]-crop_box:crop_center[1]+crop_box,
+                       crop_center[0]-crop_box:crop_center[0]+crop_box],
+                       interpolation='none', cmap='viridis')
+
+            # plot measured center
+            plt.scatter(pixel_line_center[ind_cent][0]-crop_center[0]+crop_box,
+                        pixel_line_center[ind_cent][1]-crop_center[1]+crop_box,
+                        color='r', marker='x', s=75)
+
+            # plot truth value
+            plt.scatter(pixel_truth[ind_cent]-crop_center[0]+crop_box-.5,
+                        line_truth[ind_cent]-crop_center[1]+crop_box-.5,
+                        color='b', marker='o', s=75)
+            # plt.scatter(1, 1, color='w', marker='o', s=75)
+
+            plt.show()
