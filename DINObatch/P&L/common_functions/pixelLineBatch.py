@@ -38,24 +38,24 @@ def I_to_TV(input):
 def rot1(input):
     # rotation matrix about axis 1
     angle = input
-    rot1_matrix = np.array( [ [ 1., 0., 0. ], [ 0., cos( angle ), -sin( angle ) ],\
+    matrixRot1 = np.array( [ [ 1., 0., 0. ], [ 0., cos( angle ), -sin( angle ) ],\
                                               [ 0., sin( angle ),  cos( angle ) ] ] )
-    return rot1_matrix
+    return matrixRot1
 
 def rot2(input):
     # rotation matrix about axis 2
     angle = input
-    rot2_matrix = np.array( [ [ cos( angle ), 0., -sin( angle ) ], [ 0., 1., 0. ],\
+    matrixRot2 = np.array( [ [ cos( angle ), 0., -sin( angle ) ], [ 0., 1., 0. ],\
                               [ sin( angle ), 0.,  cos( angle ) ] ] )
-    return rot2_matrix
+    return matrixRot2
 
 def rot3(input):
     # rotation matrix about axis 3
     angle = input
-    rot3_matrix = np.array( [ [  cos( angle ), sin( angle ), 0. ],\
+    matrixRot3 = np.array( [ [  cos( angle ), sin( angle ), 0. ],\
                               [ -sin( angle ), cos( angle ), 0. ],\
                                                      [ 0., 0., 1. ] ] )
-    return rot3_matrix
+    return matrixRot3
 
 ################################################################################
 #                  E X P O R T     F U N C T I O N S:
@@ -69,7 +69,7 @@ def fncH(input):
     extras     = input[-1]
 
     # number of beacon observations
-    n_beacons  = len(extras['obs_beacons'])
+    nObservations  = len(extras['obs_beacons'])
 
     # focal length
     FoL = extras['FoL']
@@ -84,35 +84,35 @@ def fncH(input):
     Dy         = extras['line_direction']
 
     # count the number of QoIs
-    n_state = state.shape[1]
+    stateDimension = state.shape[1]
 
     # initiate the H matrix
-    H = np.zeros((2*n_beacons, n_state))
+    H = np.zeros((2*nObservations, stateDimension))
 
     # loop through beacons
-    for ii in xrange(n_beacons):
-        beacon_state = SPICE_data[ii,:]
+    for ii in xrange(nObservations):
+        beacostateDimension = SPICE_data[ii,:]
         # calculate the difference between the positions of the beacon and state
-        r_diff = beacon_state[0:3] - state[ii, 0:3]
+        positionDiff = beacostateDimension[0:3] - state[ii, 0:3]
 
         # calculate norm of pointing vector
-        rho = np.linalg.norm( r_diff )
+        rho = np.linalg.norm( positionDiff )
 
         # create inertial unit pointing vector (A_hat_I)
-        A_hat_I = r_diff / rho
+        A_hat_I = positionDiff / rho
 
         # partials of A_hat_I with respect to position components
-        dA_IdX = np.array([ r_diff[0]**2 / rho**3 - 1. / rho,\
-                            r_diff[0] * r_diff[1] / rho**3,\
-                            r_diff[0] * r_diff[2] / rho**3 ])
+        dA_IdX = np.array([ positionDiff[0]**2 / rho**3 - 1. / rho,\
+                            positionDiff[0] * positionDiff[1] / rho**3,\
+                            positionDiff[0] * positionDiff[2] / rho**3 ])
 
-        dA_IdY = np.array([ r_diff[1] * r_diff[0] / rho**3,\
-                            r_diff[1]**2 / rho**3 - 1. / rho,\
-                            r_diff[1] * r_diff[2] / rho**3 ])
+        dA_IdY = np.array([ positionDiff[1] * positionDiff[0] / rho**3,\
+                            positionDiff[1]**2 / rho**3 - 1. / rho,\
+                            positionDiff[1] * positionDiff[2] / rho**3 ])
 
-        dA_IdZ = np.array([ r_diff[2] * r_diff[0] / rho**3,\
-                            r_diff[2] * r_diff[1] / rho**3,\
-                            r_diff[2]**2 / rho**3 - 1. / rho ])
+        dA_IdZ = np.array([ positionDiff[2] * positionDiff[0] / rho**3,\
+                            positionDiff[2] * positionDiff[1] / rho**3,\
+                            positionDiff[2]**2 / rho**3 - 1. / rho ])
 
         # partials of A_hat_TV with respect to position components
         # Compute DCM from the Inertia frame to camera frame:
@@ -156,7 +156,7 @@ def fncG(input):
     extras     = input[-1]
 
     # number of beacon observations
-    n_beacons  = len(extras['obs_beacons'])
+    nObservations  = len(extras['obs_beacons'])
 
     # focal length
     FoL = extras['FoL']
@@ -172,15 +172,15 @@ def fncG(input):
 
     # create array to be twice the size of the number of beacons. this is because there are
     # two data types: pixel and line
-    G = np.zeros([n_beacons,2])
-    for ii in range(n_beacons):
+    G = np.zeros([nObservations,2])
+    for ii in range(nObservations):
 
-        beacon_state = SPICE_data[ii,:]
+        beacostateDimension = SPICE_data[ii,:]
         # calculate the difference between the positions of the beacon and state
-        r_diff = beacon_state[0:3] - state[ii, 0:3]
+        positionDiff = beacostateDimension[0:3] - state[ii, 0:3]
 
         # create inertial unit pointing vector (A_hat)
-        Ahat_I = r_diff / np.linalg.norm( r_diff )
+        Ahat_I = positionDiff / np.linalg.norm( positionDiff )
 
         # Compute DCM from the Inertia frame to camera frame:
         DCM_TVI = np.dot(extras['DCM_TVB'], extras['DCM_BI'])

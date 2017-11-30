@@ -111,7 +111,7 @@ def generate_data(sc_ephem_file, planet_beacons,
     #     ephemerides[planet] = np.array(states).T
 
     for beaconID in beaconIDs:
-        beacostateDimensions = []
+        beaconState = []
         for t in observationTimes:
             stateArray = np.zeros(6)
             state = pyswice.new_doubleArray(6)
@@ -119,9 +119,9 @@ def generate_data(sc_ephem_file, planet_beacons,
             pyswice.spkezr_c(str(beaconID), t, ref, 'None', 'SUN', state, lt)
             for i in range(6):
                 stateArray[i] = pyswice.doubleArray_getitem(state, i)
-            beacostateDimensions.append(stateArray)
-        beacostateDimensions = np.array(beacostateDimensions).T
-        ephemerides[str(beaconID)] = np.array(beacostateDimensions)
+            beaconState.append(stateArray)
+        beaconState = np.array(beaconState).T
+        ephemerides[str(beaconID)] = np.array(beaconState)
     return ephemerides, observationTimes
 
 # generate_data(sc_ephem_file='Ephem1.bsp', beacon_ephem_files=[], n_observations=100,

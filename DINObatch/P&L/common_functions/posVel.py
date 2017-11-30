@@ -48,43 +48,43 @@ except ImportError:
 # -------------------------------------------------------------------------------
 
 def matrixA(input):
-    n_state        = len(input[0])
-    r_spacecraft   = np.expand_dims(input[0][0:3],axis=1)
-    n_secondaries  = input[1]
-    mu_primary     = input[2]
-    mu_secondaries = input[3]
-    kSRP           = input[4]
-    cR             = input[5]
-    r_sun          = np.expand_dims(input[6],axis=1)
-    r_secondaries_primary = input[7]
+    stateDimension     = len(input[0])
+    spacecraftPosition = np.expand_dims(input[0][0:3],axis=1)
+    nSecondaries       = input[1]
+    muPrimary          = input[2]
+    muSecondaries      = input[3]
+    kSRP               = input[4]
+    cR                 = input[5]
+    sunPosition        = np.expand_dims(input[6],axis=1)
+    position_secondaries_primary = input[7]
 
     # set the size for the A matrix and premptively populate with zeros
-    A = np.zeros((n_state, n_state))
+    A = np.zeros((stateDimension, stateDimension))
 
-    # the r_spacecraft derivate associated with the primary gravitational force
-    dFdR_p = -mu_primary * (
-    np.identity(3) / np.linalg.norm(r_spacecraft) ** 3 -
-    3 * np.dot(r_spacecraft, r_spacecraft.T) / np.linalg.norm(r_spacecraft) ** 5 
-    )
+    # the spacecraftPosition derivate associated with the primary gravitational force
+    dFdR_p = -muPrimary * ( np.identity(3) / np.linalg.norm(spacecraftPosition) ** 3 -\
+    3 * np.dot(spacecraftPosition, spacecraftPosition.T) / \
+    np.linalg.norm(spacecraftPosition) ** 5 )
 
-    # the r_spacecraft derivatives associated with gravitational force from secondary bodies
+    # the spacecraftPosition derivatives associated 
+    # with gravitational force from secondary bodies
     dFdR_s = np.zeros( ( 3, 3 ) )
 
     # loop through the secondary bodies
-    for ii in xrange(n_secondaries) :
-        r_secondary = np.expand_dims( r_secondaries_primary[:, ii], axis = 1 )
-        dFdR_s += -mu_secondaries[ii] * (
-        np.identity(3) / np.linalg.norm(r_spacecraft - r_secondary) ** 3 -
-        3 * np.dot(r_spacecraft - r_secondary,(r_spacecraft - r_secondary).T)/
-        np.linalg.norm(r_spacecraft - r_secondary) ** 5
-        )
+    for ii in xrange(nSecondaries) :
+        positionSecondary = np.expand_dims( position_secondaries_primary[:, ii], axis = 1 )
+        dFdR_s += -muSecondaries[ii] * (
+        np.identity(3) / np.linalg.norm(spacecraftPosition - positionSecondary) ** 3 -\
+        3 * np.dot(spacecraftPosition - positionSecondary,(spacecraftPosition -\
+        positionSecondary).T)/np.linalg.norm(spacecraftPosition - positionSecondary) ** 5)
 
-    # the r_spacecraft derivative associated with the SRP force
-    dFdR_SRP = cR * kSRP * (np.identity(3) / np.linalg.norm(r_spacecraft - r_sun) ** 3 -
-                            3 * np.dot(r_spacecraft - r_sun, (r_spacecraft - r_sun).T) /
-                            np.linalg.norm(r_spacecraft - r_sun) ** 5)
+    # the spacecraftPosition derivative associated with the SRP force
+    dFdR_SRP = cR * kSRP * (np.identity(3) / \
+       np.linalg.norm(spacecraftPosition - sunPosition) ** 3 -
+       3 * np.dot(spacecraftPosition - sunPosition, (spacecraftPosition - sunPosition).T) /\
+                            np.linalg.norm(spacecraftPosition - sunPosition) ** 5)
 
-    # total r_spacecraft derivatives of forces
+    # total spacecraftPosition derivatives of forces
     dFdR = dFdR_p + dFdR_s + dFdR_SRP
 
     # populate the A matrix, where each row (D) is a time derivative of a QoI
@@ -112,67 +112,69 @@ def matrixA(input):
     return A
 
 
-def EOM(state, et, primary_index, secondary_indices, n_secondaries, mu_primary, mu_secondaries,
-        kSRP, cR, abcorr, ref_frame, bodies, n_state):
+def EOM(state, et, primary_index, secondary_indices, nSecondaries, muPrimary, muSecondaries,
+        kSRP, cR, abcorr, ref_frame, bodies, stateDimension):
 
     # pull out the STM
-    phi = np.array(state[n_state:], copy=True)
-    phi = np.reshape(phi, (n_state, n_state) )
+    phi = np.array(state[stateDimension:], copy=True)
+    phi = np.reshape(phi, (stateDimension, stateDimension) )
 
     # gravitational force from primary body
-    f_primary = -mu_primary * state[0:3] / np.linalg.norm(state[0:3]) ** 3
+    fPrimary = -muPrimary * state[0:3] / np.linalg.norm(state[0:3]) ** 3
 
     # gravitational force from secondary bodies
-    f_3rd_bodies = 0
+    f3rdBodies = 0
 
-    # set the size of the r_spacecraftition_secondaries between 
+    # set the size of the spacecraftPositionitionSecondaries between 
     # secondary bodies and primary body
-    r_secondaries_primary = np.zeros((3, n_secondaries))
+    position_secondaries_primary = np.zeros((3, nSecondaries))
 
     # loop through the secondary bodies
-    for ii in range(n_secondaries):
+    for ii in range(nSecondaries):
         # determine distance from secondary to primary body
-        r_stateArray = np.zeros(3)
+        positionArray = np.zeros(3)
         stateSpice = pyswice.new_doubleArray(6)
         lt = pyswice.new_doubleArray(1)
         pyswice.spkezr_c(bodies[secondary_indices[ii]], et, ref_frame,
                         abcorr, bodies[primary_index], stateSpice, lt)
         for i in range(3):
-            r_stateArray[i] = pyswice.doubleArray_getitem(stateSpice, i)
-        r_secondaries_primary[:, ii] = r_stateArray
+            positionArray[i] = pyswice.doubleArray_getitem(stateSpice, i)
+        position_secondaries_primary[:, ii] = positionArray
 
         # calculate the "third body" force
-        f_3rd_bodies += -mu_secondaries[ii] * \
-           ( ( state[0:3] - r_secondaries_primary[:, ii] ) / \
-             np.linalg.norm(state[0:3] - r_secondaries_primary[:, ii] ) ** 3 + \
-             r_secondaries_primary[:, ii] / np.linalg.norm( r_secondaries_primary[:, ii] )**3 )
+        f3rdBodies += -muSecondaries[ii] * \
+           ( ( state[0:3] - position_secondaries_primary[:, ii] ) / \
+             np.linalg.norm(state[0:3] - position_secondaries_primary[:, ii] ) ** 3 + \
+             position_secondaries_primary[:, ii] / \
+             np.linalg.norm( position_secondaries_primary[:, ii] )**3 )
 
-    # r_spacecraftition of sun with respect to primary body
-    r_sunArray = np.zeros(3)
+    # spacecraftPositionition of sun with respect to primary body
+    sunPositionArray = np.zeros(3)
     stateSpice = pyswice.new_doubleArray(6)
     lt = pyswice.new_doubleArray(1)
     pyswice.spkezr_c(bodies[secondary_indices[ii]], et, ref_frame,
                      abcorr, bodies[primary_index], stateSpice, lt)
     for i in range(3):
-        r_sunArray[i] = pyswice.doubleArray_getitem(stateSpice, i)
-    r_sun = r_sunArray
+        sunPositionArray[i] = pyswice.doubleArray_getitem(stateSpice, i)
+    sunPosition = sunPositionArray
 
     # SRP force
-    f_SRP = cR * kSRP * (state[0:3] - r_sun) / np.linalg.norm(state[0:3] - r_sun) ** 3
+    f_SRP = cR * kSRP * (state[0:3] - sunPosition) / \
+            np.linalg.norm(state[0:3] - sunPosition) ** 3
 
     # total force (acceleration) vector
-    f = f_primary + f_3rd_bodies + f_SRP
+    f = fPrimary + f3rdBodies + f_SRP
 
     # args for the A matrix function
-    args = (state[0:n_state], n_secondaries, mu_primary, mu_secondaries, kSRP, cR, r_sun,
-            r_secondaries_primary)
+    args = (state[0:stateDimension], nSecondaries, muPrimary, muSecondaries, kSRP, cR,\
+            sunPosition, position_secondaries_primary)
 
     # A matrix calculation
     A = matrixA(args)
 
     # calculate the derivative of the STM
     dPhi = np.dot(A, phi)
-    dPhi = np.reshape(dPhi,n_state * n_state)
+    dPhi = np.reshape(dPhi,stateDimension * stateDimension)
 
     # acceleration vector to be returned to the integrator
     dState = [state[3], state[4], state[5], f[0], f[1], f[2]]
