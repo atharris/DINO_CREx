@@ -758,6 +758,12 @@ class image:
 			sceneMsg = dict(self.camera.msg) 
 			sceneMsg['rmOcc'] = 0
 			sceneMsg['addBod'] = 0
+
+
+			if self.camera.msg['psf']:
+				psf = self.psf(self.camera.psfSigma)
+
+
 			#create one scene per DCM we collected above
 			for i in range(0,len(self.DCM)):
 				FOV = self.findStarsInFOV(
@@ -798,8 +804,6 @@ class image:
 						)
 					)
 			i = 0
-			if self.camera.msg['psf']:
-					psf = self.psf(self.camera.psfSigma)
 			for eachScene in self.scenes:
 				i+=1
 				if self.camera.msg['psf']:
