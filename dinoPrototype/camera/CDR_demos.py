@@ -106,7 +106,6 @@ msg = { 'bodies': [
 	], 
 	'addStars': 1,'rmOcc': 1, 'addBod': 0, 'psf': 1, 
 	'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 'dt': 0.1}
-
 cam = camera.camera(
 	2, 				#detector_height
 	2, 				#detector_width
@@ -118,12 +117,13 @@ cam = camera.camera(
 	-1000,			#minimum magnitude (for debugging)
 	qe,
 	tc,
-	1,
+	.1,
 	0.01**2, #effective area in m^2
 	100, #dark current in electrons per second
 	100, #std for read noise in electrons
 	100, #bin size
 	2**16, #max bin depth
+	1,
 	sc,
 	msg
 	)
@@ -253,6 +253,7 @@ cam = camera.camera(
 	100, #std for read noise in electrons
 	100, #bin size
 	2**16, #max bin depth
+	1,
 	sc,
 	msg
 	)
@@ -390,6 +391,7 @@ cam = camera.camera(
 	100, #std for read noise in electrons
 	100, #bin size
 	2**16, #max bin depth
+	1,
 	sc,
 	msg
 	)
