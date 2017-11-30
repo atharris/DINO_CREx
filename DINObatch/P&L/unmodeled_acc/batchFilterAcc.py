@@ -174,6 +174,7 @@ def run_batch( input ) :
   H_inputs = ( ref_state[:,0:n_state], beacon_states, extras )
   H_tilde   = fncH( H_inputs )
 
+
   # calculate the deviation of the observables ( Y - G )
   y    = Y_obs - Y_refs
 
@@ -201,7 +202,7 @@ def run_batch( input ) :
   ##################################################################################
     
   # perform least squares on the info_matrix and observation matrix to compute the residuals
-  x_hat = np.reshape(np.linalg.lstsq( info_matrix, normal_matrix )[0], [n_state])
+  x_hat = np.dot(np.linalg.inv(info_matrix), normal_matrix).reshape([len(IC)])
 
   # initiate a filtered ref_state
   est_state = np.zeros( (ref_state.shape[0],n_state) )

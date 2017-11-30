@@ -232,7 +232,7 @@ def main():
     extras['line_direction'] = 1.
 
     # Are we using the real dynamics for the ref or the trueData
-    extras['realData']= 'ON'
+    extras['realData']= 'OFF'
 
     # Add anomaly detection parameters
     extras['anomaly']= False
@@ -246,7 +246,7 @@ def main():
     true_ephem, t_span = dg.generate_data(sc_ephem_file=DINO_kernel,
                                           planet_beacons = ['earth','mars barycenter'],
                                           beacon_ids=[],
-                                          n_observations=24,
+                                          n_observations=48,
                                           start_et=start_et,
                                           end_et=end_et,
                                           extras = extras,
@@ -355,8 +355,12 @@ def main():
     for itr in xrange(extras['iterations']):
 
         if itr > 0:
-            IC = est_state[0, :]
+            # IC = est_state[0, :]
+            IC += extra_data['x_hat_array'][0, :]
             x_bar -= extra_data['x_hat_array'][0, :]
+
+        position_error = IC[0:3] - true_ephem['spacecraft'][0:3, 0]
+        velocity_error = IC[3:6] - true_ephem['spacecraft'][3:6, 0]
 
         # the arguments for the filter are the IC, the first STM, the time span, the observables
         # data dictionary, a priori uncertainty, and the measurables' uncertainty,
@@ -368,15 +372,6 @@ def main():
                          P_bar, observation_uncertainty, x_bar, extras)
         # run filter function
         ref_state, est_state, extra_data = run_batch(filter_inputs)
-
-        [anomaly_bool , anomaly_num] = extra_data['anomaly_detected']
-        if anomaly_bool == True:
-            print '**********************************************************'
-            print 'Anomaly Detected - Estimates are not to be trusted'
-            print '**********************************************************'
-            print anomaly_num, 'Residuals out of bounds'
-            return
-
 
         extras['oldPost'] = extra_data['postfit residuals']
         # save all outputs into the dictionary with a name associated with the iteration
@@ -423,6 +418,14 @@ def main():
         plot_data['extras']      = extras
         plot_data['acc_est']     = 'ON'
         PF( plot_data )
+
+    [anomaly_bool , anomaly_num] = extra_data['anomaly_detected']
+    if anomaly_bool == True:
+        print '**********************************************************'
+        print 'Anomaly Detected - Estimates are not to be trusted'
+        print '**********************************************************'
+        print anomaly_num, 'Residuals out of bounds'
+
 
     return
 
