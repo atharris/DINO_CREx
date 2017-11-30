@@ -20,7 +20,7 @@ import sys, os, inspect
 filename = inspect.getframeinfo(inspect.currentframe()).filename
 path = os.path.dirname(os.path.abspath(filename))
 path2 = os.path.dirname(os.path.abspath(filename))
-bskName = 'Basilisk'
+bskName  = 'Basilisk'
 dinoName = 'DINO_CREx'
 splitPath = path.split(dinoName)
 dinoSpicePath = splitPath[0] + dinoName + '/DINObatch/SPICE/'
@@ -48,36 +48,36 @@ import pdb
 
 def beaconStates(input):
     # pull out the inputs for the generation of observation data
-    beacon_list       = input[0]
-    observation_times = input[1]
+    beaconList       = input[0]
+    observationTimes = input[1]
     extras            = input[-1]
 
     # compute and save total number of observations
-    n_observations    = len( beacon_list )
+    nObservationss    = len( beaconList )
 
     # Load Ephemeris Files from extras dictionary
     pyswice.furnsh_c(bskSpicePath  + extras['basic_bsp'])
     pyswice.furnsh_c(dinoSpicePath + extras['mission_bsp'])
     pyswice.furnsh_c(dinoSpicePath + extras['tls'])
 
-    # instantiate beacon_states
-    beacon_states = []
+    # instantiate beaconStates
+    beaconStates = []
 
     # for each observation time, compute the state of the dictated beacon
-    for ii in xrange( n_observations ):
+    for ii in xrange( nObservationss ):
         stateArray = np.zeros(6)
-        state = pyswice.new_doubleArray(6)
-        lt = pyswice.new_doubleArray(1)
-        pyswice.spkezr_c( beacon_list[ii], observation_times[ii], extras['ref_frame'],\
+        state      = pyswice.new_doubleArray(6)
+        lt         = pyswice.new_doubleArray(1)
+        pyswice.spkezr_c( beaconList[ii], observationTimes[ii], extras['ref_frame'],\
                           'None', 'SUN', state, lt)
         for i in range(6):
             stateArray[i] = pyswice.doubleArray_getitem(state, i)
-        beacon_states.append(stateArray)
+        beaconStates.append(stateArray)
     
     # convert final data set into numpy array
-    beacon_states = np.array(beacon_states)
+    beaconStates = np.array(beaconStates)
 
-    return beacon_states
+    return beaconStates
 
 ################################################################################
 #                    E X P O R T E D     C L A S S E S:

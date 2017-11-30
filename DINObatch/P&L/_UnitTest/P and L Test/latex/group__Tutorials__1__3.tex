@@ -1,0 +1,154 @@
+\hypertarget{group__Tutorials__1__3}{}\section{Tutorials\+\_\+1\+\_\+3}
+\label{group__Tutorials__1__3}\index{Tutorials\+\_\+1\+\_\+3@{Tutorials\+\_\+1\+\_\+3}}
+
+
+How to setup orbital simulation with multiple gravitational bodies.  
+
+
+How to setup orbital simulation with multiple gravitational bodies. 
+
+\hypertarget{group__Tutorials__1__3_scenarioOrbitMultiBody}{}\subsection{Orbit Setup to Simulate Translation with Multiple Gravitational Bodies }\label{group__Tutorials__1__3_scenarioOrbitMultiBody}
+\subsubsection*{Scenario Description }
+
+This script sets up a 3-\/\+D\+OF spacecraft which is traveling in a multi-\/gravity environment. The purpose is to illustrate how to attach a multiple gravity model, and compare the output to S\+P\+I\+CE generated trajectories. The scenarios can be run with the followings setups parameters\+: \tabulinesep=1mm
+\begin{longtabu} spread 0pt [c]{*{2}{|X[-1]}|}
+\hline
+\rowcolor{\tableheadbgcolor}\textbf{ Setup }&\textbf{ sc\+Case  }\\\cline{1-2}
+\endfirsthead
+\hline
+\endfoot
+\hline
+\rowcolor{\tableheadbgcolor}\textbf{ Setup }&\textbf{ sc\+Case  }\\\cline{1-2}
+\endhead
+1 &Hubble \\\cline{1-2}
+2 &New Horizon \\\cline{1-2}
+\end{longtabu}
+To run the default scenario 1, call the python script through \begin{DoxyVerb}  python test_scenarioOrbitMultiBody.py
+\end{DoxyVerb}
+
+
+When the simulation completes 2-\/3 plots are shown for each case. One plot always shows the inertial position vector components, while the third plot shows the inertial differences between the Basilisk simulation trajectory and the S\+P\+I\+CE spacecraft trajectory. Read test\+\_\+scenario\+Basic\+Orbit.py to learn how to setup an orbit simulation.
+
+The simulation layout is shown in the following illustration. The S\+P\+I\+CE interface object keeps track of the selection celestial objects, and ensures the gravity body object has the correct locations at each time step. 
+
+The spacecraft\+Plus() module is setup as before, except that we need to specify a priority to this task. 
+\begin{DoxyCode}
+\textcolor{comment}{# initialize spacecraftPlus object and set properties}
+scObject = spacecraftPlus.SpacecraftPlus()
+scObject.ModelTag = \textcolor{stringliteral}{"spacecraftBody"}
+scObject.hub.useTranslation = \textcolor{keyword}{True}
+scObject.hub.useRotation = \textcolor{keyword}{False}
+
+\textcolor{comment}{# add spacecraftPlus object to the simulation process}
+scSim.AddModelToTask(simTaskName, scObject, \textcolor{keywordtype}{None}, 1)
+\end{DoxyCode}
+ If B\+SK modules are added to the simulation task process, they are executed in the order that they are added However, we the execution order needs to be control, a priority can be assigned. The model with a higher priority number is executed first. Modules with unset priorities will be given a priority of -\/1 which puts them at the very end of the execution frame. They will get executed in the order in which they were added. For this scenario scripts, it is critical that the Spice object task is evaluated before the spacecraft\+Plus() model. Thus, below the Spice object is added with a higher priority task.
+
+The first step to create a fresh gravity body factor class through 
+\begin{DoxyCode}
+gravFactory = simIncludeGravBody.gravBodyFactory()
+\end{DoxyCode}
+ This clears out the list of gravitational bodies, especially ifthe script is run multiple times using \textquotesingle{}py.\+test\textquotesingle{} or in Monte-\/\+Carlo runs. Next a series of gravitational bodies are included. Note that it is convenient to include them as a list of S\+P\+I\+CE names. The Earth is included in this scenario with the spherical harmonics turned on. Note that this is true for both spacecraft simulations. 
+\begin{DoxyCode}
+gravBodies = gravFactory.createBodies([\textcolor{stringliteral}{'earth'}, \textcolor{stringliteral}{'mars barycenter'}, \textcolor{stringliteral}{'sun'}, \textcolor{stringliteral}{'moon'}, \textcolor{stringliteral}{"jupiter barycenter"}])
+gravBodies[\textcolor{stringliteral}{'earth'}].isCentralBody = \textcolor{keyword}{True}
+gravBodies[\textcolor{stringliteral}{'earth'}].useSphericalHarmParams = \textcolor{keyword}{True}
+imIncludeGravBody.loadGravFromFile(bskPath + \textcolor{stringliteral}{'External/LocalGravData/GGM03S.txt'}
+                                 , gravBodies[\textcolor{stringliteral}{'earth'}].spherHarm
+                                 , 100
+                                 )
+\end{DoxyCode}
+ The configured gravitational bodies are addes to the spacecraft dynamics with the usual command\+: 
+\begin{DoxyCode}
+scObject.gravField.gravBodies = spacecraftPlus.GravBodyVector(gravFactory.gravBodies.values())
+\end{DoxyCode}
+
+
+Next, the default S\+P\+I\+CE support module is created and configured. The first step is to store the date and time of the start of the simulation. 
+\begin{DoxyCode}
+timeInitString = \textcolor{stringliteral}{"2012 MAY 1 00:28:30.0"}
+spiceTimeStringFormat = \textcolor{stringliteral}{'%Y %B %d %H:%M:%S.%f'}
+timeInit = datetime.strptime(timeInitString,spiceTimeStringFormat)
+\end{DoxyCode}
+ The following is a support macro that creates a {\ttfamily spice\+Object} instance, and fills in typical default parameters. 
+\begin{DoxyCode}
+gravFactory.createSpiceInterface(bskPath + \textcolor{stringliteral}{'External/EphemerisData/'}, timeInitString)
+\end{DoxyCode}
+ Next the S\+P\+I\+CE module is costumized. The first step is to specify the zero\+Base. This is the inertial origin relative to which all spacecraft message states are taken. The simulation defaults to all planet or spacecraft ephemeris being given in the S\+P\+I\+CE object default frame, which is the solar system barycenter or S\+SB for short. The spacecraft\+Plus() state output message is relative to this S\+BB frame by default. To change this behavior, the zero based point must be redefined from S\+BB to another body. In this simulation we use the Earth. 
+\begin{DoxyCode}
+gravFactory.spiceObject.zeroBase = \textcolor{stringliteral}{'Earth'}
+\end{DoxyCode}
+ Finally, the S\+P\+I\+CE object is added to the simulation task list. 
+\begin{DoxyCode}
+scSim.AddModelToTask(simTaskName, gravFactory.spiceObject, \textcolor{keywordtype}{None}, -1)
+\end{DoxyCode}
+ To unload the loaded S\+P\+I\+CE kernels, use 
+\begin{DoxyCode}
+gravFactory.unloadSpiceKernels()
+\end{DoxyCode}
+ This will unload all the kernels that the gravital body factory loaded earlier.
+
+Next we would like to import spacecraft specific S\+P\+I\+CE ephemeris data into the python enviroment. This is done such that the B\+SK computed trajectories can be compared in python with the equivalent S\+P\+I\+CE directories. Note that this python S\+P\+I\+CE setup is different from the B\+SK S\+P\+I\+CE setup that was just completed. As a result it is required to load in all the required S\+P\+I\+CE kernels. The following code is used to load either spacecraft data. 
+\begin{DoxyCode}
+\textcolor{keywordflow}{if} scCase \textcolor{keywordflow}{is} \textcolor{stringliteral}{'NewHorizons'}:
+   scEphemerisFileName = \textcolor{stringliteral}{'nh\_pred\_od077.bsp'}
+    scSpiceName = \textcolor{stringliteral}{'NEW HORIZONS'}
+    vizPlanetName = \textcolor{stringliteral}{"sun"}
+\textcolor{keywordflow}{else}:  \textcolor{comment}{# default case}
+    scEphemerisFileName = \textcolor{stringliteral}{'hst\_edited.bsp'}
+    scSpiceName = \textcolor{stringliteral}{'HUBBLE SPACE TELESCOPE'}
+    vizPlanetName = \textcolor{stringliteral}{"earth"}
+pyswice.furnsh\_c(gravFactory.spiceObject.SPICEDataPath + scEphemerisFileName)  \textcolor{comment}{# Hubble Space Telescope
+       data}
+pyswice.furnsh\_c(gravFactory.spiceObject.SPICEDataPath + \textcolor{stringliteral}{'de430.bsp'})  \textcolor{comment}{# solar system bodies}
+pyswice.furnsh\_c(gravFactory.spiceObject.SPICEDataPath + \textcolor{stringliteral}{'naif0011.tls'})  \textcolor{comment}{# leap second file}
+pyswice.furnsh\_c(gravFactory.spiceObject.SPICEDataPath + \textcolor{stringliteral}{'de-403-masses.tpc'})  \textcolor{comment}{# solar system masses}
+pyswice.furnsh\_c(gravFactory.spiceObject.SPICEDataPath + \textcolor{stringliteral}{'pck00010.tpc'})  \textcolor{comment}{# generic Planetary Constants
+       Kernel}
+\end{DoxyCode}
+ To unload the S\+P\+I\+CE kernels loaded into the Python environment, use 
+\begin{DoxyCode}
+pyswice.unload\_c(gravFactory.spiceObject.SPICEDataPath + \textcolor{stringliteral}{'de430.bsp'})  \textcolor{comment}{# solar system bodies}
+pyswice.unload\_c(gravFactory.spiceObject.SPICEDataPath + \textcolor{stringliteral}{'naif0011.tls'})  \textcolor{comment}{# leap second file}
+pyswice.unload\_c(gravFactory.spiceObject.SPICEDataPath + \textcolor{stringliteral}{'de-403-masses.tpc'})  \textcolor{comment}{# solar system masses}
+pyswice.unload\_c(gravFactory.spiceObject.SPICEDataPath + \textcolor{stringliteral}{'pck00010.tpc'})  \textcolor{comment}{# generic Planetary Constants
+       Kernel}
+\end{DoxyCode}
+
+
+The initial spacecraft position and velocity vector is obtained via the S\+P\+I\+CE function call\+: 
+\begin{DoxyCode}
+scInitialState = 1000*pyswice.spkRead(scSpiceName, timeInitString, \textcolor{stringliteral}{'J2000'}, \textcolor{stringliteral}{'EARTH'})
+rN = scInitialState[0:3]         \textcolor{comment}{# meters}
+vN = scInitialState[3:6]         \textcolor{comment}{# m/s}
+\end{DoxyCode}
+ Note that these vectors are given here relative to the Earth frame. When we set the spacecraft\+Plus() initial position and velocity vectors through before initialization 
+\begin{DoxyCode}
+scObject.hub.r\_CN\_NInit = unitTestSupport.np2EigenVectorXd(rN)  \textcolor{comment}{# m - r\_CN\_N}
+scObject.hub.v\_CN\_NInit = unitTestSupport.np2EigenVectorXd(vN)  \textcolor{comment}{# m - v\_CN\_N}
+\end{DoxyCode}
+ the natural question arises, how does Basilisk know relative to what frame these states are defined? This is actually setup above where we set {\ttfamily .is\+Central\+Body = True} and mark the Earth as are central body. Without this statement, the code would assume the spacecraft\+Plus() states are relative to the default zero\+Base frame. In the earlier basic orbital motion script (scenario\+Basic\+Orbit) this subtleties were not discussed. This is because there the planets ephemeris message is being set to the default messages which zero\textquotesingle{}s both the position and orientation states. However, if Spice is used to setup the bodies, the zero\+Base state must be carefully considered.
+
+\subsubsection*{Setup 1 }
+
+Which scenario is run is controlled at the bottom of the file in the code 
+\begin{DoxyCode}
+\textcolor{keywordflow}{if} \_\_name\_\_ == \textcolor{stringliteral}{"\_\_main\_\_"}:
+    run( \textcolor{keyword}{False},       \textcolor{comment}{# do unit tests}
+         \textcolor{keyword}{True},        \textcolor{comment}{# show\_plots}
+         \textcolor{stringliteral}{'Hubble'}
+       )
+\end{DoxyCode}
+ The first 2 arguments can be left as is. The remaining argument(s) control the simulation scenario flags to turn on or off certain simulation conditions. The default scenario simulates the Hubble Space Telescope (H\+ST) spacecraft about the Earth in a L\+EO orbit. The resulting position coordinates and orbit illustration are shown below. A 2000 second simulation is performed, and the Basilisk and S\+P\+I\+CE generated orbits match up very well.   
+
+\subsubsection*{Setup 2 }
+
+The next scenario is run by changing the bottom of the file in the scenario code to read 
+\begin{DoxyCode}
+\textcolor{keywordflow}{if} \_\_name\_\_ == \textcolor{stringliteral}{"\_\_main\_\_"}:
+    run( \textcolor{keyword}{False},       \textcolor{comment}{# do unit tests}
+         \textcolor{keyword}{True},        \textcolor{comment}{# show\_plots}
+         \textcolor{stringliteral}{'NewHorizons'}
+       )
+\end{DoxyCode}
+ This case illustrates a simulation of the New Horizons spacecraft. Here the craft is already a very large distance from the sun. The resulting position coordinates and trajectorie differences are shown below.   

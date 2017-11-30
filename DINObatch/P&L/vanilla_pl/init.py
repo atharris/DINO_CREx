@@ -56,44 +56,42 @@ def norm(input):
     norm = np.sqrt(sum(np.square(input)))
     return norm
 
-# This function writes out the outputs in a text file
-
-def writingText(itr, ref_state, est_state, true_ephem, extra_data, position_error , velocity_error):
+def writingText(itr, referenceState, estimatedState, trueEphemeris, extraData, initialPositionError , initialVelocityError):
     # calculate the difference between the perturbed reference and true trajectories: reference state errors
-    err = ref_state[:, 0:6] - true_ephem['spacecraft'].T
+    err = referenceState[:, 0:6] - trueEphemeris['spacecraft'].T
 
     # compare the estimated and true trajectories: estimated state errors
-    err_hat = est_state[:, 0:6] - true_ephem['spacecraft'].T
+    stateErrorHat = estimatedState[:, 0:6] - trueEphemeris['spacecraft'].T
 
-    ResultString = ''
+    resultString = ''
 
-    ResultString += '---------------------------------------------------' + '\n'
-    ResultString += 'Iteration number '+ str(itr) + '\n'
-    ResultString += '---------------------------------------------------'+ '\n'
-    ResultString += '\n'
-    ResultString += 'Estimated x_hat_0 = ' + str(extra_data['x_hat_0'])+ '\n'
-    ResultString += 'Actual Error = ' + str(position_error) + str(velocity_error) + '\n'
-    ResultString += '\n'
+    resultString += '---------------------------------------------------' + '\n'
+    resultString += 'Iteration number '+ str(itr) + '\n'
+    resultString += '---------------------------------------------------'+ '\n'
+    resultString += '\n'
+    resultString += 'Estimated x_hat_0 = ' + str(extraData['x_hat_0'])+ '\n'
+    resultString += 'Actual Error = ' + str(initialPositionError) + str(initialVelocityError) + '\n'
+    resultString += '\n'
 
-    ResultString += 'Ref X Pos err = ' + str(err[-1, 0]) + '\n'
-    ResultString += 'Ref Y Pos err = ' + str(err[-1, 1]) + '\n'
-    ResultString += 'Ref Z Pos err = ' + str(err[-1, 2]) + '\n'
-    ResultString += 'Ref X Vel err = ' + str(err[-1, 3]) + '\n'
-    ResultString += 'Ref Y Vel err = ' + str(err[-1, 4]) + '\n'
-    ResultString += 'Ref Z Vel err = ' + str(err[-1, 5]) + '\n'
-    ResultString += '\n'
-    ResultString += 'Est X Pos err = ' + str(err_hat[-1, 0]) + '\n'
-    ResultString += 'Est Y Pos err = ' + str(err_hat[-1, 1]) + '\n'
-    ResultString += 'Est Z Pos err = ' + str(err_hat[-1, 2]) + '\n'
-    ResultString += 'Est X Vel err = ' + str(err_hat[-1, 3]) + '\n'
-    ResultString += 'Est Y Vel err = ' + str(err_hat[-1, 4]) + '\n'
-    ResultString += 'Est Z Vel err = ' + str(err_hat[-1, 5]) + '\n'
-    ResultString += '\n'
+    resultString += 'Ref X Pos err = ' + str(err[-1, 0]) + '\n'
+    resultString += 'Ref Y Pos err = ' + str(err[-1, 1]) + '\n'
+    resultString += 'Ref Z Pos err = ' + str(err[-1, 2]) + '\n'
+    resultString += 'Ref X Vel err = ' + str(err[-1, 3]) + '\n'
+    resultString += 'Ref Y Vel err = ' + str(err[-1, 4]) + '\n'
+    resultString += 'Ref Z Vel err = ' + str(err[-1, 5]) + '\n'
+    resultString += '\n'
+    resultString += 'Est X Pos err = ' + str(stateErrorHat[-1, 0]) + '\n'
+    resultString += 'Est Y Pos err = ' + str(stateErrorHat[-1, 1]) + '\n'
+    resultString += 'Est Z Pos err = ' + str(stateErrorHat[-1, 2]) + '\n'
+    resultString += 'Est X Vel err = ' + str(stateErrorHat[-1, 3]) + '\n'
+    resultString += 'Est Y Vel err = ' + str(stateErrorHat[-1, 4]) + '\n'
+    resultString += 'Est Z Vel err = ' + str(stateErrorHat[-1, 5]) + '\n'
+    resultString += '\n'
 
-    print ResultString
+    print resultString
 
     text_file = open('Batch_Iteration' + str(itr) + "/Batch" + str(itr) + ".txt", "w")
-    text_file.write(ResultString)
+    text_file.write(resultString)
     text_file.close()
 
 ################################################################################
@@ -153,16 +151,16 @@ def main():
     ###########################################
     # Initial condition for spacecraft
     # data = io.loadmat('saves/obsData.mat')
-    # true_ephem = {}
+    # trueEphemeris = {}
     # reference of sun to sc
-    # true_ephem['spacecraft'] = np.copy(data['stateS'])
+    # trueEphemeris['spacecraft'] = np.copy(data['stateS'])
     # # reference of sun to Earth
-    # true_ephem['S2E'] = np.copy(data['stateE'])
+    # trueEphemeris['S2E'] = np.copy(data['stateE'])
     # # reference of sun to Mars
-    # true_ephem['S2M'] = np.copy(data['stateM'])
+    # trueEphemeris['S2M'] = np.copy(data['stateM'])
 
     # time span
-    # t_span = data['etT'].flatten()
+    # timeSpan = data['etT'].flatten()
     #Filtering End Epochs
     start_et = pyswice.new_doubleArray(1)
     end_et=pyswice.new_doubleArray(1)
@@ -247,9 +245,9 @@ def main():
 
     # Get Observation Times and Ephemerides. This outputs a full data set that is not
     # parsed in any way. Ephemerides for all objects at all times are given.
-    true_ephem, t_span = dg.generate_data(sc_ephem_file=DINO_kernel,
+    trueEphemeris, timeSpan = dg.generate_data(sc_ephem_file=DINO_kernel,
                                           planet_beacons = ['earth','mars barycenter'],
-                                          beacon_ids=[],
+                                          beaconIDs=[],
                                           n_observations=24,
                                           start_et=start_et,
                                           end_et=end_et,
@@ -264,7 +262,7 @@ def main():
 
     # number and keys of beacons. note that the true ephem is going to have one spot for the
     # sun, which in NOT a beacon. These are used in beaconBinSPICE. 
-    beacon_names = true_ephem.keys()
+    beacon_names = trueEphemeris.keys()
     beacon_names.remove('spacecraft')
     extras['unique_beacon_IDs'] = beacon_names
     extras['n_unique_beacons'] = len(beacon_names)
@@ -275,47 +273,47 @@ def main():
     #
     ##################################################################################
 
-    # copy the initial conditions as the first sun to SC ref_states from the SPICE file
-    IC = np.copy(true_ephem['spacecraft'][:, 0])
+    # copy the initial conditions as the first sun to SC referenceStates from the SPICE file
+    IC = np.copy(trueEphemeris['spacecraft'][:, 0])
 
     print 'IC', IC
 
     # spice_derived_state is only referenced here. Should these be axed?
     spice_derived_state = pyswice.new_doubleArray(6)
     lt = pyswice.new_doubleArray(1)
-    pyswice.spkezr_c(body_id_str, t_span[0], 'J2000', 'None', 'Sun', spice_derived_state, lt)
+    pyswice.spkezr_c(body_id_str, timeSpan[0], 'J2000', 'None', 'Sun', spice_derived_state, lt)
 
     
-    # a priori uncertainty for the ref_states
-    P_bar = np.zeros((IC.shape[0], IC.shape[0]))
-    P_bar[0, 0] = 10000**2
-    P_bar[1, 1] = 10000**2
-    P_bar[2, 2] = 10000**2
-    P_bar[3, 3] = .1**2
-    P_bar[4, 4] = .1**2
-    P_bar[5, 5] = .1**2
+    # a priori uncertainty for the referenceStates
+    covBar = np.zeros((IC.shape[0], IC.shape[0]))
+    covBar[0, 0] = 10000**2
+    covBar[1, 1] = 10000**2
+    covBar[2, 2] = 10000**2
+    covBar[3, 3] = .1**2
+    covBar[4, 4] = .1**2
+    covBar[5, 5] = .1**2
 
     # add uncertainty to the IC
-    position_error = 1000 * np.divide(IC[0:3], norm(IC[0:3]))
-    velocity_error = 0.01 * np.divide(IC[3:6], norm(IC[3:6]))
+    initialPositionError = 1000 * np.divide(IC[0:3], norm(IC[0:3]))
+    initialVelocityError = 0.01 * np.divide(IC[3:6], norm(IC[3:6]))
 
-    IC[0:6] += np.append(position_error, velocity_error)
+    IC[0:6] += np.append(initialPositionError, initialVelocityError)
 
     # uncertainty to be added in the form of noise to the measurables. 
     # Takes the form of variance. Currently, the same value is used in both
     # the creation of the measurements as well as the weighting of the filter (W)
-    observation_uncertainty = np.identity(2)
-    observation_uncertainty[0, 0] = 0.2 ** 2
-    observation_uncertainty[1, 1] = 0.2 ** 2
+    observationUncertainty = np.identity(2)
+    observationUncertainty[0, 0] = 0.2 ** 2
+    observationUncertainty[1, 1] = 0.2 ** 2
 
     # the initial STM is an identity matrix
     phi0 = np.identity(IC.shape[0])
 
     # initiate a priori deviation
-    x_bar = np.zeros(IC.shape)
+    stateErrorBar = np.zeros(IC.shape)
 
     # initiate a filter output dictionary
-    filter_outputs = {}
+    filterOutputs = {}
 
     ##################################################################################
     #
@@ -324,9 +322,9 @@ def main():
     ##################################################################################
         
     # observation inputs
-    obs_inputs = (true_ephem, observation_uncertainty, extras)
+    observationInputs = (trueEphemeris, observationUncertainty, extras)
 
-    # Get the observation data (obs_data). This dictionary contains the SPICE data
+    # Get the observation data (dataObservations). This dictionary contains the SPICE data
     # from which values are calculated (key = 'SPICE'), the true observations before
     # uncertainty is added (key = 'truth') and the measured observations (key = 'data').
     # These are the 'data' values that are now simulating an actual observation, 
@@ -334,12 +332,13 @@ def main():
     # The dictionary also contains the list of beacons by name and order of processing. 
     # This list of strings (key = 'beacons') is needed for 
     # the filter's own beacon position generator
-    obs_data = getObs(obs_inputs)
+    dataObservations = getObs(observationInputs)
 
-    # create dictionary for observation data to be inputs in filter
-    obs_filter = {}
-    obs_filter['measurements'] = obs_data['data']
-    obs_filter['beaconIDs']    = obs_data['beacons']
+    # create dictionary for observation data to be inputs in filter. This is a more limited
+    # dictionary than dataObservations and serves as the most "real" input
+    filterObservations = {}
+    filterObservations['measurements'] = dataObservations['data']
+    filterObservations['beaconIDs']    = dataObservations['beacons']
 
     ##################################################################################
     #
@@ -347,24 +346,24 @@ def main():
     #
     ##################################################################################
 
-   # run the filter and output the reference ref_states (including STMs), est states and extra data
+   # run the filter and output the referenceStates (including STMs), est states and extra data
     for itr in xrange(extras['iterations']):
 
         if itr > 0:
-            IC = est_state[0, :]
-            x_bar -= extra_data['x_hat_array'][0, :]
+            IC     = estimatedState[0, :]
+            stateErrorBar -= extraData['stateErrorHatArray'][0, :]
 
         if itr==0:
-            extras['oldPost'] = np.zeros([len(t_span), 2])
+            extras['oldPost'] = np.zeros([len(timeSpan), 2])
 
-        # the arguments for the filter are the IC, the first STM, the time span, the observables
+        # the arguments for the filter: the IC, the first STM, the time span, the observables
         # data dictionary, a priori uncertainty, and the measurables' uncertainty,
         # as well as any extras
-        filter_inputs = (IC, phi0, t_span, obs_filter,\
-                         P_bar, observation_uncertainty, x_bar, extras)
+        filterInputs = (IC, phi0, timeSpan, filterObservations,\
+                         covBar, observationUncertainty, stateErrorBar, extras)
         # run filter function
-        ref_state, est_state, extra_data = run_batch(filter_inputs)
-        extras['oldPost'] = extra_data['postfit residuals']
+        referenceState, estimatedState, extraData = run_batch(filterInputs)
+        extras['oldPost'] = extraData['postfit residuals']
 
         # Check for anomaly:
 
@@ -377,10 +376,10 @@ def main():
             return
 
         # save all outputs into the dictionary with a name associated with the iteration
-        filter_outputs[str(itr)] = {}
-        filter_outputs[str(itr)]['ref_state'] = ref_state
-        filter_outputs[str(itr)]['est_state'] = est_state
-        filter_outputs[str(itr)]['extra_data'] = extra_data
+        filterOutputs[str(itr)] = {}
+        filterOutputs[str(itr)]['referenceState'] = referenceState
+        filterOutputs[str(itr)]['estimatedState'] = estimatedState
+        filterOutputs[str(itr)]['extraData']      = extraData
 
         ##################################################################################
         #
@@ -396,36 +395,38 @@ def main():
             os.makedirs(dirIt)
 
         # File to write data
-        writingText(itr+1, ref_state, est_state, true_ephem, extra_data, position_error , velocity_error)
+        writingText( itr+1, referenceState, estimatedState, trueEphemeris, extraData,\
+                     initialPositionError , initialVelocityError)
 
-        # calculate the difference between the perturbed reference and true trajectories: reference state errors
-        err = ref_state[:, 0:6] - true_ephem['spacecraft'].T
+        # calculate the difference between the perturbed reference and 
+        # true trajectories: reference state errors
+        stateError = referenceState[:, 0:6] - trueEphemeris['spacecraft'].T
 
         # compare the estimated and true trajectories: estimated state errors
-        err_hat = est_state[:, 0:6] - true_ephem['spacecraft'].T
+        stateErrorHat = estimatedState[:, 0:6] - trueEphemeris['spacecraft'].T
 
-        plot_data = extra_data
+        plotData = extraData
 
-        plot_data['postfit delta']= extra_data['postfit changes']
-        plot_data['states']      = est_state
-        plot_data['truth']       = obs_data['truth']
-        plot_data['beacon_list'] = obs_data['beacons']
-        plot_data['t_span']      = t_span
-        plot_data['dirIt']       = dirIt
-        plot_data['err']         = err
-        plot_data['err_hat']     = err_hat
-        plot_data['obs_uncertainty'] = observation_uncertainty
-        plot_data['ref_state']   = ref_state
-        plot_data['true_ephem']  = true_ephem
-        plot_data['extras']      = extras
-        plot_data['acc_est']     = 'OFF'
-        PF( plot_data )
-
+        plotData['postfit delta']   = extraData['postfit changes']
+        plotData['states']          = estimatedState
+        plotData['truth']           = dataObservations['truth']
+        plotData['beacon_list']     = dataObservations['beacons']
+        plotData['timeSpan']        = timeSpan
+        plotData['dirIt']           = dirIt
+        plotData['err']             = stateError
+        plotData['stateErrorHat']   = stateErrorHat
+        plotData['obs_uncertainty'] = observationUncertainty
+        plotData['referenceState']  = referenceState
+        plotData['trueEphemeris']   = trueEphemeris
+        plotData['extras']          = extras
+        plotData['acc_est']         = 'OFF'
+        PF( plotData )
+        pdb.set_trace()
         #  Write the output to the pickle file
         fileTag = 'nominal'
         file = dirIt+'/'+fileTag+'_data.pkl'
         pklFile = open( file, 'wb')
-        pickle.dump( plot_data, pklFile, -1 )
+        pickle.dump( plotData, pklFile, -1 )
         pklFile.flush()
 
         pklFile.close()
