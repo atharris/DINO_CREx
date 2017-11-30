@@ -12,7 +12,7 @@ filename = inspect.getframeinfo(inspect.currentframe()).filename
 path = os.path.dirname(os.path.abspath(filename))
 
 bskName = 'Basilisk'
-bskPath = '../..' + '/' + bskName + '/'
+bskPath = '../../..' + '/' + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 
@@ -21,7 +21,7 @@ import simulationArchTypes
 import imu_sensor
 import star_tracker
 import simple_nav
-import rigidBodyKinematics as rbk
+import RigidBodyKinematics as rbk
 
 # if this script is run from a custom folder outside of the Basilisk folder, then uncomment the
 # following line and specify the absolute bath to the Basilisk folder
@@ -55,11 +55,11 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         self.outputMsgID = -1
 
         ## Input IMU, Star Tracker structures
-        self.inputIMUData = imu_sensor.ImuSensor.IMUSensorIntMsg()
-        self.inputStData = star_tracker.StarTracker.STSensorIntValues()
+        self.inputIMUData = imu_sensor.ImuSensor.sensedValues
+        self.inputStData = star_tracker.StarTracker.sensedValues
 
         ## Output navigation estimate structure.
-        self.outputMsgData = simple_nav.SimpleNav.NavAttIntMsg()
+        self.outputMsgData = simple_nav.SimpleNav.estAttState
 
         ##  Define Estimate variables
         self.stateEst = np.zeros([6,]) #    state estimate is 3 delta MRPs, 3 bias states
@@ -74,7 +74,9 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         self.H = np.zeros([3, 6])
         self.H[:3, :3] = np.identity(3)
 
-        self.predOptions = ekf.biasReplacementOptions(np.zeros([3,]))
+        A_ls, G_ls = ekf.linearizeSystem(self.stateEst[0:3], self.stateEst[3:6])
+
+        self.predOptions = ekf.biasReplacementOptions(np.zeros([3,]), A_ls, G_ls, self.stateNoise)
 
     ## The selfInit method is used to initialze all of the output messages of a class.
     # It is important that ALL outputs are initialized here so that other models can
@@ -122,7 +124,7 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         #   Compute measurement innovation
         innov = self.stMeas - np.dot(self.H, predState)
         if np.linalg.norm(innov) > (1.0 / 3.0):
-            innov_s = rbk.sigmaUnitSwitch(y) - np.dot(self.H, predState)
+            innov_s = rbk.sigmaUnitSwitch(self.stMeas) - np.dot(self.H, predState)
             if np.linalg.norm(innov_s) < np.linalg.norm(innov):
                 innov = innov_s
 
@@ -144,17 +146,20 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
     # method.  You could easily detonate your sim's ability to run in realtime.
     def updateState(self, currentTime):
         #   First, read messages we've subscribed to:
-        simulationArchTypes.ReadMessage(self.inputStMsgID, self.inputMsgData, self.moduleID)
-        simulationArchTypes.ReadMessage(self.inputIMsgID, self.inputMsgData, self.moduleID)
+        simulationArchTypes.ReadMessage(self.inputStMsgID, self.inputStMsgData, self.moduleID)
+        simulationArchTypes.ReadMessage(self.inputIMUMsgID, self.inputIMUData, self.moduleID)
 
+        self.stMeas = rbk.EP2MRP(self.inputStMsgData.qInrtl2Case)
+        self.gyroMeas =  self.inputIMUData.AngVelPlatform
         #   Next, implement your routines or functions to process the input data and store it:
         self.kalmanStep()
 
         localEstAtt = self.estState[0:3]
         localRateEst = self.gyroMeas - self.estState[3:]
-        
+
+        self.outputMsgData.timeTag = currentTime
         self.outputMsgData.sigma_BN = localEstAtt
-        self.outputMsgData.omega_BN = localRateEst
+        self.outputMsgData.omega_BN_B = localRateEst
 
         #   Finally, write the output message types:
         simulationArchTypes.WriteMessage(self.outputMsgID, currentTime, self.outputMsgData, self.moduleID)

@@ -36,6 +36,10 @@ def log_DynOutputs(TheBSKSim, samplingTime):
     TheBSKSim.TotalSim.logThisMessage(TheBSKSim.DynClass.simpleNavObject.outputAttName, samplingTime)
     return
 
+def log_aekfOutputs(TheBskSim, samplingTime):
+    TheBskSim.TotalSim.logThisMessage(TheBskSim.FswClass.attFilter.outputMsgName, samplingTime)
+    return
+
 def log_FSWOutputs(TheBSKSim, samplingTime):
     TheBSKSim.TotalSim.logThisMessage(TheBSKSim.FSWClass.trackingErrorData.outputDataName, samplingTime)
     TheBSKSim.TotalSim.logThisMessage(TheBSKSim.FSWClass.mrpFeedbackData.outputDataName, samplingTime)
@@ -149,6 +153,23 @@ def pull_senseOutputs(TheBSKSim):
     # Plot Relevant Dyn Outputs
     # BSKPlt.plot_orbit(r_BN)
     BSKPlt.plot_rotationalNav(sigma_tilde_BN, omega_tilde_BN)
+
+def pull_aekfOutputs(TheBSKSim):
+    # Pull Dyn Outputs
+    sigma_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FswClass.attFilter.outputStateMessage + '.sigma_BN', range(3))
+    omega_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.DynClass.gyroModel.OutputDataMsg + '.omega_BN_B', range(3))
+
+
+    # Print Dyn Outputs
+    print '\n\n'
+    print 'DYNAMICS:'
+    print 'sigma_hat_BN = ', sigma_hat_BN[-3:, 1:], '\n'
+    print 'omega_hat_BN = ', omega_hat_BN[-3:, 1:], '\n'
+    testRBN, testVBN = define_dino_earthSOI()
+
+    # Plot Relevant Dyn Outputs
+    # BSKPlt.plot_orbit(r_BN)
+    BSKPlt.plot_rotationalNav(sigma_hat_BN, omega_hat_BN)
 
 def pull_FSWOutputs(TheBSKSim):
     sigma_RN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.trackingErrorData.inputRefName + ".sigma_RN", range(3))
@@ -338,6 +359,7 @@ def attFilter_dynScenario(TheDynSim):
     samplingTime = simulationTime / (numDataPoints - 1)
     log_DynOutputs(TheDynSim, samplingTime)
     log_DynCelestialOutputs(TheDynSim, samplingTime)
+    log_aekfOutputs(TheDynSim, samplingTime)
 
     # Initialize Simulation
     TheDynSim.InitializeSimulation()
@@ -367,5 +389,6 @@ def attFilter_dynScenario(TheDynSim):
     # Pull data for post-processing and plotting
     pull_DynOutputs(TheDynSim)
     pull_senseOutputs(TheDynSim)
+    pull_aekfOutputs(TheDynSim)
     #pull_DynCelestialOutputs(TheDynSim)
     plt.show()
