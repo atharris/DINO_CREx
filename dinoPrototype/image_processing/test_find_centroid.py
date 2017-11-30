@@ -51,7 +51,7 @@ attde_sc = dyn.eulerDCM_321(math.radians(251.115), math.radians(-32.842), math.r
 # note: image map is in the (line, pixel) format ... same as (row, column) .... (y, x)
 
 # load example image from image generation module
-do_CDR_beacon = True
+do_CDR_beacon = False
 if do_CDR_beacon:
     file_in = np.load('CDR_save_files/90_deg_orig.npz')
     pos_beacon = np.vstack((file_in['earth_pos'], file_in['moon_pos']))
@@ -72,7 +72,7 @@ if do_CDR_beacon:
     cam_fov = ( 2 * math.degrees(math.atan2(cam_sensor_size[0]/2., cam_focal_length)),
                 2 * math.degrees(math.atan2(cam_sensor_size[1]/2., cam_focal_length)))
 
-do_CDR_stars = False
+do_CDR_stars = True
 if do_CDR_stars:
     file_in = np.load('CDR_save_files/stars_only.npz')
 
@@ -123,10 +123,10 @@ fname_catalog = 'star_catalog/tycho_mag7cutoff.db'
 # TODO calculate/select ROI parameters <-- unclear if handled by image gen already
 # signal_threshold, noise_threshold, ROI_size (n x n pixel border), single side ROI_border_width
 ROI_parameters = {}
-ROI_parameters['signal_threshold'] = .01
-ROI_parameters['noise_threshold'] = .001
+ROI_parameters['signal_threshold'] = 1E-3
+ROI_parameters['noise_threshold'] = 1E-6
 ROI_parameters['ROI_size'] = 100
-ROI_parameters['ROI_border_width'] = 2
+ROI_parameters['ROI_border_width'] = 1
 ROI_parameters['max_search_dist'] = 50
 
 
@@ -190,15 +190,15 @@ for ind in range(4):
 # pixel_line_beacon_i[0]
 
 # find centroid
-# pixel_line_centroid, DN = imfunc.find_centroid_point_source(ex_image, ((101, 453),(282, 122), (330, 112)), ROI_parameters, 3)
-# pixel_line_centroid, DN = imfunc.find_centroid_point_source(ex_image, ( (pixel_star[0, 0], line_star[0, 0]),
-#                                                                         (pixel_star[0, 1], line_star[0, 1]),
-#                                                                         (pixel_star[0, 2], line_star[0, 2])),
-#                                                                         ROI_parameters, 3)
+pixel_line_centroid, DN = imfunc.find_centroid_point_source(ex_image, ((101, 453),(282, 122), (330, 112)), ROI_parameters)
+pixel_line_centroid, DN = imfunc.find_centroid_point_source(ex_image, ((pixel_star[0, 0], line_star[0, 0]),
+                                                                         (pixel_star[0, 1], line_star[0, 1]),
+                                                                         (pixel_star[0, 2], line_star[0, 2])),
+                                                                         ROI_parameters)
 
 # PLACEHOLDER ---- Included (240, 245) to check for finding same beacon twice
-ROI_estimates = ((256, 256), (390, 256), (240, 245))
-pixel_line_centroid, DN = imfunc.find_center_resolved_body(ex_image, ROI_estimates, ROI_parameters)
+#ROI_estimates = ((256, 256), (390, 256), (240, 245))
+#pixel_line_centroid, DN = imfunc.find_center_resolved_body(ex_image, ROI_estimates, ROI_parameters)
 
 print '\nPixel Line Centroid Locations:'
 # pixel_line_centroid = (0, 0)
