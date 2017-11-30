@@ -29,118 +29,118 @@ from pixelLineBatch import fncG
 
 def getObs(input):
     # pull out the inputs for the generation of observation data
-    SPICE_data = input[0]
-    observation_uncertainty = input[1]
-    extras = input[-1]
-    n_beacons = extras['n_unique_beacons']
+    spiceData              = input[0]
+    observationUncertainty = input[1]
+    extras                 = input[-1]
+    nUniqueBeacons         = extras['n_unique_beacons']
     # number of observations in a mini observation set per beacon
-    n_obs = extras['repeat_obs']
+    repeatObservations     = extras['repeat_obs']
 
     # for simplification, give the location of the SC with respect to the sun it's own variable
-    r_spacecraft = SPICE_data['spacecraft']
+    spacecraftPosition = spiceData['spacecraft']
 
     # number of samples/observations
-    n_samples = r_spacecraft.shape[1]
+    nObservations = spacecraftPosition.shape[1]
 
     # create noise for the estimated observations
     # np.random.seed(42)
     if 'seed' in extras:
       np.random.seed(extras['seed'])
 
-    observation_noise = np.zeros([n_samples, 2])
-    observation_noise[:,0] = rndNrm(0., observation_uncertainty[0,0] , n_samples)
-    observation_noise[:,1] = rndNrm(0., observation_uncertainty[1,1] , n_samples)
+    observationNoise = np.zeros([nObservations, 2])
+    observationNoise[:,0] = rndNrm(0., observationUncertainty[0,0] , nObservations)
+    observationNoise[:,1] = rndNrm(0., observationUncertainty[1,1] , nObservations)
 
     # the size of an observation "bin". A "bin" is a super set of 
     # observations for each beacon. Each beacon is observed
-    # until it has been observed n_obs times. 
+    # until it has been observed repeatObservations times. 
     # After this, the next beacon is observed and so on. This
     # pattern repeats until the last beacon in the list of 
     # possible objects has been reached. After this, the pattern repeats once again
-    bin_size = n_obs * n_beacons
+    binSize = repeatObservations * nUniqueBeacons
     # The largest number of whole bins that it will take to get as close as possible to the
     # amount of provided data samples
-    n_bins = n_samples / bin_size
+    nBins   = nObservations / binSize
 
     # initialize the observation dictionary
     obs = {}
 
     # create a list for the beacon names associated with each measurement
     obs['beacons'] = list()
-    obs['data']    = np.zeros((n_samples, 2))
-    obs['truth']   = np.zeros((n_samples, 2))
-    obs['SPICE']   = np.zeros((n_samples, 6))
+    obs['data']    = np.zeros((nObservations, 2))
+    obs['truth']   = np.zeros((nObservations, 2))
+    obs['SPICE']   = np.zeros((nObservations, 6))
 
-    ref_state = np.zeros([n_samples, 6])
+    referenceState = np.zeros([nObservations, 6])
     # loop through all the bins. make sure to go max bin + 1 so that the rest of the 
     # arrays get filled even after the last whole bin
-    for bb in xrange( int(n_bins ) ) :
+    for bb in xrange( int(nBins ) ) :
       # while in a bin, loop through beacon keys
-      for ii in xrange(n_beacons):
+      for ii in xrange(nUniqueBeacons):
          # if the indices for the beacon mini bin are not outside the last whole bin, add the data
-         indice =  bb * bin_size + n_obs * ii
-         if indice < n_samples :
+         indice =  bb * binSize + repeatObservations * ii
+         if indice < nObservations :
             # create beacon mini bin indices for readability
-            start_idx = bb * bin_size + n_obs * ii
-            end_idx   = bb * bin_size + n_obs + n_obs * ii
+            startIndex = bb * binSize + repeatObservations * ii
+            endIndex   = bb * binSize + repeatObservations + repeatObservations * ii
 
             # pull out relevant key
             key = extras['unique_beacon_IDs'][ii]
  
             # store the key associated with the data
-            obs['beacons'] += [key] * n_obs
+            obs['beacons'] += [key] * repeatObservations
   
             # calculate the difference between the positions of 
             # the sun-to-sc and the sun-to-object
             # as well as the difference in velocities. 
             # These are used for multiple calculations
-            r_beacon = np.copy(SPICE_data[key][0:3, start_idx : end_idx ])
-            v_beacon = np.copy(SPICE_data[key][3:6, start_idx : end_idx ])
+            beaconPosition = np.copy(spiceData[key][0:3, startIndex : endIndex ])
+            beaconVelocity = np.copy(spiceData[key][3:6, startIndex : endIndex ])
 
             # store the beacon data in an array to be used for the calculation
             # of H matrices and estimated observations.
-            obs['SPICE'][start_idx : end_idx, 0:3 ] = r_beacon.T
-            obs['SPICE'][start_idx : end_idx, 3:6 ] = v_beacon.T
+            obs['SPICE'][startIndex : endIndex, 0:3 ] = beaconPosition.T
+            obs['SPICE'][startIndex : endIndex, 3:6 ] = beaconVelocity.T
 
-            r_sc = np.copy(r_spacecraft[:, start_idx : end_idx])
-            ref_state[indice ,:] = r_sc.T
+            rSC = np.copy(spacecraftPosition[:, startIndex : endIndex])
+            referenceState[indice ,:] = rSC.T
 
          # if the indices are outside a whole bin, do a special data fill
          else :
             # begin where the begin should
-            start_idx = bb * bin_size + n_obs * ii
+            startIndex = bb * binSize + repeatObservations * ii
             # but end at the last data sample
-            end_idx   = n_samples
+            endIndex   = nObservations
 
             # pull out relevant key
             key = extras['unique_beacon_IDs'][ii]
 
             # copy the relevant keys in
-            obs['beacons'] += [key] * (end_idx - start_idx)
+            obs['beacons'] += [key] * (endIndex - startIndex)
 
             # calculate the difference between the positions of 
             # the sun-to-sc and the sun-to-object
             # as well as the difference in velocities. 
             # These are used for multiple calculations
-            r_beacon = np.copy(SPICE_data[key][0:3, start_idx : end_idx ])
-            v_beacon = np.copy(SPICE_data[key][3:6, start_idx : end_idx ])
+            beaconPosition = np.copy(spiceData[key][0:3, startIndex : endIndex ])
+            beaconVelocity = np.copy(spiceData[key][3:6, startIndex : endIndex ])
 
             # store the beacon data in an array to be used for the calculation
             # of H matrices and estimated observations.
 
-            obs['SPICE'][start_idx : end_idx, 0:3 ] = r_beacon.T
-            obs['SPICE'][start_idx : end_idx, 3:6 ] = v_beacon.T
+            obs['SPICE'][startIndex : endIndex, 0:3 ] = beaconPosition.T
+            obs['SPICE'][startIndex : endIndex, 3:6 ] = beaconVelocity.T
 
-            r_sc = np.copy(r_spacecraft[:, start_idx : end_idx])
-            # print bb * bin_size  + n_obs * ii
-            ref_state[indice,:] = r_sc.T
+            rSC = np.copy(spacecraftPosition[:, startIndex : endIndex])
+            # print bb * binSize  + repeatObservations * ii
+            referenceState[indice,:] = rSC.T
 
             break
     extras['obs_beacons'] = list(obs['beacons'])
-    G_ref_inputs = (ref_state, obs['SPICE'], extras)
+    G_ref_inputs = (referenceState, obs['SPICE'], extras)
     # calculate the estimated observables and organize into an array
     obs['truth'] = np.copy(fncG(G_ref_inputs))
-    obs['data'] = np.copy(fncG(G_ref_inputs)) + observation_noise
+    obs['data'] = np.copy(fncG(G_ref_inputs)) + observationNoise
     return obs
 
 ################################################################################
