@@ -74,6 +74,8 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         self.H = np.zeros([3, 6])
         self.H[:3, :3] = np.identity(3)
 
+        self.dt = 0.1
+
         A_ls, G_ls = ekf.linearizeSystem(self.stateEst[0:3], self.stateEst[3:6])
 
         self.predOptions = ekf.biasReplacementOptions(np.zeros([3,]), A_ls, G_ls, self.stateNoise)
@@ -115,15 +117,19 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         #   Prediction Step: predict the new mean and covariance based on the assumed model
         self.predOptions.omega_bn_meas = self.gyroMeas
         print "State Estimate:", self.stateEst
-        F, G = ekf.linearizeSystem(self.stateEst, self.predOptions)
+        F, G = ekf.linearizeSystem(self.stateEst[0:3], self.gyroMeas - self.stateEst[3:6])
         self.predOptions.F = F
         self.predOptions.G = G
         self.predOptions.Q = self.stateNoise
 
-        predState = ekf.rk4(ekf.biasReplacementEOM, self.estState, self.propOptions)
+        propState = np.zeros([42,])
+        propState[0:6] = self.stateEst
+        propState[6:] = np.reshape(self.estCov,[36,])
+
+        predState = ekf.rk4(ekf.biasReplacementEOM, 0.0, self.dt, propState, self.predOptions)
         predCov = np.resize(predState[6:], (6,6))
         #   Correction Step: If new star tracker measurements are available, attempt to correct the attitude and bias estimates
-
+        predState = predState[0:6]
         #   Compute the new Kalman gain
         temp = self.H.dot(predCov.dot(np.transpose(self.H))) + self.measNoise
         tempInv = np.linalg.inv(temp)
@@ -144,7 +150,7 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         M = I - KH
         estCov = np.dot(M, np.dot(predCov, M.T)) + np.dot(kalmanGain, np.dot(self.measNoise, kalmanGain.T))
 
-        self.estState = newStateEst
+        self.stateEst = newStateEst
         self.estCov = estCov
 
     ## The updateState method is the cyclical worker method for a given Basilisk class.  It
@@ -162,8 +168,8 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         #   Next, implement your routines or functions to process the input data and store it:
         self.kalmanStep()
 
-        localEstAtt = self.estState[0:3]
-        localRateEst = self.gyroMeas - self.estState[3:]
+        localEstAtt = self.stateEst[0:3]
+        localRateEst = self.gyroMeas - self.stateEst[3:]
 
         self.outputMsgData.timeTag = currentTime
         self.outputMsgData.sigma_BN = localEstAtt

@@ -157,8 +157,8 @@ def pull_senseOutputs(TheBSKSim):
 
 def pull_aekfOutputs(TheBSKSim):
     # Pull Dyn Outputs
-    sigma_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgData+ '.sigma_BN', range(3))
-    omega_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWclass.attFilter.outputMsgData+ '.omega_BN_B', range(3))
+    sigma_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName+ '.sigma_BN', range(3))
+    omega_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName+ '.omega_BN_B', range(3))
 
 
     # Print Dyn Outputs

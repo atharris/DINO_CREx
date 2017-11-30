@@ -17,7 +17,7 @@ class biasReplacementOptions:
         self.Q = Q
 
 def biasReplacementEOM(t, x, options):
-    dx = np.zeros([12,])
+    dx = np.zeros([42,])
     dx[0:3] = 0.25 * rbk.BmatMRP(x[0:3]).dot(options.omega_bn - x[3:6])
 
     P = np.resize(x[6:], (6,6))
