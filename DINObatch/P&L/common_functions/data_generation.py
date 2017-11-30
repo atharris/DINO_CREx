@@ -16,7 +16,11 @@ sys.path.append(bskPath + 'PythonModules')
 sys.path.append(dinoSpicePath)
 
 
-import pyswice
+try:
+    import pyswice
+except ImportError:
+    from Basilisk import pyswice
+    bskSpicePath = splitPath[0] + bskName + '/supportData/EphemerisData/'
 import numpy as np
 from batchFilter import runRef
 

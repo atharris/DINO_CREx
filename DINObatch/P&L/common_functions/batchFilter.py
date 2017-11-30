@@ -240,6 +240,16 @@ def run_batch( input ) :
     postfitsDelta[ii,:] = extras['oldPost'][ii,:] - y[ii,:] + np.dot(H_tilde[0+2*ii:2+2*ii,:], x_hat_array[ii,0:np.shape(H_tilde)[1]])
     postfits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*ii:2+2*ii,:], x_hat_array[ii,:])
 
+  # Anomaly detection
+  for ii in range(np.shape(x_hat_array)[0]):
+    for jj in range(np.shape(postfits)[1]):
+      if np.abs(postfits[ii,jj]) - 3*observation_uncertainty[jj, jj] > 0:
+        extras['anomaly_num']+=1
+        print 'Anomalous measurement detected at time ' , ii , 'on measurement type ', jj
+
+  if extras['anomaly_num'] > extras['anomaly_threshold']:
+    extras['anomaly'] = True
+
   prefits = np.zeros([np.shape(x_hat_array)[0], np.shape(y)[1]])
   for ii in range(1,np.shape(x_hat_array)[0]):
     prefits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*(ii):2+2*(ii),:], x_bar_array[ii,:])
@@ -254,6 +264,7 @@ def run_batch( input ) :
   extra_data['postfit changes'] = postfitsDelta
   extras['x_hat_0']               += x_hat
   extra_data['x_hat_0']           = extras['x_hat_0']
+  extra_data['anomaly_detected']  = [extras['anomaly'], extras['anomaly_num']]
 
 
   return ref_state, est_state, extra_data

@@ -2,21 +2,21 @@
 Iteration number 3
 ---------------------------------------------------
 
-Estimated x_hat_0 = [ -2.78827467e+03   3.81367408e+03   1.62174369e+03  -4.26106980e-02
-  -2.12386502e-02  -2.04094988e-02]
+Estimated x_hat_0 = [ -2.79348667e+03   3.81918355e+03   1.62415556e+03  -4.19073596e-02
+  -2.56595669e-02  -8.91570182e-03]
 Actual Error = [ 2789.12789832 -3800.24051432 -1667.01457705][ 0.04198607  0.02517178  0.01017602]
 
-Last X Pos err = -169.699070781
-Last Y Pos err = 1075.85485262
-Last Z Pos err = -2788.92222367
-Last X Vel err = -0.000277760569485
-Last Y Vel err = 0.00174423350592
-Last Z Vel err = -0.00451639215667
+Last X Pos err = -257.505958587
+Last Y Pos err = 1640.39089337
+Last Z Pos err = -4270.42579944
+Last X Vel err = -0.000422641335462
+Last Y Vel err = 0.00267602272485
+Last Z Vel err = -0.00695342528598
 
-Last X Pos err = -375.896957383
-Last Y Pos err = 2386.31296352
-Last Z Pos err = -6219.63519537
-Last X Vel err = -0.000619861482075
-Last Y Vel err = 0.00390468361783
-Last Z Vel err = -0.0101606643175
+Last X Pos err = 43.1317727268
+Last Y Pos err = -275.469472945
+Last Z Pos err = 717.906900682
+Last X Vel err = 7.81683193765e-05
+Last Y Vel err = -0.00048469049727
+Last Z Vel err = 0.00125250554792
 
