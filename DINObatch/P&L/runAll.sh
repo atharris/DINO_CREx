@@ -1,1 +1,0 @@
-time python init.py
