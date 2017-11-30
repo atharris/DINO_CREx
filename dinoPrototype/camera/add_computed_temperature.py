@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 import pdb
-from numpy import array, arange, pi, average, log10, exp, sqrt
+from numpy import array, arange, pi, average, log10, exp, sqrt, isnan
 import matplotlib.pyplot as plt
 import sys
 sys.path.insert(0, 'dependencies')
@@ -179,39 +179,46 @@ plt.legend()
 plt.show()
 
 
-pdb.set_trace()
 
 import sqlite3
 db = 'db/tycho.db'
+db = 'db/dimStars.db'
 conn = sqlite3.connect(db)
 c = conn.cursor()
 d = conn.cursor()
+pdb.set_trace()
 
 #COMMENT OUT THE UPDATE SINCE IT'S BEEN DONE ALREADY
+count = 0
 if 1:
-	select_string = "SELECT id, BTmag, VTmag, published_temperature from tycho_data"
+	select_string = "SELECT id, BTmag, VTmag, published_temperature from table2"
 	c.execute(select_string)
 	for row in c:
 		if row[1] != None and row[2] != None:
 			BVT = row[1] - row[2]
+			#small subset of stars will break T_model because BVT too small. 
+			#Force them not to
+			count +=1
 			T = T_model(BVT,a_T,b_T,c_T,f_T)
-			update_string = "UPDATE tycho_data SET computed_temperature=\'" + \
+			update_string = "UPDATE table2 SET computed_temperature=\'" + \
 			str(T) + "\' where id=\'" + str(row[0]) + "'"
 			d.execute(update_string)
+			conn.commit()
 			print(update_string)
 		elif row[3] != None:
-			update_string = "UPDATE tycho_data SET computed_temperature=\'" + \
+			update_string = "UPDATE table2 SET computed_temperature=\'" + \
 			str(row[3]) + "\' where id=\'" + str(row[0]) + "'"
 			d.execute(update_string)
+			conn.commit()
 			print(update_string)
 		else:
 			BVT = 0
 			T = T_model(BVT,a_T,b_T,c_T,f_T)
-			update_string = "UPDATE tycho_data SET computed_temperature=\'" + \
+			update_string = "UPDATE table2 SET computed_temperature=\'" + \
 			str(T) + "\' where id=\'" + str(row[0]) + "'"
 			d.execute(update_string)
+			conn.commit()
 			print(update_string)
-	conn.commit()
 
 
 select_string = "SELECT name, computed_temperature, published_temperature from tycho_data"

@@ -39,12 +39,13 @@ dlambda_S_B_T = average(B_T_lambda[1:]-B_T_lambda[0:-1])
 
 import sqlite3
 db = 'db/tycho.db'
+db = 'db/dimStars.db'
 conn = sqlite3.connect(db)
 c = conn.cursor()
 d = conn.cursor()
 
 
-select_string = "SELECT name, computed_temperature, published_temperature, VTmag, BTmag, id from tycho_data" + \
+select_string = "SELECT name, computed_temperature, published_temperature, VTmag, BTmag, id from table1" + \
 	" WHERE VTmag != ''"
 c.execute(select_string)
 
@@ -99,7 +100,7 @@ for i in range(0,len(comp)):
 	BTmag_comp.append(B_star)
 
 	if 1:
-		update_string = "UPDATE tycho_data SET reduction_term=\'" + \
+		update_string = "UPDATE table1 SET reduction_term=\'" + \
 		str(r_star_sq_over_d_star_sq) + "\' where id=\'" + str(star_id[i]) + "'"
 		d.execute(update_string)
 		print(update_string)
