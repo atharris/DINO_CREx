@@ -15,18 +15,27 @@ __date__ = '$Date$'[7:26]
 ################################################################################
 #                     I M P O R T     L I B R A R I E S
 ################################################################################
+##############################################################################
+# Log path in order to get pyswice from BSK
 
-import os
-import pickle
-import sys
-import time
-import optparse
-import socket
-import pdb
-import scipy.integrate as integ
-import scipy.io as io
-import spiceypy as SP
+import sys, os, inspect
+
+filename = inspect.getframeinfo(inspect.currentframe()).filename
+path = os.path.dirname(os.path.abspath(filename))
+path2 = os.path.dirname(os.path.abspath(filename))
+bskName = 'Basilisk'
+dinoName = 'DINO_CREx'
+splitPath = path.split(dinoName)
+dinoSpicePath = splitPath[0] + dinoName + '/DINObatch/SPICE/'
+bskSpicePath = splitPath[0] + bskName + '/External/EphemerisData/'
+bskPath = splitPath[0] + bskName + '/'
+sys.path.append(bskPath + 'modules')
+sys.path.append(bskPath + 'PythonModules')
+sys.path.append(dinoSpicePath)
+
+
 import numpy as np
+import pyswice
 
 
 ################################################################################
@@ -118,11 +127,17 @@ def EOM(state, et, primary_index, secondary_indices, n_secondaries, mu_primary, 
     r_secondaries_primary = np.zeros((3, n_secondaries))
 
     # loop through the secondary bodies
-    for ii in xrange(n_secondaries):
+    for ii in range(n_secondaries):
         # determine distance from secondary to primary body
-        r_secondaries_primary[:, ii] = \
-             SP.spkezr(bodies[secondary_indices[ii]], et, ref_frame, 
-                       abcorr, bodies[primary_index])[0][0:3]
+        r_stateArray = np.zeros(3)
+        stateSpice = pyswice.new_doubleArray(6)
+        lt = pyswice.new_doubleArray(1)
+        pyswice.spkezr_c(bodies[secondary_indices[ii]], et, ref_frame,
+                        abcorr, bodies[primary_index], stateSpice, lt)
+        for i in range(3):
+            r_stateArray[i] = pyswice.doubleArray_getitem(stateSpice, i)
+        r_secondaries_primary[:, ii] = r_stateArray
+
         # calculate the "third body" force
         f_3rd_bodies += -mu_secondaries[ii] * \
            ( ( state[0:3] - r_secondaries_primary[:, ii] ) / \
@@ -130,7 +145,14 @@ def EOM(state, et, primary_index, secondary_indices, n_secondaries, mu_primary, 
              r_secondaries_primary[:, ii] / np.linalg.norm( r_secondaries_primary[:, ii] )**3 )
 
     # r_spacecraftition of sun with respect to primary body
-    r_sun = SP.spkezr(bodies[primary_index], et, ref_frame, abcorr, bodies[0])[0][0:3]
+    r_sunArray = np.zeros(3)
+    stateSpice = pyswice.new_doubleArray(6)
+    lt = pyswice.new_doubleArray(1)
+    pyswice.spkezr_c(bodies[secondary_indices[ii]], et, ref_frame,
+                     abcorr, bodies[primary_index], stateSpice, lt)
+    for i in range(3):
+        r_sunArray[i] = pyswice.doubleArray_getitem(stateSpice, i)
+    r_sun = r_sunArray
 
     # SRP force
     f_SRP = cR * kSRP * (state[0:3] - r_sun) / np.linalg.norm(state[0:3] - r_sun) ** 3

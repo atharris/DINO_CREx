@@ -16,16 +16,7 @@ __date__ = '$Date$'[7:26]
 #                     I M primary_index O R T     L I B R A R I E secondary_indices
 ################################################################################
 
-import os
-import pickle
-import sys
-import time
-import optparse
-import socket
-import pdb
 import scipy.integrate as integ
-import scipy.io as io
-import spiceypy as SP
 import numpy as np
 
 from rngRngRtBatch import fncH
@@ -135,7 +126,7 @@ def run_batch( input ) :
 
   # create observation weight matrix (W)
   W = aInv( observation_uncertainty )
-    
+
   ##################################################################################
   #
   # Integrate Reference Trajectory page 196
@@ -159,7 +150,6 @@ def run_batch( input ) :
   
   # execute propagation
   state      = runRef( prop_input )
-
   ref_state  = np.copy( state )
 
   ##################################################################################
@@ -185,22 +175,21 @@ def run_batch( input ) :
 
   # inputs for Y_refs (G) calculation
   G_ref_inputs = ( ref_state[:,0:n_state], SPICE_data_GH, extras )
-  
+
   # calculate the estimated observables and organize into an array
   Y_refs = fncG( G_ref_inputs )
 
   # using the inputs of G, calculate the H matrix
   H_inputs = ( ref_state[:,0:n_state], SPICE_data_GH, extras )
   H_tilde   = fncH( H_inputs )
- 
+
   # calculate the deviation of the observables ( Y - G )
   y    = Y_obs['data'] - Y_refs
 
   # initiate an array to hold the filtered covariances
   P_array = np.zeros( (n_samples, n_state, n_state) )
-
   # cycle through the observations/reference states and build up the filter data
-  for ii in xrange( n_samples ) :
+  for ii in xrange(n_samples) :
       # pull out the STM
       phi_t_t0  = np.reshape( ref_state[ii,n_state:], (n_state,n_state) )
       # matrix multiply the H matrix at time tii with that of the contemporary STM
@@ -219,14 +208,14 @@ def run_batch( input ) :
   ##################################################################################
     
   # perform least squares on the info_matrix and observation matrix to compute the residuals
-  x_hat = np.linalg.lstsq( info_matrix, normal_matrix )[0]
+  x_hat = np.reshape(np.linalg.lstsq( info_matrix, normal_matrix )[0], [6])
 
   # initiate a filtered ref_state
   est_state = np.zeros( (ref_state.shape[0],n_state) )
 
   # initiate an array to hold the filtered covariances
   # P_array = np.zeros( (n_samples, n_state, n_state) )
-  
+
   # the first filtered covariance is the inverse of the covariance matrix
   P = aInv( info_matrix )
 
@@ -245,20 +234,28 @@ def run_batch( input ) :
 
   # inputs for Y_est (G) calculation
   G_est_inputs = ( est_state[:,0:n_state], SPICE_data_GH, extras )
-  
+
   # calculate the estimated observables and organize into an array
   Y_est = fncG( G_est_inputs )
 
   # compute the postfits using the updated observables and the measured values
-  postfits = Y_obs['data'] - Y_est
+  postfits = np.zeros([np.shape(x_hat_array)[0], np.shape(y)[1]])
+  for ii in range(np.shape(x_hat_array)[0]):
+    postfits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*ii:2+2*ii,:], x_hat_array[ii,:])
+
+  prefits = np.zeros([np.shape(x_hat_array)[0], np.shape(y)[1]])
+  for ii in range(1,np.shape(x_hat_array)[0]):
+    prefits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*(ii):2+2*(ii),:], x_hat_array[ii-1,:])
 
   # store various arrays in a data dictionary
   extra_data                      = {}
   extra_data['Y']                 = Y_obs
   extra_data['P_array']           = P_array
   extra_data['x_hat_array']       = x_hat_array
-  extra_data['prefit residuals']  = y
+  extra_data['prefit residuals']  = prefits
   extra_data['postfit residuals'] = postfits
+  extras['x_hat_0']               += x_hat
+  extra_data['x_hat_0']           = extras['x_hat_0']
 
 
   return ref_state, est_state, extra_data

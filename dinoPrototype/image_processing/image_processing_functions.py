@@ -6,6 +6,7 @@
 import math         #common math functions
 import numpy as np  #matrix algebra
 import matplotlib.pyplot as plt
+import cv2
 
 
 
@@ -267,3 +268,55 @@ def find_centroid_point_source(pixel_map, pixel_line_beacon_i, ROI_parameters):
 
     return loc_centroid, DN
 
+
+def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18, min_rad=0, max_rad=0, show_img=False):
+    """This function attempts to find the center of curves in a given image
+    If the minimum and/or maximum circle radius is unknown leave as 0
+    @param img The image is the only required argument
+    @param blur The kernel size
+    @param canny_thresh The threshold for the hysteresis procedure in the canny function
+    @param dp Inverse ratio of the accumulator resolution to the image resolution, recommend leaving as 1
+    @param center_dist The minimum distance between centers of detected circles
+    @param accum The accumulator threshold for circle centers. Smaller value gives more error.
+    @param min_rad The minimum radius for the circles
+    @oaram max_rad The maximum radius for the circles
+    @param show_img Set to show the images at each stage in the processing
+    @return An array of circles that should have the best matches first if there are multiple
+    """
+    if show_img:
+        cv2.imshow('before', img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    orrig_img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+    img = cv2.medianBlur(img, blur)
+    img = cv2.GaussianBlur(img, (blur, blur), 0)
+
+    if show_img:
+        cv2.imshow('blur', img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    if show_img:
+        canny_img = cv2.Canny(img, canny_thresh, canny_thresh / 15)
+
+        cv2.imshow('canny', canny_img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    circles = cv2.HoughCircles(img, cv2.HOUGH_GRADIENT, dp, center_dist, param1=canny_thresh, param2=accum, minRadius=min_rad, maxRadius=max_rad)
+
+    if show_img:
+        tmp = np.uint16(np.around(circles))
+
+        average = np.uint16(np.mean(tmp[0, :], axis=0))
+
+        for i in circles[0, :]:
+            cv2.circle(orrig_img, (i[0], i[1]), i[2], (0, 255, 0), 2)
+            cv2.circle(orrig_img, (i[0], i[1]), 2, (0, 0, 255), 3)
+
+        cv2.imshow('Detected circles', orrig_img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    return circles
