@@ -41,8 +41,8 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         super(AttitudeFilter, self).__init__(modelName, modelActive, modelPriority)
 
         ## Input gyro, star tracker message names
-        self.inputStMsgName = "st_output_data"
-        self.inputIMUMsgName = "gyro_output_data"
+        self.inputStMsgName = "some_bullshit"
+        self.inputIMUMsgName = "won_t_work"
 
         ## Output body torque message name
         self.outputMsgName = "aekf_output_data"
@@ -64,7 +64,7 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         ##  Define Estimate variables
         self.stateEst = np.zeros([6,]) #    state estimate is 3 delta MRPs, 3 bias states
         self.outEst = np.zeros([6,]) #      Output is 3 BN MRPs, 3 angular rates
-        self.estCov = np.zeros([6,6]) #     Estimated state covariance
+        self.estCov = 100*np.identity(6) #     Estimated state covariance
 
         ##  Define noise variables
         self.stateNoise = np.identity(6)
@@ -116,7 +116,7 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
     def kalmanStep(self):
         #   Prediction Step: predict the new mean and covariance based on the assumed model
         self.predOptions.omega_bn_meas = self.gyroMeas
-        print "State Estimate:", self.stateEst
+        #print "State Estimate:", self.stateEst
         F, G = ekf.linearizeSystem(self.stateEst[0:3], self.gyroMeas - self.stateEst[3:6])
         self.predOptions.F = F
         self.predOptions.G = G
@@ -138,7 +138,7 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         #   Compute measurement innovation
         innov = self.stMeas - np.dot(self.H, predState)
         if np.linalg.norm(innov) > (1.0 / 3.0):
-            innov_s = rbk.sigmaUnitSwitch(self.stMeas) - np.dot(self.H, predState)
+            innov_s = rbk.MRPswitch(self.stMeas, 1.0) - np.dot(self.H, predState)
             if np.linalg.norm(innov_s) < np.linalg.norm(innov):
                 innov = innov_s
 

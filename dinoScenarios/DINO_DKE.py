@@ -27,7 +27,7 @@ class DynamicsClass():
         # Define process name, task name and task time-step
         self.processName = SimBase.DynamicsProcessName
         self.taskName = "DynamicsTask"
-        self.taskTimeStep = mc.sec2nano(10)
+        self.taskTimeStep = mc.sec2nano(0.01)
 
         # Create task
         SimBase.dynProc.addTask(SimBase.CreateNewTask(self.taskName, self.taskTimeStep))

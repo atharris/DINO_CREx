@@ -24,8 +24,8 @@ def log_DynCelestialOutputs(TheDynSim, samplingTime):
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.marsGravBody.bodyInMsgName, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.sunGravBody.bodyInMsgName, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.moonGravBody.bodyInMsgName, samplingTime)
-#    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.gyroModel.OutputDataMsg, samplingTime)
-#    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.starTracker.outputStateMessage, samplingTime)
+    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.gyroModel.OutputDataMsg, samplingTime)
+    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.starTracker.outputStateMessage, samplingTime)
 #    for ind in range(0,len(TheDynSim.DynClass.beaconList)):
 #        TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.beaconList[ind].scStateOutMsgName, samplingTime)
 
@@ -354,7 +354,7 @@ def attFilter_dynScenario(TheDynSim):
     """
     # Log data for post-processing and plotting
     #   Set length of simulation in nanoseconds from the simulation start.
-    simulationTime = mc.sec2nano(1000)
+    simulationTime = mc.sec2nano(100)
     #   Set the number of data points to be logged, and therefore the sampling frequency
     numDataPoints = 10000
     samplingTime = simulationTime / (numDataPoints - 1)
@@ -363,7 +363,7 @@ def attFilter_dynScenario(TheDynSim):
     log_aekfOutputs(TheDynSim, samplingTime)
 
     # Initialize Simulation
-    TheDynSim.InitializeSimulation()
+    TheDynSim.InitializeSimulationAndDiscover()
 
     # Set up the orbit using classical orbit elements
     #oe = define_default_orbit()
@@ -389,7 +389,7 @@ def attFilter_dynScenario(TheDynSim):
 
     # Pull data for post-processing and plotting
     pull_DynOutputs(TheDynSim)
-    #pull_senseOutputs(TheDynSim)
+    pull_senseOutputs(TheDynSim)
     pull_aekfOutputs(TheDynSim)
     #pull_DynCelestialOutputs(TheDynSim)
     plt.show()
