@@ -108,7 +108,7 @@ msg = { 'bodies': [
 	sc
 	], 
 	'addStars': 1,'rmOcc': 1, 'addBod': 1, 'psf': 1, 
-	'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 'dt': 0.01}
+	'raster': 1, 'photon':1, 'dark': 1, 'read': 1, 'dt': 0.01}
 
 cam = camera.camera(
 	0.019968, 				#detector_height
@@ -147,7 +147,7 @@ starCam = camera.camera(
 	0.01**2, #effective area in m^2
 	100, #dark current in electrons per second
 	100, #std for read noise in electrons
-	1000, #bin size
+	10, #bin size
 	2**32, #max bin depth
 	1,
 	sc,
@@ -181,7 +181,7 @@ if 0 or makeAll:
 
 	plt.figure()
 	plt.imshow(cam.images[len(cam.images)-1].detectorArray.reshape(512,512))
-
+	plt.title('Image 1 (Earth as Resolved Body, Moon as a Pt Source)')
 
 ###############################################################################
 #
@@ -210,13 +210,13 @@ if 0 or makeAll:
 
 	plt.figure()
 	plt.imshow(cam.images[len(cam.images)-1].detectorArray.reshape(512,512))
+	plt.title('Image 2 (Earth as Resolved Body, Moon as a Pt Source)')
 
-
-# ###############################################################################
-# #
-# #		Image 3 (Beacons as large resolved bodies)
-# #
-# ###############################################################################
+###############################################################################
+#
+#		Image 3 (Beacons as large resolved bodies)
+#
+###############################################################################
 
 if 0 or makeAll:
 	sc.state = np.array([au/1000,-1e6, 0, 0, 0, 0])
@@ -238,6 +238,7 @@ if 0 or makeAll:
 
 	plt.figure()
 	plt.imshow(cam.images[len(cam.images)-1].detectorArray.reshape(512,512))
+	plt.title('Image 3 (Beacons as large resolved bodies)')
 
 ###############################################################################
 #
@@ -267,6 +268,7 @@ if 0 or makeAll:
 
 	plt.figure()
 	plt.imshow(cam.images[len(cam.images)-1].detectorArray.reshape(512,512))
+	plt.title('Image 4 (Blended Source)')
 
 ###############################################################################
 #
@@ -295,6 +297,7 @@ if 0 or makeAll:
 
 	plt.figure()
 	plt.imshow(cam.images[len(cam.images)-1].detectorArray.reshape(512,512))
+	plt.title('Image 5 (Corners)')
 
 ###############################################################################
 #
@@ -324,6 +327,7 @@ if 0 or makeAll:
 
 	plt.figure()
 	plt.imshow(cam.images[len(cam.images)-1].detectorArray.reshape(512,512))
+	plt.title('Image 6 (Not Blended, but ROIs overlap)')
 
 ###############################################################################
 #
@@ -404,15 +408,16 @@ if 0 or makeAll:
 		val[i]
 	plt.figure()
 	plt.imshow(starCam.images[len(starCam.images)-1].detectorArray.reshape(512,512))
-
+	plt.title('Image 7 (Hot Pixels)')
 
 ###############################################################################
 #
-#		Image 7 (Hot Pixels)
+#		Image 8 (Dark Pixels)
 #
 ###############################################################################
 
 if 0 or makeAll:
+
 	sc.attitudeDCM = np.array([
 		[ 0, 1, 0],
 		[-1, 0, 0],
@@ -451,7 +456,7 @@ if 0 or makeAll:
 		0
 	plt.figure()
 	plt.imshow(starCam.images[len(starCam.images)-1].detectorArray.reshape(512,512))
-
+	plt.title('Image 8 (Dark Pixels)')
 
 pdb.set_trace()
 
