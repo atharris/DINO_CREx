@@ -7,6 +7,12 @@ import math
 import csv
 import logging
 
+#imu_sensor.h type file in         dinoModels/messages
+import NavMsg       #msg struct     navTransIntMsg
+import CamMsg       #msg struct
+import AttdeNavMsg  #msg struct     navAttIntMsg
+import spiceBeacon  #msg struct     beacon positions
+
 # @cond DOXYGEN_IGNORE
 filename = inspect.getframeinfo(inspect.currentframe()).filename
 path = os.path.dirname(os.path.abspath(filename))
@@ -26,11 +32,17 @@ class ImageProcessing(simulationArchTypes.PythonModelClass):
         super(ImageProcessing, self).__init__(modelName, modelActive, modelPriority)
 
         ## Input guidance structure message name
-        self.inputMsgName = ""
+        self.inputCamMsgName = "Cam Msg"
+        self.inputBeaconMsgName = []        # create separate 'AddBeacon' function to add variable number of beacons
+
         ## Output body torque message name
         self.outputMsgName = ""
+
         ## Input message ID (initialized to -1 to break messaging if unset)
-        self.inputMsgID = -1
+        self.inputCamMsgID = -1
+        self.inputNavID = -1
+        self.inputAttdeNavID = -1
+
         ## Output message ID (initialized to -1 to break messaging if unset)
         self.outputMsgID = -1
 
