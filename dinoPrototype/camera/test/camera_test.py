@@ -295,9 +295,17 @@ def test_4_8_findStarsInFOV():
 		plt.ylim(0,UMiCam.resolutionHeight)
 		plt.gca().invert_yaxis()
 		plt.axis('equal')
-	pdb.set_trace()
 
-	assert(1==1)
+	savedData = np.load('4.8.test_support.npy')
+	savedUMiRA = savedData[0]
+	savedUMiDE = savedData[1]
+	savedOriRA = savedData[2]
+	savedOriDE = savedData[3]
+
+	assert(np.array_equal(UMiCam.images[0].RA,savedUMiRA))
+	assert(np.array_equal(UMiCam.images[0].DE,savedUMiDE))
+	assert(np.array_equal(OriCam.images[0].RA,savedOriRA))
+	assert(np.array_equal(OriCam.images[0].DE,savedOriDE))
 
 
 
