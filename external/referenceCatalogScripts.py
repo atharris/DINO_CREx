@@ -1,7 +1,12 @@
 import sqlite3
 import math as m
 import numpy as np
-import dynamics as dyn
+import sys, os, inspect
+
+# set below to DINO path 
+sys.path.append('../dinoModels/fswAlgorithms/imageProcessing/dependencies/')
+
+import dynamicFunctions as dyn
 
 # Dependencies: tycho.db
 #               table name: tycho_data (329499 entries, 325 mb)
@@ -35,7 +40,7 @@ if makeSearchCatalog:
 
     print 'Generating Initial Search Catalog'
 
-    star_catalog = sqlite3.connect('star_catalog/tycho.db')
+    star_catalog = sqlite3.connect('tycho.db')
     with star_catalog:
 
         s = star_catalog.cursor()
@@ -65,7 +70,7 @@ if makeSearchCatalog:
     #######################################################
     # Create new table with subset of original catalog
 
-    objectID_star_catalog = sqlite3.connect('star_catalog/tycho_BTmag_cutoff.db')
+    objectID_star_catalog = sqlite3.connect('tycho_BTmag_cutoff.db')
 
     with objectID_star_catalog:
 
@@ -104,7 +109,7 @@ if makeSearchCatalog:
 if makeObjectIDCatalog:
 
     # pull star catalog entries from reference table
-    star_catalog = sqlite3.connect('star_catalog/tycho_BTmag_cutoff.db')
+    star_catalog = sqlite3.connect('tycho_BTmag_cutoff.db')
     with star_catalog:
 
         s = star_catalog.cursor()
@@ -165,7 +170,7 @@ if makeObjectIDCatalog:
 
 
     # create new reference table for object ID purposes
-    objectID_catalog = sqlite3.connect('star_catalog/objectID_catalog.db')
+    objectID_catalog = sqlite3.connect('objectID_catalog.db')
     with objectID_catalog:
 
         print 'Generating Object ID Reference Table'
@@ -221,7 +226,7 @@ if makeObjectIDCatalog:
 
 if checkNumEntries:
 
-    ref_catalog = sqlite3.connect('star_catalog/objectID_catalog.db')
+    ref_catalog = sqlite3.connect('objectID_catalog.db')
     with ref_catalog:
 
         cursor = ref_catalog.cursor()
@@ -234,7 +239,7 @@ if checkNumEntries:
         for row in rows:
             print row
 
-    ref_catalog = sqlite3.connect('star_catalog/tycho.db')
+    ref_catalog = sqlite3.connect('tycho.db')
     with ref_catalog:
 
         cursor = ref_catalog.cursor()
