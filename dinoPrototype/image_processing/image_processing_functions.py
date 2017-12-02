@@ -6,23 +6,8 @@
 import math         #common math functions
 import numpy as np  #matrix algebra
 import matplotlib.pyplot as plt
-import sqlite3 as sql
 import cv2
 
-##################################################
-##################################################
-
-# function to convert s/c state and beacon position to initial estimate of beacon centroid pixel/line location
-# may not be necessary if pixel line location can be directly provided by navigation module
-
-def initial_beacon_estimate(pos_beacon, pos_sc, attde_sc, cam_res, cam_fov):
-
-    # TODO update function to convert nav module output into pixel/line estimate
-    pixel = 10
-    line = 10
-
-    pl_beacon = (pixel, line)
-    return pl_beacon
 
 ##################################################
 ##################################################
@@ -333,11 +318,9 @@ def find_highest_pixel(initial_pixel_loc, pixel_map, threshold):
 
     # Continue trying to find a pixel farther up until we have found the uppermost pixel and next_y is not at the top
     # of the map
-<<<<<<< HEAD
-    while (not found_upper_pixel) and current_y < max_y - 1:
-=======
+
     while (not found_upper_pixel) and current_y < max_y-1:
->>>>>>> 1f40f9d9c73aa748727f11d3fba27871f6641b19
+
         # Save the next values because we now know they are on and farther up than the previous values.
         next_y = current_y + 1
 
@@ -439,11 +422,8 @@ def find_right_pixel(initial_pixel_loc, pixel_map, threshold):
 
     # Continue trying to find a pixel farther up until we have found the uppermost pixel and current_y is not at the top
     # of the map
-<<<<<<< HEAD
-    while (not found_right_pixel) and current_x < max_x - 1:
-=======
     while (not found_right_pixel) and current_x < max_x-1:
->>>>>>> 1f40f9d9c73aa748727f11d3fba27871f6641b19
+
         # Save the next values because we now know they are on and farther up than the previous values.
         next_x = current_x + 1
 
@@ -645,11 +625,6 @@ def find_centroid_point_source(pixel_map, pixel_line_beacon_i, ROI_parameters):
     return loc_centroid, DN
 
 
-##################################################
-##################################################
-
-# Output    loc_center      list of (x,y) pixel/line coordinates of center locations
-#           DN              total signal content of ROI
 
 def find_center_resolved_body(pixel_map, pixel_line_beacon_i, ROI_parameters):
 
@@ -672,16 +647,16 @@ def find_center_resolved_body(pixel_map, pixel_line_beacon_i, ROI_parameters):
         maxROIvalue = np.amax(image_ROI[i])
         print maxROIvalue
 
-<<<<<<< HEAD
-        center = hough_circles(image_ROI[i], center_dist=1E5, canny_thresh= 250, blur=1, accum=5, show_img=False)
-=======
         # normalize ROI for center-finding function
-        currentROI = (image_ROI[i]/maxROIvalue) * 255.
+        currentROI = (image_ROI[i] / maxROIvalue) * 255.
 
         center = hough_circles(currentROI, center_dist=50, canny_thresh=175, blur=5, accum=5, show_img=False)
->>>>>>> 1f40f9d9c73aa748727f11d3fba27871f6641b19
 
         if center is not None:
+            print '\nCHECK'
+            print i
+            print center
+            print corner_ROI
             loc_center[i] = (center[0] + corner_ROI[i][1], center[1] + corner_ROI[i][0])
         else:
             loc_center = None
@@ -733,8 +708,6 @@ def already_found_ROI(pixel_loc, corner_ROI, image_ROI):
     #print "\n\n"
 
     return alreadyFound
-
-
 
 
 

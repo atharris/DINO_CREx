@@ -26,4 +26,4 @@ class DINO_DynSim(SimulationBaseClass.SimBaseClass):
         self.FSWClass = DINO_FSW.FSWClass(self)
 
 if __name__ == "__main__":
-    scene.multiOrbitBeacons_dynScenario(DINO_DynSim())
+    scene.attFilter_dynScenario(DINO_DynSim())
