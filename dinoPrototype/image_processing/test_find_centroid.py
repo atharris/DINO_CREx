@@ -9,8 +9,6 @@ import math
 import matplotlib.pyplot as plt
 import image_processing_functions as imfunc
 import search_location_functions as locfunc
-# import object_id_functions as idfunc
-
 
 
 ##################################################
@@ -42,8 +40,8 @@ cameraParam['pixel size'] = cam_pixel_size
 fname_catalog = 'star_catalog/tycho_BTmag_cutoff.db'
 
 # select which scenario to run
-do_CDR_stars = True
-do_CDR_beacon = False
+do_CDR_stars = False
+do_CDR_beacon = True
 
 doplot_centroid = True
 doplot_isearch = True
@@ -65,17 +63,10 @@ if do_CDR_beacon:
     ex_image = ex_image.reshape(512, 512)
     plt.imshow(ex_image)
     plt.show()
-    cam_res = (512, 512)
-    cam_pixel_size = (39E-6, 39E-6)         # horizontal, vertical [m]
-    cam_focal_length = .05                  # [m]
-
-    cam_sensor_size = (cam_res[0] * cam_pixel_size[0], cam_res[1] * cam_pixel_size[1])  # [m]
-    cam_fov = ( 2 * math.degrees(math.atan2(cam_sensor_size[0]/2., cam_focal_length)),
-                2 * math.degrees(math.atan2(cam_sensor_size[1]/2., cam_focal_length)))
 
     # generate pixel line estimates for beacons in camera field of view
     pixel_line_beacon_i = locfunc.initial_beacons_estimate(
-        pos_beacon, pos_sc, attde_sc, cam_res, cam_focal_length, cam_pixel_size)
+        pos_beacon, pos_sc, attde_sc, cameraParam)
 
     # pass in three initial estimates to test ROI generation logic
     pixel_truth = np.array([256, 394.99206801, 240])
@@ -97,13 +88,6 @@ if do_CDR_stars:
     ex_image = file_in['detector_array']
     ex_image = (ex_image/np.amax(ex_image)) * 255
     ex_image = ex_image.reshape(512, 512)
-
-    cam_res = (512, 512)
-    cam_pixel_size = (39E-6, 39E-6)         # horizontal, vertical [m]
-    cam_focal_length = .05                  # [m]
-    cam_sensor_size = (cam_res[0] * cam_pixel_size[0], cam_res[1] * cam_pixel_size[1])  # [m]
-    cam_fov = ( 2 * math.degrees(math.atan2(cam_sensor_size[0]/2., cam_focal_length)),
-                2 * math.degrees(math.atan2(cam_sensor_size[1]/2., cam_focal_length)))
 
     # generate pixel line estimates for stars in camera field of view
     # pixel_truth, line_star, star_catalog = locfunc.initial_stars_estimate(
@@ -154,10 +138,6 @@ if do_CDR_stars:
     print 'stars in field of view: ', n_star
     print 'min/max pixel coord.: ', min(pixel_truth), max(pixel_truth)
     print 'min/max line coord.: ', min(line_truth), max(line_truth)
-    print '3 Brightest Stars: '
-    for ind in range(3):
-        print pixel_truth[ind], line_truth[ind], star_catalog[ind], star_catalog[ind], star_catalog[ind]
-
     print '\nPixel Line Centroid Locations:'
     print pixel_line_center
     print pixel_line_center.shape
@@ -174,8 +154,8 @@ if doplot_isearch == True:
     # plt.colorbar()
 
     if do_CDR_beacon:
-        plt.scatter(pixel_line_beacon_i[0][0], pixel_line_beacon_i[1][0], color='r', marker='+', s=30)
-        plt.scatter(pixel_line_beacon_i[0][1], pixel_line_beacon_i[1][1], color='r', marker='+', s=30)
+        plt.scatter(pixel_line_beacon_i[0][0], pixel_line_beacon_i[0][1], color='r', marker='+', s=30)
+        plt.scatter(pixel_line_beacon_i[1][0], pixel_line_beacon_i[1][1], color='r', marker='+', s=30)
 
         #plt.savefig('CDR_save_files/90_deg_orig_initial_estimate.png')
 

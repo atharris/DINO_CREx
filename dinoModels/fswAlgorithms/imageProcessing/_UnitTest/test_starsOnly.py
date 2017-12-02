@@ -44,6 +44,7 @@ cam_fov = (2 * math.degrees(math.atan2(cam_sensor_size[0] / 2., cam_focal_length
 # use below to put beacons out of field of view (if only interested in image processing stars)
 N_r_beacons = (np.array([-1E3, -1E3, 0]), np.array([-1E3, -1E3, -1E3]))
 
+
 # spacecraft state from nav module
 N_r_cam = file_in['sc_pos']
 BN_dcm_cam = file_in['sc_dcm']

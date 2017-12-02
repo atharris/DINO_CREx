@@ -8,8 +8,6 @@ import search_location_functions as locfunc
 import object_id_functions as idfunc
 import dynamics as dyn
 
-# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 #############################################################
 #############################################################
 
@@ -71,7 +69,7 @@ if do_CDR_stars:
 
 # generate pixel line estimates for stars in camera field of view
 pixel_star, line_star, star_catalog = locfunc.initial_stars_estimate(
-    attde_sc, cam_res, cam_focal_length, cam_pixel_size, fname_catalog)
+    attde_sc, cameraParam, fname_catalog)
 
 # num_obj = 5
 num_obj = len(pixel_star)
@@ -105,7 +103,7 @@ voteMin = round(num_obj/2)
 # Object ID
 objectID = idfunc.objectID_stars((pixel_star[0:num_obj], line_star[0:num_obj]),
                                                     attde_sc, imageProcessingParam,
-                                                    camParam)
+                                                    cameraParam)
 
 print '\nObject ID Results:'
 for indStar in range(num_obj):
