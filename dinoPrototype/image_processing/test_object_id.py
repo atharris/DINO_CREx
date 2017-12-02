@@ -23,8 +23,8 @@ ROI_parameters['max_search_dist'] = 50
 imageProcessingParam ={}
 imageProcessingParam['voteCountMinRatio'] = .5
 imageProcessingParam['dthetaMax'] = 15
-imageProcessingParam['filenameSearchCatalog'] = 'tycho_BTmag_cutoff.db'
-imageProcessingParam['filenameObjectIDCatalog'] = 'objectID_catalog.db'
+imageProcessingParam['filenameSearchCatalog'] = 'star_catalog/tycho_BTmag_cutoff.db'
+imageProcessingParam['filenameObjectIDCatalog'] = 'star_catalog/objectID_catalog.db'
 imageProcessingParam['dthetaError'] = 5E-6
 
 
@@ -62,6 +62,13 @@ if do_CDR_stars:
     # fig1.suptitle('Original Image', fontsize=12, fontweight='bold')
     # plt.show()
 
+    cameraParam = {}
+    cameraParam['resolution'] = cam_res
+    cameraParam['focal length'] = cam_focal_length
+    cameraParam['sensor size'] = cam_sensor_size
+    cameraParam['field of view'] = cam_fov
+    cameraParam['pixel size'] = cam_pixel_size
+
 # generate pixel line estimates for stars in camera field of view
 pixel_star, line_star, star_catalog = locfunc.initial_stars_estimate(
     attde_sc, cam_res, cam_focal_length, cam_pixel_size, fname_catalog)
@@ -97,8 +104,8 @@ voteMin = round(num_obj/2)
 
 # Object ID
 objectID = idfunc.objectID_stars((pixel_star[0:num_obj], line_star[0:num_obj]),
-                                                    imageProcessingParam, attde_sc,
-                                                    cam_focal_length, cam_res, cam_pixel_size)
+                                                    attde_sc, imageProcessingParam,
+                                                    camParam)
 
 print '\nObject ID Results:'
 for indStar in range(num_obj):

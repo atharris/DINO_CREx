@@ -1,0 +1,7 @@
+{
+  "DINObatch/_UnitTest/test_batch.py": true, 
+  "dinoModels/SimCode/opnav_camera/_UnitTest/test_opnav_camera.py": true, 
+  "dinoModels/fswAlgorithms/image_processing/test_find_centroid.py": true, 
+  "dinoPrototype/image_processing/test_find_centroid.py": true, 
+  "dinoPrototype/image_processing/test_object_id.py": true
+}

@@ -280,4 +280,3 @@ def quest(B_ehat, N_ehat, *w):
     DCM = crp2dcm(crp)
 
     return DCM
-

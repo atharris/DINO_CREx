@@ -86,6 +86,7 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
                                     and not already_found_ROI((current_row, search_col_min), corner_ROI, image_ROI):
                             center_ROI_array = np.vstack((center_ROI_array, np.array([search_col_min, current_row])))
                             signal_found = True
+
                         elif current_value_right >= signal_threshold \
                                     and not already_found_ROI((current_row, search_col_max), corner_ROI, image_ROI):
                             center_ROI_array = np.vstack((center_ROI_array, np.array([search_col_max, current_row])))
@@ -125,9 +126,6 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
             center_ROI[0] = center_ROI_array[0, 0]
             center_ROI[1] = center_ROI_array[0, 1]
 
-            print "\nC ROI"
-            print center_ROI_array[0]
-
             ROI_min_row = find_lowest_pixel(center_ROI_array[0], pixel_map, signal_threshold)
             ROI_min_col = find_left_pixel(center_ROI_array[0], pixel_map, signal_threshold)
             ROI_max_row = find_highest_pixel(center_ROI_array[0], pixel_map, signal_threshold)
@@ -145,10 +143,10 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
 
             image_ROI.append(pixel_map[int(ROI_min_row):int(ROI_max_row+1), int(ROI_min_col):int(ROI_max_col+1)])
 
-            print '\nROI center location and value'
-            print center_ROI, pixel_map[int(center_ROI[1]), int(center_ROI[0])]
-            print 'ROI limits'
-            print (ROI_min_row, ROI_max_row), (ROI_min_col, ROI_max_col)
+            # print '\nROI center location and value'
+            # print center_ROI, pixel_map[int(center_ROI[1]), int(center_ROI[0])]
+            # print 'ROI limits'
+            # print (ROI_min_row, ROI_max_row), (ROI_min_col, ROI_max_col)
 
             corner_ROI.append([ROI_min_row, ROI_min_col])
 
@@ -594,7 +592,7 @@ def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18
         # plt.savefig('centerfinding_roi.png')
         plt.show()
 
-    print 'LOCAL MAX: ', np.amax(img)
+    # print 'LOCAL MAX: ', np.amax(img)
 
     return circles
 
@@ -645,7 +643,7 @@ def find_center_resolved_body(pixel_map, pixel_line_beacon_i, ROI_parameters):
         # np.savez('saved_output/cropped_image_' + str(i)  + '.npz')
 
         maxROIvalue = np.amax(image_ROI[i])
-        print maxROIvalue
+        # print maxROIvalue
 
         # normalize ROI for center-finding function
         currentROI = (image_ROI[i] / maxROIvalue) * 255.
@@ -653,10 +651,6 @@ def find_center_resolved_body(pixel_map, pixel_line_beacon_i, ROI_parameters):
         center = hough_circles(currentROI, center_dist=50, canny_thresh=175, blur=5, accum=5, show_img=False)
 
         if center is not None:
-            print '\nCHECK'
-            print i
-            print center
-            print corner_ROI
             loc_center[i] = (center[0] + corner_ROI[i][1], center[1] + corner_ROI[i][0])
         else:
             loc_center = None
@@ -710,4 +704,67 @@ def already_found_ROI(pixel_loc, corner_ROI, image_ROI):
     return alreadyFound
 
 
+##################################################
+##################################################
 
+def checkBeaconStatus(posBeacons, posSC, DCM_BN, camFoV, radiusBeacons, angularSizeMin):
+    """Check current status of beacons in target beacon lists
+       :param pos_cb: list of target beacon position (1x3) numpy arrays in heliocentric coordinates [km]
+       :param pos_obs: position of camera in heliocentric coordinates [km]
+       :param DCM_NB: direction cosine matrix of observer attitude [body to heliocentric coord. frame]
+       :param radiusBeacons: field of view tuple (horizontal, vertical) [degrees]
+       :param angularSizeMin: minimum beacon size for it to be treated as a resolved body [deg]
+       :return: list of beacon status as defined below
+                        '0' if beacon is not in camera field of view
+                        '1' if beacon is in camera field of view as a point source
+                        '2' if beacon is in camera field of view as a resolved body
+       """
+
+    numBeacons = len(posBeacons)
+    beaconStatus = []
+
+    for ind in range(numBeacons):
+
+        #################################################
+        # Determine if beacon is in camera field of view
+
+        # compute relative position of celestial body to observer in body coordinates
+        pos_obs2cb_helio = (posBeacons[ind] - posSC)
+        pos_obs2cb_body = np.matmul(DCM_BN, pos_obs2cb_helio)
+        e_obs2cb_body = pos_obs2cb_body / np.linalg.norm(pos_obs2cb_body)
+
+        # take field of view angles from centerline
+        horiz_fovcenter = camFoV[0] / 2.
+        vert_fovcenter = camFoV[1] / 2.
+
+        # compute azimuth and elevation of celestial body
+        az = math.degrees(math.atan2(e_obs2cb_body[1], e_obs2cb_body[0]))
+        el = math.degrees(math.asin(e_obs2cb_body[2]))
+
+        # check if limits in camera specs
+        chkFoV = True
+        if (abs(az) > horiz_fovcenter) or (abs(el) > vert_fovcenter):
+            chkFoV = False
+            currentStatus = 0
+
+        if np.linalg.norm(pos_obs2cb_body) < radiusBeacons[ind]:
+            chkFoV = False
+            currentStatus = 0
+
+        #################################################
+        # Determine if beacon should be treated as a point-source or a resolved body
+
+        if chkFoV == True:
+
+            angularSizeBeacon = 2*math.degrees(math.atan(radiusBeacons[ind]/np.linalg.norm(pos_obs2cb_helio)))
+
+            # print 'Check Beacon Status Angular Size: ', angularSizeBeacon
+
+            if angularSizeBeacon < angularSizeMin:
+                currentStatus = 1
+            else:
+                currentStatus = 2
+
+        beaconStatus.append(currentStatus)
+
+    return beaconStatus

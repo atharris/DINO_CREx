@@ -7,9 +7,6 @@
 import math         # common math functions
 import numpy as np  # matrix algebra
 import sqlite3 as sql
-import image_processing_functions as imfunc
-import matplotlib.pyplot as plt
-import search_location_functions as slf
 import dynamics as dyn
 from timeit import default_timer as timer
 
@@ -17,10 +14,10 @@ from timeit import default_timer as timer
 ##################################################
 ##################################################
 
-# Convert pixel / line coordinates to inertial RA and Dec
-# P/L --> body unit vector --> inertial unit vector --> inertial RA and Dec
-
 def pixelline_to_radec(pl_in, attde_sc, cam_param):
+    # Convert pixel / line coordinates to inertial RA and Dec
+    # P/L --> body unit vector --> inertial unit vector --> inertial RA and Dec
+
 
     cam_focal_length = cam_param['focal_length']
     cam_res = cam_param['resolution']
@@ -37,13 +34,6 @@ def pixelline_to_radec(pl_in, attde_sc, cam_param):
 
     return radec
 
-
-##################################################
-##################################################
-
-def searchCatalog(rows, dtheta):
-
-    return
 
 ##################################################
 ##################################################
@@ -83,7 +73,7 @@ def pixelline_to_ehat(pl_in, cam_param):
 #           cam_res
 # Output    angular distance
 
-def pixelline_to_angular_separation(pl1, pl2, attde_sc, cam_param):
+def pixelline_to_angular_separation(pl1, pl2, cam_param):
 
     # Find unit vector in camera coordinates for each pixel/line coordinate
     ehat1_cam = pixelline_to_ehat(pl1, cam_param)
@@ -119,9 +109,7 @@ def observed_measurements(pl_in, dthetaMax, attde_sc, cam_param):
         while ind2 < len(pl_in[0]):
 
             current_dtheta = pixelline_to_angular_separation(
-                (pl_in[0][ind], pl_in[1][ind]),
-                (pl_in[0][ind2], pl_in[1][ind2]),
-                attde_sc, cam_param)
+                (pl_in[0][ind], pl_in[1][ind]), (pl_in[0][ind2], pl_in[1][ind2]), cam_param)
 
             if current_dtheta <= dthetaMax:
                 dtheta.append(current_dtheta)
@@ -166,13 +154,12 @@ def generate_uniqueID_and_counts(rawIDs):
 ##################################################
 ##################################################
 
-def objectID_stars(pl_in, imageProcessingParam, attde_sc, cam_focal_length, cam_res, cam_pixel_size):
+def objectID_stars(pl_in, attde_sc, imageProcessingParam, cameraParameters):
     """
     Identifies objects in an image using a reference catalog.
-    Required dependencies: 'star_catalog/fname_catalog.db'
-
     @param  pl_in               Tuple of 1xN arrays of right ascension and declination in HCI coordinates [deg]
                                 Assumed to be center locations of objects in image.
+    @param  attde_sc            Camera attitude BN direction cosine matrix (camera to heliocentric coord. frame)
     @param imageProcessingParam Dict of user specified parameters
                                 'filenameSearchCatalog' : SQL database filename in XXXXX catalog directory
                                 'filenameObjectIDCatalog' : SQL database filename in XXXX catalog directory
@@ -180,13 +167,17 @@ def objectID_stars(pl_in, imageProcessingParam, attde_sc, cam_focal_length, cam_
                                 'dthetaError' : one-sided error bound for ref. dtheta values in object ID catalog [deg]
                                 'voteCountMinRatio' : ratio of total votes required out of total possible to considered
                                 a positive ID match.
-    @param  attde_sc            Camera attitude BN direction cosine matrix (camera to heliocentric coord. frame)
-    @param  cam_focal_length    Camera focal length [mm]
-    @param  cam_res             Resolution of camera sensor [horiz x vert]
-    @param  cam_pixel_size      Individutal pixel size of camera sensor [horiz mm x vert mm]
+    @param cameraParameters:    python dict with the following entries
+                                ['resolution'] tuple of horizontal x vertical camera sensor resolution
+                                ['focal length'] camera sensor effective focal length [m]
+                                ['pixel size'] tuple of horizontal x vertical camera sensor pixel size [m]
     @return objectID            List of reference catalog ID values for identified objects (NaN if none found)
     @return observationWeight   List of observation weight based on vote count (NaN if none found)
     """
+
+    cam_res = cameraParameters['resolution']
+    cam_focal_length = cameraParameters['focal length']
+    cam_pixel_size = cameraParameters['pixel size']
 
     voteMinRatio = imageProcessingParam['voteCountMinRatio']
     dthetaMax = imageProcessingParam['dthetaMax']
@@ -212,7 +203,7 @@ def objectID_stars(pl_in, imageProcessingParam, attde_sc, cam_focal_length, cam_
     dtheta, pairIndex = observed_measurements(pl_in, dthetaMax, attde_sc, cam_param)
 
     # open object ID reference catalog
-    ref_catalog = sql.connect('star_catalog/'+fname_catalog)
+    ref_catalog = sql.connect(fname_catalog)
     with ref_catalog:
 
         cursor = ref_catalog.cursor()
@@ -331,7 +322,7 @@ def objectID_stars(pl_in, imageProcessingParam, attde_sc, cam_focal_length, cam_
 
 def catalogIDsToRaDec(refIDs, fnameCatalog):
 
-    ref_catalog = sql.connect('star_catalog/'+fnameCatalog)
+    ref_catalog = sql.connect(fnameCatalog)
     with ref_catalog:
 
         radec = []

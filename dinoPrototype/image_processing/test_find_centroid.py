@@ -15,9 +15,6 @@ import search_location_functions as locfunc
 
 ##################################################
 ##################################################
-# Nav module inputs
-pos_beacon = np.array([[10100, 10000, 0]])
-pos_sc = np.array([10000, 0, 0])
 
 # signal_threshold, noise_threshold, ROI_size (n x n pixel border), single side ROI_border_width
 ROI_parameters = {}
@@ -26,6 +23,20 @@ ROI_parameters['noise_threshold'] = 1E-6
 ROI_parameters['ROI_size'] = 100
 ROI_parameters['ROI_border_width'] = 1
 ROI_parameters['max_search_dist'] = 50
+
+cam_res = (512, 512)
+cam_pixel_size = (39E-6, 39E-6)  # horizontal, vertical [m]
+cam_focal_length = .05  # [m]
+cam_sensor_size = (cam_res[0] * cam_pixel_size[0], cam_res[1] * cam_pixel_size[1])  # [m]
+cam_fov = (2 * math.degrees(math.atan2(cam_sensor_size[0] / 2., cam_focal_length)),
+           2 * math.degrees(math.atan2(cam_sensor_size[1] / 2., cam_focal_length)))
+
+cameraParam = {}
+cameraParam['resolution'] = cam_res
+cameraParam['focal length'] = cam_focal_length
+cameraParam['sensor size'] = cam_sensor_size
+cameraParam['field of view'] = cam_fov
+cameraParam['pixel size'] = cam_pixel_size
 
 # reference star catalog filename
 fname_catalog = 'star_catalog/tycho_BTmag_cutoff.db'
@@ -42,11 +53,6 @@ doplot_isearch = True
 
 # note: image map is in the (line, pixel) format ... same as (row, column) .... (y, x)
 
-<<<<<<< HEAD
-# load example image from image generation module
-do_CDR_beacon = False
-=======
->>>>>>> 1f40f9d9c73aa748727f11d3fba27871f6641b19
 if do_CDR_beacon:
     file_in = np.load('CDR_save_files/90_deg.npz')
     pos_beacon = np.vstack((file_in['earth_pos'], file_in['moon_pos']))
@@ -67,9 +73,6 @@ if do_CDR_beacon:
     cam_fov = ( 2 * math.degrees(math.atan2(cam_sensor_size[0]/2., cam_focal_length)),
                 2 * math.degrees(math.atan2(cam_sensor_size[1]/2., cam_focal_length)))
 
-<<<<<<< HEAD
-do_CDR_stars = True
-=======
     # generate pixel line estimates for beacons in camera field of view
     pixel_line_beacon_i = locfunc.initial_beacons_estimate(
         pos_beacon, pos_sc, attde_sc, cam_res, cam_focal_length, cam_pixel_size)
@@ -84,7 +87,6 @@ do_CDR_stars = True
     pixel_line_center, DN = imfunc.find_center_resolved_body(ex_image, ROI_estimates, ROI_parameters)
 
 
->>>>>>> 1f40f9d9c73aa748727f11d3fba27871f6641b19
 if do_CDR_stars:
     file_in = np.load('CDR_save_files/stars_only_cdr.npz')
 
@@ -103,30 +105,9 @@ if do_CDR_stars:
     cam_fov = ( 2 * math.degrees(math.atan2(cam_sensor_size[0]/2., cam_focal_length)),
                 2 * math.degrees(math.atan2(cam_sensor_size[1]/2., cam_focal_length)))
 
-<<<<<<< HEAD
-    cam_sensor_size = (2 * cam_focal_length * math.tan(cam_fov[0]/2.),
-                       2 * cam_focal_length * math.tan(cam_fov[1]/2.))
-    cam_fov = ( 2 * math.degrees(math.atan2(cam_sensor_size[0]/2., cam_focal_length)),
-                2 * math.degrees(math.atan2(cam_sensor_size[1]/2., cam_focal_length)))
-
-    print cam_fov
-
-# star catalog filename
-fname_catalog = 'star_catalog/tycho_mag7cutoff.db'
-
-# TODO calculate/select ROI parameters <-- unclear if handled by image gen already
-# signal_threshold, noise_threshold, ROI_size (n x n pixel border), single side ROI_border_width
-ROI_parameters = {}
-ROI_parameters['signal_threshold'] = 1E-3
-ROI_parameters['noise_threshold'] = 1E-6
-ROI_parameters['ROI_size'] = 100
-ROI_parameters['ROI_border_width'] = 1
-ROI_parameters['max_search_dist'] = 50
-=======
     # generate pixel line estimates for stars in camera field of view
-    pixel_truth, line_star, star_catalog = locfunc.initial_stars_estimate(
-        attde_sc, cam_res, cam_focal_length, cam_pixel_size, fname_catalog)
->>>>>>> 1f40f9d9c73aa748727f11d3fba27871f6641b19
+    # pixel_truth, line_star, star_catalog = locfunc.initial_stars_estimate(
+    #     attde_sc, cameraParam, fname_catalog)
 
     # find centroid
     pixel_truth = np.array([443.71657484, 493.96318093, 95.3500384])
@@ -135,6 +116,8 @@ ROI_parameters['max_search_dist'] = 50
     for ind in range(len(pixel_truth)):
         ROI_estimates.append((pixel_truth[ind], line_truth[ind]))
     pixel_line_center, DN = imfunc.find_centroid_point_source(ex_image, ROI_estimates, ROI_parameters)
+
+    print pixel_line_center
 
 ##################################################
 ##################################################
@@ -165,18 +148,6 @@ if do_CDR_beacon:
 
 if do_CDR_stars:
 
-<<<<<<< HEAD
-# find centroid
-pixel_line_centroid, DN = imfunc.find_centroid_point_source(ex_image, ((101, 453),(282, 122), (330, 112)), ROI_parameters)
-pixel_line_centroid, DN = imfunc.find_centroid_point_source(ex_image, ((pixel_star[0, 0], line_star[0, 0]),
-                                                                         (pixel_star[0, 1], line_star[0, 1]),
-                                                                         (pixel_star[0, 2], line_star[0, 2])),
-                                                                         ROI_parameters)
-
-# PLACEHOLDER ---- Included (240, 245) to check for finding same beacon twice
-#ROI_estimates = ((256, 256), (390, 256), (240, 245))
-#pixel_line_centroid, DN = imfunc.find_center_resolved_body(ex_image, ROI_estimates, ROI_parameters)
-=======
     print '\n\nInitial Star Location Estimate:'
     print pixel_truth
     n_star = len(pixel_truth)
@@ -190,7 +161,6 @@ pixel_line_centroid, DN = imfunc.find_centroid_point_source(ex_image, ((pixel_st
     print '\nPixel Line Centroid Locations:'
     print pixel_line_center
     print pixel_line_center.shape
->>>>>>> 1f40f9d9c73aa748727f11d3fba27871f6641b19
 
 
 ##################################################
@@ -205,7 +175,7 @@ if doplot_isearch == True:
 
     if do_CDR_beacon:
         plt.scatter(pixel_line_beacon_i[0][0], pixel_line_beacon_i[1][0], color='r', marker='+', s=30)
-        plt.scatter(390, 256, color='r', marker='+', s=30)
+        plt.scatter(pixel_line_beacon_i[0][1], pixel_line_beacon_i[1][1], color='r', marker='+', s=30)
 
         #plt.savefig('CDR_save_files/90_deg_orig_initial_estimate.png')
 
