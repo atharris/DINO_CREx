@@ -1,4 +1,5 @@
-#! /usr/bin/env python3
+#! /usr/bin/python
+# /usr/bin/env python
 # H+
 #	Title   : camera_demo.py
 #	Author  : Matt Muszynski
