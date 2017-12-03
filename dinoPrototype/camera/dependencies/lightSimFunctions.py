@@ -109,7 +109,7 @@ def mapSphere(latRes, longRes, radCB):
 
     # assume each facet has equal areas totaling seim-sphere
     nptsLatLongC = ptsLatLongC.shape[0]
-    facetArea = (4.*math.pi*radCB**2) / nptsLatLongC
+    facetArea = (2.*math.pi*radCB**2) / nptsLatLongC
 
     mkplots = False
     if mkplots:
