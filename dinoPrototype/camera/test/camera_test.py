@@ -81,57 +81,82 @@ msg = { 'bodies': [
 	'addStars': 0,'rmOcc': 0, 'addBod': 0, 'psf': 1, 
 	'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 'dt': 0.01}
 
-# #create camera with no stars in it for tests that don't need them
-# #They will run significantly faster without them.
-# noStarCam = camera.camera(
-# 	2, 					#detectorHeight
-# 	2, 					#detectorWidth
-# 	5.0, 				#focalLength
-# 	512, 				#resolutionHeight
-# 	512,				#resolutionWidth
-# 	np.identity(3), 	#body2cameraDCM
-# 	1000,		   	 	#maximum magnitude
-# 	-1000,				#minimum magnitude (for debugging)
-# 	qe,					#quantum efficiency dictionary
-# 	tc,					#transmission curve dictionary
-# 	1,					#wavelength bin size in nm
-# 	0.01**2, 			#effective area in m^2
-# 	100, 				#dark current in electrons per second
-# 	100, 				#std for read noise in electrons
-# 	100, 				#bin size
-# 	2**32, 				#max bin depth
-# 	1,					#sigma for gaussian psf
-# 	sc,					#spacecraft the camera is attached to
-# 	msg,				#debug message
-# 	db='../db/tycho.db'	#stellar database
-# 	)
+#create camera with no stars in it for tests that don't need them
+#They will run significantly faster without them.
+noStarCam = camera.camera(
+	2, 					#detectorHeight
+	2, 					#detectorWidth
+	5.0, 				#focalLength
+	512, 				#resolutionHeight
+	512,				#resolutionWidth
+	np.identity(3), 	#body2cameraDCM
+	1000,		   	 	#maximum magnitude
+	-1000,				#minimum magnitude (for debugging)
+	qe,					#quantum efficiency dictionary
+	tc,					#transmission curve dictionary
+	1,					#wavelength bin size in nm
+	0.01**2, 			#effective area in m^2
+	100, 				#dark current in electrons per second
+	100, 				#std for read noise in electrons
+	100, 				#bin size
+	2**32, 				#max bin depth
+	1,					#sigma for gaussian psf
+	sc,					#spacecraft the camera is attached to
+	msg,				#debug message
+	db='../db/tycho.db'	#stellar database
+	)
 
-# #now create a camera with stars in it for use in the tests that
-# #actually need them.
-# msg['addStars'] = 1
-# starCam = camera.camera(
-# 	2, 					#detectorHeight
-# 	2, 					#detectorWidth
-# 	5.0, 				#focalLength
-# 	512, 				#resolutionHeight
-# 	512,				#resolutionWidth
-# 	np.identity(3), 	#body2cameraDCM
-# 	1000,		   	 	#maximum magnitude
-# 	-1000,				#minimum magnitude (for debugging)
-# 	qe,					#quantum efficiency dictionary
-# 	tc,					#transmission curve dictionary
-# 	1,					#wavelength bin size in nm
-# 	0.01**2, 			#effective area in m^2
-# 	100, 				#dark current in electrons per second
-# 	100, 				#std for read noise in electrons
-# 	100, 				#bin size
-# 	2**32, 				#max bin depth
-# 	1,					#sigma for gaussian psf
-# 	sc,					#spacecraft the camera is attached to
-# 	msg,				#debug message
-# 	db='../db/tycho.db'	#stellar database
-# 	)
-# sc.attitudeDCM = np.identity(3)
+#now create a camera with stars in it for use in the tests that
+#actually need them.
+msg['addStars'] = 1
+starCam = camera.camera(
+	2, 					#detectorHeight
+	2, 					#detectorWidth
+	5.0, 				#focalLength
+	512, 				#resolutionHeight
+	512,				#resolutionWidth
+	np.identity(3), 	#body2cameraDCM
+	1000,		   	 	#maximum magnitude
+	-1000,				#minimum magnitude (for debugging)
+	qe,					#quantum efficiency dictionary
+	tc,					#transmission curve dictionary
+	1,					#wavelength bin size in nm
+	0.01**2, 			#effective area in m^2
+	100, 				#dark current in electrons per second
+	100, 				#std for read noise in electrons
+	100, 				#bin size
+	2**32, 				#max bin depth
+	1,					#sigma for gaussian psf
+	sc,					#spacecraft the camera is attached to
+	msg,				#debug message
+	db='../db/tycho.db'	#stellar database
+	)
+#create a camera with a tiny detector so we can find just a single
+#star for doing PSF tests.
+
+tinyCam = camera.camera(
+	0.02,				#detectorHeight
+	0.02,				#detectorWidth
+	5.0, 				#focalLength
+	512, 				#resolutionHeight
+	512,				#resolutionWidth
+	np.identity(3), 	#body2cameraDCM
+	1000,		   	 	#maximum magnitude
+	-1000,				#minimum magnitude (for debugging)
+	qe,					#quantum efficiency dictionary
+	tc,					#transmission curve dictionary
+	1,					#wavelength bin size in nm
+	0.01**2, 			#effective area in m^2
+	100, 				#dark current in electrons per second
+	100, 				#std for read noise in electrons
+	100, 				#bin size
+	2**32, 				#max bin depth
+	1,					#sigma for gaussian psf
+	sc,					#spacecraft the camera is attached to
+	msg,				#debug message
+	db='../db/tycho.db'	#stellar database
+	)
+sc.attitudeDCM = np.identity(3)
 
 # def test_4_1_loadAllStars():
 # 	#load support dict that was calculated offline
@@ -148,25 +173,25 @@ msg = { 'bodies': [
 # 	assert(sum(starCam.VT) == test_4_1_support_dict['VTsum'])
 # 	assert(sum(starCam.BVT) == test_4_1_support_dict['BVTsum'])
 
-# # def test_4_2_calculate_FOV():
-# # 	cam1 = camera.camera(
-# # 		1,2,2)
-# # 	cam2= camera.camera(
-# # 		3,4,5)
-# # 	cam3 = camera.camera(
-# # 		6,4,2)
+# # # def test_4_2_calculate_FOV():
+# # # 	cam1 = camera.camera(
+# # # 		1,2,2)
+# # # 	cam2= camera.camera(
+# # # 		3,4,5)
+# # # 	cam3 = camera.camera(
+# # # 		6,4,2)
 
-# # 	assert(cam1.angularHeight == 15)
-# # 	assert(cam1.angularWidth == 16)
-# # 	assert(cam1.angularDiagonal == 18)
+# # # 	assert(cam1.angularHeight == 15)
+# # # 	assert(cam1.angularWidth == 16)
+# # # 	assert(cam1.angularDiagonal == 18)
 
-# # 	assert(cam2.angularHeight == 54)
-# # 	assert(cam2.angularWidth == 45)
-# # 	assert(cam2.angularDiagonal == 25)
+# # # 	assert(cam2.angularHeight == 54)
+# # # 	assert(cam2.angularWidth == 45)
+# # # 	assert(cam2.angularDiagonal == 25)
 
-# # 	assert(cam2.angularHeight == 13)
-# # 	assert(cam2.angularWidth == 17)
-# # 	assert(cam2.angularDiagonal == 18)
+# # # 	assert(cam2.angularHeight == 13)
+# # # 	assert(cam2.angularWidth == 17)
+# # # 	assert(cam2.angularDiagonal == 18)
 
 # def test_4_7_cameraUpdateState():
 # 	assert(len(noStarCam.images) == 0)
@@ -192,120 +217,120 @@ msg = { 'bodies': [
 # 	assert(len(noStarCam.images[0].scenes) == 3)
 # 	assert(len(noStarCam.images[1].scenes) == 2)
 
-def test_4_8_findStarsInFOV():
-	msg = { 'bodies': [
-		bod.earth,
-		bod.luna,
-		sc
-		], 
-		'addStars': 1,'rmOcc': 0, 'addBod': 0, 'psf': 1, 
-		'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 'dt': 0.01}
+# def test_4_8_findStarsInFOV():
+# 	msg = { 'bodies': [
+# 		bod.earth,
+# 		bod.luna,
+# 		sc
+# 		], 
+# 		'addStars': 1,'rmOcc': 0, 'addBod': 0, 'psf': 1, 
+# 		'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 'dt': 0.01}
 
-	OriCam = camera.camera(
-		1.5,				#detectorHeight
-		1.5, 				#detectorWidth
-		3.0, 				#focalLength
-		512, 				#resolutionHeight
-		512,				#resolutionWidth
-		np.identity(3), 	#body2cameraDCM
-		3.57,		   	 	#maximum magnitude
-		-1000,				#minimum magnitude (for debugging)
-		qe,					#quantum efficiency dictionary
-		tc,					#transmission curve dictionary
-		1,					#wavelength bin size in nm
-		0.01**2, 			#effective area in m^2
-		100, 				#dark current in electrons per second
-		100, 				#std for read noise in electrons
-		100, 				#bin size
-		2**32, 				#max bin depth
-		1,					#sigma for gaussian psf
-		sc,					#spacecraft the camera is attached to
-		msg,				#debug message
-		db='../db/tycho.db'	#stellar database
-		)
-	sc.attitudeDCM = Euler321_2DCM(
-		np.deg2rad(85),
-		np.deg2rad(0),
-		np.deg2rad(0)
-		)
+# 	OriCam = camera.camera(
+# 		1.5,				#detectorHeight
+# 		1.5, 				#detectorWidth
+# 		3.0, 				#focalLength
+# 		512, 				#resolutionHeight
+# 		512,				#resolutionWidth
+# 		np.identity(3), 	#body2cameraDCM
+# 		3.57,		   	 	#maximum magnitude
+# 		-1000,				#minimum magnitude (for debugging)
+# 		qe,					#quantum efficiency dictionary
+# 		tc,					#transmission curve dictionary
+# 		1,					#wavelength bin size in nm
+# 		0.01**2, 			#effective area in m^2
+# 		100, 				#dark current in electrons per second
+# 		100, 				#std for read noise in electrons
+# 		100, 				#bin size
+# 		2**32, 				#max bin depth
+# 		1,					#sigma for gaussian psf
+# 		sc,					#spacecraft the camera is attached to
+# 		msg,				#debug message
+# 		db='../db/tycho.db'	#stellar database
+# 		)
+# 	sc.attitudeDCM = Euler321_2DCM(
+# 		np.deg2rad(85),
+# 		np.deg2rad(0),
+# 		np.deg2rad(0)
+# 		)
 	
-	msg['takeImage'] = 1
-	OriCam.updateState()
-	msg['takeImage'] = 0
-	OriCam.updateState()
+# 	msg['takeImage'] = 1
+# 	OriCam.updateState()
+# 	msg['takeImage'] = 0
+# 	OriCam.updateState()
 
 
-	UMiCam = camera.camera(
-		2.3,				#detectorHeight
-		2.3,				#detectorWidth
-		4.0, 				#focalLength
-		512, 				#resolutionHeight
-		512,				#resolutionWidth
-		np.identity(3), 	#body2cameraDCM
-		4,			   	 	#maximum magnitude
-		-1000,				#minimum magnitude (for debugging)
-		qe,					#quantum efficiency dictionary
-		tc,					#transmission curve dictionary
-		1,					#wavelength bin size in nm
-		0.01**2, 			#effective area in m^2
-		100, 				#dark current in electrons per second
-		100, 				#std for read noise in electrons
-		100, 				#bin size
-		2**32, 				#max bin depth
-		1,					#sigma for gaussian psf
-		sc,					#spacecraft the camera is attached to
-		msg,				#debug message
-		db='../db/tycho.db'	#stellar database
-		)
-	sc.attitudeDCM = Euler321_2DCM(
-		np.deg2rad(187),
-		np.deg2rad(59),
-		np.deg2rad(0)
-		)
+# 	UMiCam = camera.camera(
+# 		2.3,				#detectorHeight
+# 		2.3,				#detectorWidth
+# 		4.0, 				#focalLength
+# 		512, 				#resolutionHeight
+# 		512,				#resolutionWidth
+# 		np.identity(3), 	#body2cameraDCM
+# 		4,			   	 	#maximum magnitude
+# 		-1000,				#minimum magnitude (for debugging)
+# 		qe,					#quantum efficiency dictionary
+# 		tc,					#transmission curve dictionary
+# 		1,					#wavelength bin size in nm
+# 		0.01**2, 			#effective area in m^2
+# 		100, 				#dark current in electrons per second
+# 		100, 				#std for read noise in electrons
+# 		100, 				#bin size
+# 		2**32, 				#max bin depth
+# 		1,					#sigma for gaussian psf
+# 		sc,					#spacecraft the camera is attached to
+# 		msg,				#debug message
+# 		db='../db/tycho.db'	#stellar database
+# 		)
+# 	sc.attitudeDCM = Euler321_2DCM(
+# 		np.deg2rad(187),
+# 		np.deg2rad(59),
+# 		np.deg2rad(0)
+# 		)
 
-	msg['takeImage'] = 1
-	UMiCam.updateState()
-	msg['takeImage'] = 0
-	UMiCam.updateState()
+# 	msg['takeImage'] = 1
+# 	UMiCam.updateState()
+# 	msg['takeImage'] = 0
+# 	UMiCam.updateState()
 
 
-	plot = 1
+# 	plot = 1
 
-	if plot:
-		plt.figure()
-		plt.imshow(OriCam.images[0].detectorArray.reshape(
-			OriCam.resolutionHeight,
-			OriCam.resolutionWidth
-			))
-		plt.figure()
-		plt.imshow(UMiCam.images[0].detectorArray.reshape(
-			UMiCam.resolutionHeight,
-			UMiCam.resolutionWidth
-			))
+# 	if plot:
+# 		plt.figure()
+# 		plt.imshow(OriCam.images[0].detectorArray.reshape(
+# 			OriCam.resolutionHeight,
+# 			OriCam.resolutionWidth
+# 			))
+# 		plt.figure()
+# 		plt.imshow(UMiCam.images[0].detectorArray.reshape(
+# 			UMiCam.resolutionHeight,
+# 			UMiCam.resolutionWidth
+# 			))
 
-		plt.figure()
-		plt.plot(OriCam.images[0].scenes[0].pixel,OriCam.images[0].scenes[0].line,'.')
-		plt.xlim(0,OriCam.resolutionWidth)
-		plt.ylim(0,OriCam.resolutionHeight)
-		plt.gca().invert_yaxis()
-		plt.axis('equal')
-		plt.figure()
-		plt.plot(UMiCam.images[0].scenes[0].pixel,UMiCam.images[0].scenes[0].line,'.')
-		plt.xlim(0,UMiCam.resolutionWidth)
-		plt.ylim(0,UMiCam.resolutionHeight)
-		plt.gca().invert_yaxis()
-		plt.axis('equal')
+# 		plt.figure()
+# 		plt.plot(OriCam.images[0].scenes[0].pixel,OriCam.images[0].scenes[0].line,'.')
+# 		plt.xlim(0,OriCam.resolutionWidth)
+# 		plt.ylim(0,OriCam.resolutionHeight)
+# 		plt.gca().invert_yaxis()
+# 		plt.axis('equal')
+# 		plt.figure()
+# 		plt.plot(UMiCam.images[0].scenes[0].pixel,UMiCam.images[0].scenes[0].line,'.')
+# 		plt.xlim(0,UMiCam.resolutionWidth)
+# 		plt.ylim(0,UMiCam.resolutionHeight)
+# 		plt.gca().invert_yaxis()
+# 		plt.axis('equal')
 
-	savedData = np.load('4.8.test_support.npy')
-	savedUMiRA = savedData[0]
-	savedUMiDE = savedData[1]
-	savedOriRA = savedData[2]
-	savedOriDE = savedData[3]
+# 	savedData = np.load('4.8.test_support.npy')
+# 	savedUMiRA = savedData[0]
+# 	savedUMiDE = savedData[1]
+# 	savedOriRA = savedData[2]
+# 	savedOriDE = savedData[3]
 
-	assert(np.array_equal(UMiCam.images[0].RA,savedUMiRA))
-	assert(np.array_equal(UMiCam.images[0].DE,savedUMiDE))
-	assert(np.array_equal(OriCam.images[0].RA,savedOriRA))
-	assert(np.array_equal(OriCam.images[0].DE,savedOriDE))
+# 	assert(np.array_equal(UMiCam.images[0].RA,savedUMiRA))
+# 	assert(np.array_equal(UMiCam.images[0].DE,savedUMiDE))
+# 	assert(np.array_equal(OriCam.images[0].RA,savedOriRA))
+# 	assert(np.array_equal(OriCam.images[0].DE,savedOriDE))
 
 
 
@@ -439,6 +464,42 @@ def test_4_8_findStarsInFOV():
 # 		plt.title('Test 4.9 Full Star Field with Non-Occulted Stars Removed')
 # 		plt.axes().set_aspect('equal')
 # 		pdb.set_trace()
+
+#set up image for tests 10-12
+sc.attitudeDCM = Euler321_2DCM(
+	np.deg2rad(1.12551889),
+	np.deg2rad(2.26739556),
+	np.deg2rad(0)
+	)
+msg['takeImage'] = 1
+tinyCam.updateState()
+msg['takeImage'] = 0
+tinyCam.updateState()
+
+def test_4_10_PSF_sum_to_I():
+	assert ( sum(tinyCam.images[0].scenes[0].psfI) - tinyCam.images[0].scenes[0].I < 1e-10)
+
+def test_4_11_PSF_mean_at_256_256():
+	assert ( abs(256 - np.mean(tinyCam.images[0].scenes[0].psfPixel)) < 1e-10 )
+	assert ( abs(256 - np.mean(tinyCam.images[0].scenes[0].psfLine)) < 1e-10 )
+
+def test_4_12_PSF_sum_to_I():
+	pdb.set_trace()
+	assert ( abs(256 - np.mean(tinyCam.images[0].scenes[0].psfPixel)) < 1e-10 )
+	assert ( abs(256 - np.mean(tinyCam.images[0].scenes[0].psfLine)) < 1e-10 )
+
+# def test_4_1_PSF_sum_to_1():
+# 	sc.attitudeDCM = Euler321_2DCM(
+# 		np.deg2rad(1.12551889),
+# 		np.deg2rad(2.26739556),
+# 		np.deg2rad(0)
+# 		)
+# 	msg['takeImage'] = 1
+# 	tinyCam.updateState()
+# 	msg['takeImage'] = 0
+# 	tinyCam.updateState()
+# 	assert ( abs(256 - np.mean(tinyCam.images[0].scenes[0].psfPixel)) < 1e-12 )
+# 	assert ( abs(256 - np.mean(tinyCam.images[0].scenes[0].psfLine)) < 1e-12 )
 
 # def test_4_16_pixelLineConversion():
 # 	#find distance between center of FOV and each star in p/l coords.
@@ -576,21 +637,46 @@ def test_4_8_findStarsInFOV():
 # 	assert(len(noStarCam.images[4].scenes[0].pixel) != 0)
 # 	assert(len(noStarCam.images[5].scenes[0].pixel) != 0)
 
-# def test_4_21_mapSphere():
-# 	import lightSimFunctions
-# 	earthSurfaceArea = 4*np.pi*bod.earth.r_eq**2
+def test_4_21_mapSphere():
+	import lightSimFunctions
+	earthSurfaceArea = 4*np.pi*bod.earth.r_eq**2
 
-# 	map100x100 = lightSimFunctions.mapSphere(100,100,bod.earth.r_eq)
-# 	map250x250 = lightSimFunctions.mapSphere(250,250,bod.earth.r_eq)
-# 	map500x500 = lightSimFunctions.mapSphere(500,500,bod.earth.r_eq)
+	map100x100 = lightSimFunctions.mapSphere(100,100,bod.earth.r_eq)
+	map250x250 = lightSimFunctions.mapSphere(250,250,bod.earth.r_eq)
+	map500x500 = lightSimFunctions.mapSphere(500,500,bod.earth.r_eq)
 	
-# 	map100x100surfaceArea = len(map100x100[0])*map100x100[1]
-# 	map250x250surfaceArea = len(map250x250[0])*map250x250[1]
-# 	map500x500surfaceArea = len(map500x500[0])*map500x500[1]
-# 	pdb.set_trace()
-# 	assert ( (map100x100surfaceArea - earthSurfaceArea/2)/(earthSurfaceArea/2) < 1e-15 )
-# 	assert ( (map250x250surfaceArea - earthSurfaceArea/2)/(earthSurfaceArea/2) < 1e-15 )
-# 	assert ( (map500x500surfaceArea - earthSurfaceArea/2)/(earthSurfaceArea/2) < 1e-15 )
+	map100x100surfaceArea = len(map100x100[0])*map100x100[1]
+	map250x250surfaceArea = len(map250x250[0])*map250x250[1]
+	map500x500surfaceArea = len(map500x500[0])*map500x500[1]
+	assert ( (map100x100surfaceArea - earthSurfaceArea/2)/(earthSurfaceArea/2) < 1e-15 )
+	assert ( (map250x250surfaceArea - earthSurfaceArea/2)/(earthSurfaceArea/2) < 1e-15 )
+	assert ( (map500x500surfaceArea - earthSurfaceArea/2)/(earthSurfaceArea/2) < 1e-15 )
+
+def test_4_22_mapSphere():
+	import lightSimFunctions
+	earthSurfaceArea = 4*np.pi*bod.earth.r_eq**2
+
+	map100x100 = lightSimFunctions.mapSphere(10,10,bod.earth.r_eq)
+	map250x250 = lightSimFunctions.mapSphere(250,250,bod.earth.r_eq)
+	map500x500 = lightSimFunctions.mapSphere(500,500,bod.earth.r_eq)
+	
+	lon100x100 = map100x100[0][:,1]
+	lat100x100 = map100x100[0][:,0]
+	lon250x250 = map100x100[0][:,1]
+	lat250x250 = map100x100[0][:,0]
+	lon500x500 = map100x100[0][:,1]
+	lat500x500 = map100x100[0][:,0]
+
+	map100x100surfaceArea = len(map100x100[0])*map100x100[1]
+	map250x250surfaceArea = len(map250x250[0])*map250x250[1]
+	map500x500surfaceArea = len(map500x500[0])*map500x500[1]
+
+	assert ( sum(lat100x100 + np.flip(lat100x100,0)) < 1e-8 )
+	assert ( sum(lat250x250 + np.flip(lat250x250,0)) < 1e-8 )
+	assert ( sum(lat500x500 + np.flip(lat500x500,0)) < 1e-8 )
+	assert ( sum(np.flip(lon100x100,0)+lon100x100 -180) < 1e-8 )
+	assert ( sum(np.flip(lon250x250,0)+lon250x250 -180) < 1e-8 )
+	assert ( sum(np.flip(lon500x500,0)+lon500x500 -180) < 1e-8 )
 
 # def test_4_23_lumos():
 # 	import lightSimFunctions
