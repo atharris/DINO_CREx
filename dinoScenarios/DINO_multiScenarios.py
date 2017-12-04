@@ -10,11 +10,20 @@ bskPath = '../..' + '/' + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 
-import macros as mc
-import unitTestSupport as sp
-import orbitalMotion as om
-import RigidBodyKinematics as rbk
+
 import BSK_plotting as BSKPlt
+
+try:
+    import macros as mc
+    import unitTestSupport as sp
+    import orbitalMotion as om
+    import RigidBodyKinematics as rbk
+except ImportError:
+    import Basilisk.utilities.macros as mc
+    import Basilisk.utilities.unitTestSupport as sp
+    import Basilisk.utilities.orbitalMotion as om
+    import Basilisk.utilities.RigidBodyKinematics as rbk
+    from Basilisk.fswAlgorithms import *
 
 # ------------------------------------- DATA LOGGING ------------------------------------------------------ #
 

@@ -6,19 +6,27 @@ bskPath = '../..' + '/' + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 
-import macros as mc
-import unitTestSupport as sp
+try:
+    import macros as mc
+    import unitTestSupport as sp
+    import sim_model
+    import spacecraftPlus
+    import gravityEffector
+    import simple_nav
+    import spice_interface
+    import ephemeris_converter
+    import radiation_pressure
+    import star_tracker
+    import imu_sensor
+except ImportError:
+    import Basilisk.utilities.macros as mc
+    import Basilisk.utilities.unitTestSupport as sp
+    from Basilisk.simulation import sim_model, spacecraftPlus, gravityEffector, simple_nav, spice_interface
+    from Basilisk.simulation import ephemeris_converter, radiation_pressure, star_tracker, imu_sensor
+
 #import simMessages
 
-import sim_model
-import spacecraftPlus
-import gravityEffector
-import simple_nav
-import spice_interface
-import ephemeris_converter
-import radiation_pressure
-import star_tracker
-import imu_sensor
+
 
 #   Define the base class for simulation dynamics
 class DynamicsClass():
