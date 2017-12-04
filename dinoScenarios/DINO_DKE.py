@@ -207,8 +207,6 @@ class DynamicsClass():
         PMatrix = [0.0] * 3 * 3
         PMatrix[0 * 3 + 0] = PMatrix[1 * 3 + 1] = PMatrix[2 * 3 + 2] = senNoiseStd
         errorBounds = [1e6] * 3
-        import pdb
-        pdb.set_trace()
         self.starTracker.walkBounds = np.array(errorBounds)
         self.starTracker.PMatrix = np.array(PMatrix).reshape(3,3)
 
