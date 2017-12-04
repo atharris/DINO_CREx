@@ -142,8 +142,8 @@ class DynamicsClass():
         self.spiceObject.UTCCalInit = "11 Jul 2020 00:00:37.034"
         self.spiceObject.ModelTag = "SpiceInterfaceData"
         self.spiceObject.SPICEDataPath = bskPath + 'External/EphemerisData/'
-        self.spiceObject.OutputBufferCount = 10000
-        self.spiceObject.PlanetNames = spice_interface.StringVector(self.spicePlanetNames)
+        self.spiceObject.outputBufferCount = 10000
+        self.spiceObject.planetNames = spice_interface.StringVector(self.spicePlanetNames)
         print '\n' + 'SPICE DATA'
         print 'Spice cel bodies: ', self.spicePlanetNames
         # By default the SPICE object will use the solar system barycenter as the inertial origin
@@ -206,10 +206,11 @@ class DynamicsClass():
         senNoiseStd = 0.01
         PMatrix = [0.0] * 3 * 3
         PMatrix[0 * 3 + 0] = PMatrix[1 * 3 + 1] = PMatrix[2 * 3 + 2] = senNoiseStd
-
         errorBounds = [1e6] * 3
-        self.starTracker.walkBounds = sim_model.DoubleVector(errorBounds)
-        self.starTracker.PMatrix = sim_model.DoubleVector(PMatrix)
+        import pdb
+        pdb.set_trace()
+        self.starTracker.walkBounds = np.array(errorBounds)
+        self.starTracker.PMatrix = np.array(PMatrix).reshape(3,3)
 
     def AddGyro(self):
         self.gyroModel = imu_sensor.ImuSensor()
@@ -234,10 +235,10 @@ class DynamicsClass():
         PMatrixAccel = [0.0] * 3 * 3
         errorBoundsAccel = [1e6] * 3
         
-        self.gyroModel.PMatrixGyro = sim_model.DoubleVector(PMatrixGyro)
-        self.gyroModel.walkBoundsGyro = sim_model.DoubleVector(errorBoundsGyro)
-        self.gyroModel.PMatrixAccel = sim_model.DoubleVector(PMatrixAccel)
-        self.gyroModel.walkBoundsAccel = sim_model.DoubleVector(errorBoundsAccel)
+        self.gyroModel.PMatrixGyro = np.array(PMatrixGyro).reshape(3,3)
+        self.gyroModel.walkBoundsGyro = np.array(errorBoundsGyro)
+        self.gyroModel.PMatrixAccel = np.array(PMatrixAccel).reshape(3,3)
+        self.gyroModel.walkBoundsAccel = np.array(errorBoundsAccel)
 
     # Global call to initialize every module
     def InitAllDynObjects(self):
