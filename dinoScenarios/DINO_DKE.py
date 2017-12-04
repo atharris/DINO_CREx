@@ -5,20 +5,31 @@ bskName = 'Basilisk'
 bskPath = '../..' + '/' + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
+bskSpicePath = bskPath + 'External/EphemerisData/'
 
-import macros as mc
-import unitTestSupport as sp
+try:
+    import macros as mc
+    import unitTestSupport as sp
+    import sim_model
+    import spacecraftPlus
+    import gravityEffector
+    import simple_nav
+    import spice_interface
+    import ephemeris_converter
+    import radiation_pressure
+    import star_tracker
+    import imu_sensor
+except ImportError:
+    from Basilisk import __path__
+    import Basilisk.utilities.macros as mc
+    import Basilisk.utilities.unitTestSupport as sp
+    from Basilisk.simulation import sim_model, spacecraftPlus, gravityEffector, simple_nav, spice_interface
+    from Basilisk.simulation import ephemeris_converter, radiation_pressure, star_tracker, imu_sensor
+    bskSpicePath = __path__[0] + '/supportData/EphemerisData/'
+
 #import simMessages
 
-import sim_model
-import spacecraftPlus
-import gravityEffector
-import simple_nav
-import spice_interface
-import ephemeris_converter
-import radiation_pressure
-import star_tracker
-import imu_sensor
+
 
 #   Define the base class for simulation dynamics
 class DynamicsClass():
@@ -141,7 +152,7 @@ class DynamicsClass():
     def SetSpiceObject(self):
         self.spiceObject.UTCCalInit = "11 Jul 2020 00:00:37.034"
         self.spiceObject.ModelTag = "SpiceInterfaceData"
-        self.spiceObject.SPICEDataPath = bskPath + 'External/EphemerisData/'
+        self.spiceObject.SPICEDataPath = bskSpicePath
         self.spiceObject.outputBufferCount = 10000
         self.spiceObject.planetNames = spice_interface.StringVector(self.spicePlanetNames)
         print '\n' + 'SPICE DATA'

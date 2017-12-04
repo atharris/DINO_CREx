@@ -5,10 +5,15 @@ bskPath = '../..' + '/' + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 
-import macros as mc
-#import batch_filter
-import ephem_difference
-import ephem_nav_converter
+try:
+    import macros as mc
+    # import batch_filter
+    import ephem_difference
+    import ephem_nav_converter
+except ImportError:
+    import Basilisk.utilities.macros as mc
+    from Basilisk.fswAlgorithms import ephem_difference, ephem_nav_converter
+
 
 class FSWClass():
     def __init__(self, SimBase):

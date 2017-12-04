@@ -5,7 +5,10 @@ bskPath = '../..' + '/' + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 
-import SimulationBaseClass
+try:
+    import SimulationBaseClass
+except ImportError:
+    from Basilisk.utilities import SimulationBaseClass
 import DINO_DKE
 import DINO_FSW
 import DINO_multiScenarios as scene
