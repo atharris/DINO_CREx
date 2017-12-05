@@ -817,6 +817,7 @@ class image:
 					eachScene.psfI = I.reshape(len(psf['I'])*len(eachScene.I))
 
 
+				#self.addBkgdStarLight()
 				if self.camera.msg['photon']:
 					eachScene.psfI = self.addPoissonNoise(eachScene.psfI)
 
@@ -1212,7 +1213,7 @@ class image:
 			theta = linspace(0,2*pi,c*4)[0:-1]
 			x = append(x,r*cos(theta))
 			y = append(y,r*sin(theta))
-			I = append(I,ones(len(theta))*self.gaussian(r,1))
+			I = append(I,ones(len(theta))*self.gaussian(r,sigma))
 		I = I/sum(I)
 
 		psfDict = { "x":x, "y":y, "I":I }
@@ -1406,7 +1407,7 @@ class image:
 		camRArad = arctan2(C12,C11)
 		camDErad = -arcsin(C13)
 
-		camRAdeg = abs(rad2deg(camRArad))
+		camRAdeg = abs(rad2deg(camRArad) - sunAngleDeg)
 		camDEdeg = abs(rad2deg(camDErad))
 		camDEbin = argmin(abs(camDEdeg-decBins))
 		camRAbin = argmin(abs(camRAdeg-raBins))
@@ -1468,9 +1469,9 @@ class image:
 			160,170,180,190,200,210,220,230,240,250,260,270,280,290,300,310,
 			320,330,340,350])
 
-		C12 = self.camera.sc.attitudeDCM[0,1]
-		C11 = self.camera.sc.attitudeDCM[0,0]
-		C13 = self.camera.sc.attitudeDCM[0,2]
+		C12 = self.camera.body2cameraDCM.dot(self.camera.sc.attitudeDCM)[0,1]
+		C11 = self.camera.body2cameraDCM.dot(self.camera.sc.attitudeDCM)[0,0]
+		C13 = self.camera.body2cameraDCM.dot(self.camera.sc.attitudeDCM)[0,2]
 
 		camRArad = arctan2(C12,C11)
 		camDErad = -arcsin(C13)
@@ -1481,7 +1482,6 @@ class image:
 		if camRAdeg < 0: camRAdeg += 360
 
 
-		#probably a better way to do this...
 		#the place where the difference between camera DE and the decliation bins
 		#given by Leinert is the smallest will be the delination bin that we want.
 		camDEbin = min(abs(camDEdeg-decBins)) == abs(camDEdeg-decBins)
