@@ -28,7 +28,7 @@ sys.path.append(rigidPath)
 
 
 def AttExec(K_Gain, P_Gain, Position_of_Satellite, Velocity_of_Satellite, Attitude_of_Target, Attitude_of_Satellite,
-           Position_of_Target, Velocity_of_Target, Reference_Attitude, Reference_Angular_Rate,
+           Position_of_Target, Velocity_of_Target, Angular_Rate_of_Spacecraft,
             Time_to_Sweep_and_Observe):
 
     def norm(input):
@@ -37,21 +37,19 @@ def AttExec(K_Gain, P_Gain, Position_of_Satellite, Velocity_of_Satellite, Attitu
 
     K = K_Gain
     P = P_Gain
-    sBN = Reference_Attitude
-    wBN = Reference_Angular_Rate
+    sBN = Attitude_of_Satellite
+    wBN = Angular_Rate_of_Spacecraft
 
     rsat = Position_of_Satellite
     vsat = Velocity_of_Satellite
-
+    control_torque = np.zeros([len(Position_of_Target), Time_to_Sweep_and_Observe, 3])
     for jj in range(len(Position_of_Target)):
 
         robj = Position_of_Target[jj]
         vobj = Velocity_of_Target[jj]
 
-        # Reference Attitude and Angular speed of beacon
-
         sobj = Attitude_of_Target
-        ssat = Attitude_of_Satellite
+        ssat = sBN
 
         # Body-Inertial Frame Rotation Matrix
         bn = MRP2C(sBN)
@@ -110,7 +108,7 @@ def AttExec(K_Gain, P_Gain, Position_of_Satellite, Velocity_of_Satellite, Attitu
         wbn = wBN
 
         # Initializing Arrays
-        control_torque = np.zeros([t, 3])
+
 
         for ii in xrange(t):
 
@@ -187,9 +185,9 @@ def AttExec(K_Gain, P_Gain, Position_of_Satellite, Velocity_of_Satellite, Attitu
                 sbr = - sbr/(s**2)
 
             # "Output" Values for the Executive Branch
-            control_torque[ii, ...] = (-K*sbr - P*sbr)
+            control_torque[jj, ii, ...] = (-K*sbr - P*sbr)
 
-        print(control_torque)
+        return control_torque
 
 
 
