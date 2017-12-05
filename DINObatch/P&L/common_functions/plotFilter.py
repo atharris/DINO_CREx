@@ -46,6 +46,60 @@ def plotFunction(data_dict):
     postDelta = data_dict['postfit changes']
 
     stand_devs = 3. * np.array([np.sqrt(np.fabs(np.diag(P))) for P in P_array])
+    plt.figure(1)
+    plt.subplot(321)
+    plt.plot(t_span, stand_devs[:, 0], 'r--', t_span, -1 * stand_devs[:, 0], 'r--')
+    plt.plot(t_span, err_hat[:, 0], 'k.')
+    plt.ylabel('x (km)')
+    plt.xticks([])
+    plt.title('Position')
+    plt.ylim((-1.1*np.max(stand_devs[:, 0]), 1.1*np.max(stand_devs[:, 0])))
+
+    plt.subplot(323)
+    plt.plot(t_span, stand_devs[:, 1], 'r--', t_span, -1 * stand_devs[:, 1], 'r--')
+    plt.plot(t_span, err_hat[:, 1], 'k.')
+    plt.ylabel('y (km)')
+    plt.xticks([])
+    plt.ylim((-1.1*np.max(stand_devs[:, 1]), 1.1*np.max(stand_devs[:, 1])))
+
+    plt.subplot(325)
+    plt.plot(t_span, stand_devs[:, 2], 'r--', t_span, -1 * stand_devs[:, 2], 'r--')
+    plt.plot(t_span, err_hat[:, 2], 'k.')
+    plt.ylabel('z (km)')
+    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+    ax = plt.gca()
+    ax.set_xticklabels(['t_0', 't_f'])
+    plt.ylim((-1.1*np.max(stand_devs[:, 2]), 1.1*np.max(stand_devs[:, 2])))
+
+    plt.subplot(322)
+    plt.plot(t_span, stand_devs[:, 3], 'r--', t_span, -1 * stand_devs[:, 3], 'r--')
+    plt.plot(t_span, err_hat[:, 3], 'k.')
+    plt.ylabel('vx (km/s)')
+    plt.xticks([])
+    plt.title('Velocity')
+    plt.ylim((-1.1*np.max(stand_devs[:, 3]), 1.1*np.max(stand_devs[:, 3])))
+
+    plt.subplot(324)
+    plt.plot(t_span, stand_devs[:, 4], 'r--', t_span, -1 * stand_devs[:, 4], 'r--')
+    plt.plot(t_span, err_hat[:, 4], 'k.')
+    plt.ylabel('vy (km/s)')
+    plt.xticks([])
+    plt.ylim((-1.1*np.max(stand_devs[:, 4]), 1.1*np.max(stand_devs[:, 4])))
+
+    plt.subplot(326)
+    plt.plot(t_span, stand_devs[:, 5], 'r--', t_span, -1 * stand_devs[:, 5], 'r--')
+    plt.plot(t_span, err_hat[:, 5], 'k.')
+    plt.ylabel('vz (km/s)')
+    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+    ax = plt.gca()
+    ax.set_xticklabels(['t_0', 't_f'])
+    plt.ylim((-1.1*np.max(stand_devs[:, 5]), 1.1*np.max(stand_devs[:, 5])))
+
+    plt.suptitle('State Errors' + ' $\hat{x}$' + ' and Covariance Bounds')
+    plt.tight_layout()
+    plt.subplots_adjust(top=.9)
+    plt.savefig(dirIt+'/State Errors and Covariance Bounds.png', dpi=300, format='png')
+
 
     if data_dict['acc_est'] == 'OFF':
       plt.figure(1)
@@ -101,7 +155,7 @@ def plotFunction(data_dict):
       plt.suptitle('State Errors' + ' $\hat{x}$' + ' and Covariance Bounds')
       plt.tight_layout()
       plt.subplots_adjust(top=.9)
-      plt.savefig(dirIt+'/State Errors and Covariance Bounds.png', dpi=300, format='png')
+      plt.savefig(dirIt+'/$x_hat$ and Covariance Bounds.png', dpi=300, format='png')
     elif data_dict['acc_est'] == 'ON':
       plt.figure(1)
       plt.subplot(331)
@@ -181,7 +235,7 @@ def plotFunction(data_dict):
       plt.suptitle('State Errors' + ' $\hat{x}$' + ' and Covariance Bounds')
       plt.tight_layout()
       plt.subplots_adjust(top=.9)
-      plt.savefig(dirIt+'/State Errors and Covariance Bounds.png', dpi=300, format='png')
+      plt.savefig(dirIt+'/$x_hat$ and Covariance Bounds.png', dpi=300, format='png')
     else:
       print 'Did not specify if plotting estimated accelerations was on or off'
 

@@ -253,7 +253,9 @@ def main():
 
     tt_switch = 5
 
-
+    print '------------------'
+    print 'Filter Image Span : ' ,(t_span[-1] - t_span[0])/(60*60*24), 'days'
+    print '------------------'
 
     # number and keys of beacons. note that the true ephem is going to have one spot for the
     # sun, which in NOT a beacon. These are used in beaconBinSPICE. 
