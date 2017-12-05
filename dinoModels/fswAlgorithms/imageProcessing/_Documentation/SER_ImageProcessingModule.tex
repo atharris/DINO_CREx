@@ -1,0 +1,176 @@
+\documentclass[]{DINOReportMemo}
+\usepackage{DINO_C-REx}
+\usepackage{colortbl}
+
+
+\newcommand{\ModuleName}{Image Processing} %edit this!
+\newcommand{\subject}{Object ID} %edit this!
+\newcommand{\status}{Initial Version}
+\newcommand{\preparer}{Joseph Park} %edit this!
+\newcommand{\summary}{Description of object ID algorithm along with supporting analysis.} %edit this
+\usepackage{float}
+\usepackage{rotating}
+\usepackage{pdflscape}
+\usepackage{wasysym}
+\begin{document}
+
+\makeCover
+
+
+%
+% enter the revision documentation here
+% to add more lines, copy the table entry and the \hline, and paste after the current entry.
+%
+\pagestyle{empty}
+{\renewcommand{\arraystretch}{2}
+\noindent
+\begin{longtable}{|p{0.5in}|p{4.5in}|p{1.14in}|}
+\hline
+{\bfseries Rev}: & {\bfseries Change Description} & {\bfseries By} \\
+\hline
+1.0 & Initial Release &  Joseph Park\\ %edit this
+\hline
+
+\end{longtable}
+}
+
+\newpage
+\setcounter{page}{1}
+\pagestyle{fancy}
+
+\tableofcontents
+~\\ \hrule ~\\
+
+\newpage
+\section{Algorithm Overview}
+\subsection{Methodology} The object ID algorithm implemented by the image processing module is based on "A Geometric Voting Algorithm for Star Trackers". The key criteria utilized are binary angles between each pair of observed objects. There are several steps to the process outlined below:
+\begin{itemize}
+  \item object ID specific reference table generation
+  \item binary angle calculation for each observed object pair
+  \item reference table search for matches
+  \item voting system for positive IDs
+  \item unknown object resolution\\
+\end{itemize}
+
+\subsection{Reference Catalog} Describe the data used from the reference catalog and the calculations required to make the object ID specific reference table. \\ 
+\begin{figure}[H]
+  \begin{center}
+  \includegraphics[width=\linewidth/3]{bct_nsc1.png}
+  \caption{Catalog Size vs. Number of Objects Tradeoff.}
+  \label{fig:boat1}
+  \end{center}
+\end{figure}
+\begin{figure}[H]
+  \begin{center}
+  \includegraphics[width=\linewidth/3]{bct_nsc1.png}
+  \caption{Maximum Delta Theta vs. Object ID Ref. Table Size.}
+  \label{fig:boat1}
+  \end{center}
+\end{figure}
+
+Show tradeoff in number of entries in original reference catalog (limited by magnitude) vs. number of observable objects in a given field of view (set 10x10 deg FoV with varying attitudes) to demonstrate sufficient number of reference objects. \\
+Show results vs. raw catalog size (both original reference catalog and object ID specific catalog. \\
+
+\subsection{Voting Criteria} Describe the error requirements for searches in the reference catalog as well as positive ID requirements. \\
+\begin{figure}[H]
+  \begin{center}
+  \includegraphics[width=\linewidth/3]{bct_nsc1.png}
+  \caption{Error Bound vs. Number of Object ID Matches.}
+  \label{fig:boat1}
+  \end{center}
+\end{figure}
+\begin{figure}[H]
+  \begin{center}
+  \includegraphics[width=\linewidth/3]{bct_nsc1.png}
+  \caption{Positive Match Ratio vs. Positive Matches.}
+  \label{fig:boat1}
+  \end{center}
+\end{figure}
+\begin{figure}[H]
+  \begin{center}
+  \includegraphics[width=\linewidth/3]{bct_nsc1.png}
+  \caption{Positive Match Ratio vs. False Positive Matches.}
+  \label{fig:boat1}
+  \end{center}
+\end{figure}
+
+\subsection{Accuracy vs. Performance Tradeoff} Show tradeoff between star magnitudes included and maximum dtheta criteria.
+\begin{figure}[H]
+  \begin{center}
+  \includegraphics[width=\linewidth/3]{bct_nsc1.png}
+  \caption{Error Bound vs. Number of Object ID Matches.}
+  \label{fig:boat1}
+  \end{center}
+\end{figure}
+
+
+\newpage
+\section{Tests}
+
+\subsection{Test 1: Observed Objects Binary Angle Calculations}
+\textbf{Description}: This test verifies the calculation of the intra-stellar angles computed between each two objects in the given camera field of view.\\
+\textbf{Methods}: pixelline\_to\_ehat(), pixelline\_to\_radec()\\
+
+\subsection{Test 2: Reference Objects Binary Angle Calculations}
+\textbf{Description}: This test verifies the calculation of the intra-stellar angles computed between each two objects in the reference catalog.\\
+\textbf{Methods}: pixelline\_to\_ehat(), pixelline\_to\_radec()\\
+
+\subsection{Test 4: Voting Algorithm Matches}
+\textbf{Description}: \\
+\textbf{Methods}: pixelline\_to\_ehat(), pixelline\_to\_radec()\\
+
+\subsection{Test 5: Target Beacon Identification}
+\textbf{Description}: \\
+\textbf{Methods}: pixelline\_to\_ehat(), pixelline\_to\_radec()\\
+
+\newpage
+
+\subsection{Test 3: image.psf()}
+\textbf{Status}: Incomplete. 10.31.17\\
+\textbf{Responsible Team Member}: Matt Muszynski \\
+\textbf{Description}: Because we expect the gaussian PDF applied to stars and body facets to be normalized, this test checks that the sum of the PSF caluclated by image.psf() is indeded one.\\
+\textbf{Method}: \\
+
+\subsection{Test 4.11: image.psf()}
+\textbf{Status}: Incomplete. 10.31.17\\
+\textbf{Responsible Team Member}: Matt Muszynski \\
+\textbf{Description}: The PSF calculated at runtime should be centered at (0,0) in pixel/line space. This test ensures that it is.\\
+\textbf{Method}: \\
+
+\subsection{Test 4.12: image.psf()}
+\textbf{Status}: Incomplete. 10.31.17\\
+\textbf{Responsible Team Member}: Matt Muszynski \\
+\textbf{Description}: This test fits a 2D gaussian to the PSF created my image.psf() at run time to enure the correct covariance is achieved.\\
+\textbf{Method}: \\
+
+\subsection{Test 4.13: image.rasterize()}
+\textbf{Status}: Incomplete. 10.31.17\\
+\textbf{Responsible Team Member}: Beryl Kuo \\
+\textbf{Description}: \\
+\textbf{Method}: \\
+
+\subsection{Test 4.14: image.add\_read\_noise()}
+\textbf{Status}: Incomplete. 10.31.17\\
+\textbf{Responsible Team Member}: Ishaan Patel \\
+\textbf{Description}: This test adds read noise to a blank image and ensures that it is in fact gaussian as desired.\\
+\textbf{Method}: \\
+
+\subsection{Test 4.15: image.add\_poisson\_noise()}
+\textbf{Status}: Incomplete. 10.31.17\\
+\textbf{Responsible Team Member}: Ishaan Patel \\
+\textbf{Description}: This test adds poisson noise to a false detector array and checks the output to ensure it is truly a poisson distribution.\\
+\textbf{Method}: \\
+
+\subsection{Test 4.16: image.pix\_line()}
+\textbf{Status}: Incomplete. 10.31.17\\
+\textbf{Responsible Team Member}: Matt Muszynski \\
+\textbf{Description}: This method takes (TBD) stars from a scene, calculates their angular separation using their pixel and line coordinates and the phsical characteristics of the camera that took the image. This is then compared to the true angular separation between the two stars using the dot product of the unit vector pointing at each.\\
+\textbf{Method}: \\
+
+\subsection{Test 4.17: em.planck()}
+\textbf{Status}: Test Passes. 10.31.17\\
+\textbf{Responsible Team Member}: Matt Muszynski \\
+\textbf{Description}: This test checks that the value of the integral of em.planck() over all wavelength space to the output of em.stefan\_boltzmann() matches to within 0.1\% \\
+\textbf{Method}: This method performs a numerical integration of the planck functon over a wavelength range of 1nm to 10000nm in 1nm bins. Values outside of this range are ignored as they are very small. This involves evaluating em.planck() at all wavelengths and multiplying by 1nm (essentially a Riemann sum). This then gives a value in units of $W/m^2/sr$. The $sr$ portion of this value can be removed by multiplying by a factor of pi (the solid angle subtended by the source as measured at the source). Theoretically this value should match the output of the stefan-boltzmann function exactly. In order to allow for the error inherent in the numerical integration, we only assert that the values match to within 0.1\%.\\
+
+\end{document}

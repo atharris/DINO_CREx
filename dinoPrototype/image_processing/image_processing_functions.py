@@ -316,7 +316,6 @@ def find_highest_pixel(initial_pixel_loc, pixel_map, threshold):
 
     # Continue trying to find a pixel farther up until we have found the uppermost pixel and next_y is not at the top
     # of the map
-
     while (not found_upper_pixel) and current_y < max_y-1:
 
         # Save the next values because we now know they are on and farther up than the previous values.
@@ -768,3 +767,4 @@ def checkBeaconStatus(posBeacons, posSC, DCM_BN, camFoV, radiusBeacons, angularS
         beaconStatus.append(currentStatus)
 
     return beaconStatus
+

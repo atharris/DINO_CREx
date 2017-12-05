@@ -105,6 +105,7 @@ objectID = idfunc.objectID_stars((pixel_star[0:num_obj], line_star[0:num_obj]),
                                                     attde_sc, imageProcessingParam,
                                                     cameraParam)
 
+
 print '\nObject ID Results:'
 for indStar in range(num_obj):
     print objectID[indStar]

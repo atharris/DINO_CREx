@@ -154,6 +154,7 @@ if doplot_isearch == True:
     # plt.colorbar()
 
     if do_CDR_beacon:
+
         plt.scatter(pixel_line_beacon_i[0][0], pixel_line_beacon_i[0][1], color='r', marker='+', s=30)
         plt.scatter(pixel_line_beacon_i[1][0], pixel_line_beacon_i[1][1], color='r', marker='+', s=30)
 

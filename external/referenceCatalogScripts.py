@@ -3,7 +3,6 @@ import math as m
 import numpy as np
 import sys, os, inspect
 
-# set below to DINO path 
 sys.path.append('../dinoModels/fswAlgorithms/imageProcessing/dependencies/')
 
 import dynamicFunctions as dyn
