@@ -58,8 +58,7 @@ sc = bod.sc(
 qe = {}
 qe['lambda'] = np.arange(420,721,2.)
 #the throughput definition here is a cheat to make something
-#somewhat realistic while not spending time on researching that
-#realism just yet.
+#somewhat realistic it is suffient for the test that need to be done here.
 qe['throughput'] = (100000-(qe['lambda']-570)**2) - \
 	min(100000-(qe['lambda']-570)**2)
 qe['throughput'] = 0.8*qe['throughput']/max(qe['throughput'])
@@ -80,6 +79,7 @@ bodies = [bod.earth,bod.luna]
 msg = {
 	'addStars': 0,'rmOcc': 0, 'addBod': 0, 'psf': 1, 
 	'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 'dt': 0.01}
+takeImage = 0
 
 #create camera with no stars in it for tests that don't need them
 #They will run significantly faster without them.
@@ -105,6 +105,7 @@ noStarCam = camera.camera(
 	scState,			#position state of s/c
 	scDCM,				#intertal 2 body DCM for s/c
 	bodies,				#bodies to track in images
+	takeImage,			#takeImage message
 	debug=msg,			#debug message
 	db='../db/tycho.db'	#stellar database
 	)
@@ -134,6 +135,7 @@ starCam = camera.camera(
 	scDCM,				#intertal 2 body DCM for s/c
 	scState,			#position state of s/c
 	bodies,				#bodies to track in images
+	takeImage,			#takeImage message
 	debug=msg,			#debug message
 	db='../db/tycho.db'	#stellar database
 	)
@@ -162,6 +164,7 @@ tinyCam = camera.camera(
 	scState,			#position state of s/c
 	scDCM,				#intertal 2 body DCM for s/c
 	bodies,				#bodies to track in images
+	takeImage,			#takeImage message
 	debug=msg,			#debug message
 	db='../db/tycho.db'	#stellar database
 	)
@@ -203,23 +206,23 @@ def test_4_1_loadAllStars():
 
 def test_4_7_cameraUpdateState():
 	assert(len(noStarCam.images) == 0)
-	msg['takeImage'] = 1
+	noStarCam.takeImage = 1
 	noStarCam.updateState()
 	noStarCam.updateState()
 	noStarCam.updateState()
 	assert(len(noStarCam.images) == 1)
 	assert(len(noStarCam.images[0].scenes) == 0)
-	msg['takeImage'] = 0
+	noStarCam.takeImage = 0
 	noStarCam.updateState()
 	assert(len(noStarCam.images) == 1)
 	assert(len(noStarCam.images[0].scenes) == 3)
-	msg['takeImage'] = 1
+	noStarCam.takeImage = 1
 	noStarCam.updateState()
 	assert(len(noStarCam.images) == 2)
 	assert(len(noStarCam.images[0].scenes) == 3)
 	assert(len(noStarCam.images[1].scenes) == 0)
 	noStarCam.updateState()
-	msg['takeImage'] = 0
+	noStarCam.takeImage = 0
 	noStarCam.updateState()
 	assert(len(noStarCam.images) == 2)
 	assert(len(noStarCam.images[0].scenes) == 3)
@@ -255,6 +258,7 @@ def test_4_8_findStarsInFOV():
 		scState,			#position state of s/c
 		scDCM,				#intertal 2 body DCM for s/c
 		bodies,				#bodies to track in images
+		takeImage,			#takeImage message
 		debug=msg,			#debug message
 		db='../db/tycho.db'	#stellar database
 		)
@@ -264,9 +268,9 @@ def test_4_8_findStarsInFOV():
 		np.deg2rad(0)
 		)
 	
-	msg['takeImage'] = 1
+	OriCam.takeImage = 1
 	OriCam.updateState()
-	msg['takeImage'] = 0
+	OriCam.takeImage = 0
 	OriCam.updateState()
 
 
@@ -292,6 +296,7 @@ def test_4_8_findStarsInFOV():
 		scState,			#position state of s/c
 		scDCM,				#intertal 2 body DCM for s/c
 		bodies,				#bodies to track in images
+		takeImage,			#takeImage message
 		debug=msg,			#debug message
 		db='../db/tycho.db'	#stellar database
 		)
@@ -301,9 +306,9 @@ def test_4_8_findStarsInFOV():
 		np.deg2rad(0)
 		)
 
-	msg['takeImage'] = 1
+	UMiCam.takeImage = 1
 	UMiCam.updateState()
-	msg['takeImage'] = 0
+	UMiCam.takeImage = 0
 	UMiCam.updateState()
 
 
@@ -359,17 +364,17 @@ def test_4_9_imageRemoveOccultations():
 	#but don't add the earth back in
 	msg['rmOcc'] = 1
 	msg['addBod'] = 0
-	msg['takeImage'] = 1
+	starCam.takeImage = 1
 	starCam.updateState()
-	msg['takeImage'] = 0
+	starCam.takeImage = 0
 	starCam.updateState()
 	
 	#take another image, pointed in the same place, but don't
 	#remove occulted stars
 	msg['rmOcc'] = 0
-	msg['takeImage'] = 1
+	starCam.takeImage = 1
 	starCam.updateState()
-	msg['takeImage'] = 0
+	starCam.takeImage = 0
 	starCam.updateState()
 
 	#find distance between center of FOV and each star in p/l coords.
@@ -484,9 +489,9 @@ tinyCam.scDCM = Euler321_2DCM(
 	np.deg2rad(2.26739556),
 	np.deg2rad(0)
 	)
-msg['takeImage'] = 1
+tinyCam.takeImage = 1
 tinyCam.updateState()
-msg['takeImage'] = 0
+tinyCam.takeImage = 0
 tinyCam.updateState()
 
 def test_4_10_PSF_sum_to_I():
@@ -519,9 +524,9 @@ def test_4_12_PSF_sigma_is_correct():
 
 def test_4_13_rasterize():
 	#need to take an image so we can access image.photonEnergy()
-	msg['takeImage'] = 1
+	tinyCam.takeImage = 1
 	tinyCam.updateState()
-	msg['takeImage'] = 0
+	tinyCam.takeImage = 0
 	tinyCam.updateState()
 	pixPos = np.array([ 1.4,  4.9,  4.9,  4.4,  1.4,  4.2,  4.1,  1.9,  1.3,  3.2])
 	linePos = np.array([ 4.2,  3.1,  2.4,  3.5,  2.8,  3.2,  2.4,  2.5,  4.1,  2.2])
@@ -546,9 +551,9 @@ def test_4_13_rasterize():
 
 def test_4_14_photon_energy():
 	#need to take an image so we can access image.photonEnergy()
-	msg['takeImage'] = 1
+	tinyCam.takeImage = 1
 	tinyCam.updateState()
-	msg['takeImage'] = 0
+	tinyCam.takeImage = 0
 	tinyCam.updateState()
 
 	from constants import h, c
@@ -629,33 +634,33 @@ def test_4_20_checkFOV():
 	#position earth and sc so earth is at the center of the FOV
 	bod.earth.state = np.array([au/1000,0,0,0,0,0])
 	noStarCam.scState = bod.earth.state - np.array([100000,0,0,0,0,0])
-	msg['takeImage'] = 1
+	noStarCam.takeImage = 1
 	noStarCam.updateState()
-	msg['takeImage'] = 0
+	noStarCam.takeImage = 0
 	noStarCam.updateState()
 
 	#position earth and sc so earth is completelt out of the FOV
 	bod.earth.state = np.array([au/1000,0,0,0,0,0])
 	noStarCam.scState = bod.earth.state - np.array([0,100000,0,0,0,0])
-	msg['takeImage'] = 1
+	noStarCam.takeImage = 1
 	noStarCam.updateState()
-	msg['takeImage'] = 0
+	noStarCam.takeImage = 0
 	noStarCam.updateState()
 
 	#position earth and sc so earth is completelt out of the FOV
 	bod.earth.state = np.array([au/1000,0,0,0,0,0])
 	noStarCam.scState = bod.earth.state - np.array([100000,23000,0,0,0,0])
-	msg['takeImage'] = 1
+	noStarCam.takeImage = 1
 	noStarCam.updateState()
-	msg['takeImage'] = 0
+	noStarCam.takeImage = 0
 	noStarCam.updateState()
 
 	#position earth and sc so earth is completelt out of the FOV
 	bod.earth.state = np.array([au/1000,0,0,0,0,0])
 	noStarCam.scState = bod.earth.state - np.array([100000,0,23000,0,0,0])
-	msg['takeImage'] = 1
+	noStarCam.takeImage = 1
 	noStarCam.updateState()
-	msg['takeImage'] = 0
+	noStarCam.takeImage = 0
 	noStarCam.updateState()
 
 	plot = 1

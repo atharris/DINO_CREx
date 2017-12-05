@@ -149,6 +149,7 @@ class camera:
 		scState,
 		scDCM,
 		bodies,
+		takeImage,
 		**kwargs
 		):
 
@@ -250,6 +251,7 @@ class camera:
 		self.bodies = bodies
 		self.scState = scState
 		self.scDCM = scDCM
+		self.takeImage = takeImage
 
 	###########################################################################
 	#	loadAllStars() is used to load stellar data from a database (nominally
@@ -500,7 +502,7 @@ class camera:
 
 		#initialize a counter so we can check if we have open images
 		openImages = 0
-		takeImage = self.msg['takeImage']
+		takeImage = self.takeImage
 		#loop through all images counting the ones that are open.
 		#if you find an open one, set its key to openImageKey.
 		#if there's more than one open, the var will be overwritten, but
@@ -657,7 +659,7 @@ class image:
 
 	def updateState(self):
 
-		if self.camera.msg['takeImage'] == 1:
+		if self.camera.takeImage== 1:
 			#if the image is still actively being taken, all we do is save
 			#off a DCM for that scene. The image will only be created once
 			#self.camera.msg['takeImage'] is set to zero and
