@@ -33,7 +33,7 @@ def initial_beacon_estimate(pos_beacon, pos_sc, attde_sc, cam_res, cam_fov):
 # output:   corner_ROI              Array of lower left corner locations of ROI
 #           image_ROI               Array of image maps of ROI only [p x p] numpy array
 
-def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
+def generatePointSourceROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
 
     # Pull out threshold parameters
     signal_threshold = ROI_parameters['signal_threshold']
@@ -177,7 +177,7 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
 #           ROI_parameters          {signal_threshold, noise_threshold, ROI_size, ROI_border_width}
 # output:   pixel_map_corrected     pixel map with average value of ROI border subtracted from all values [n x m] array
 
-def apply_ROI_border(pixel_map, ROI_parameters):
+def applyROIBborder(pixel_map, ROI_parameters):
 
     border_ROI = ROI_parameters['ROI_border_width']
     num_rows, num_cols = pixel_map.shape
@@ -259,11 +259,11 @@ def find_centroid_point_source(pixel_map, pixel_line_beacon_i, ROI_parameters, n
     DN = np.empty([num_beacons], dtype=int)
 
     # crop original image to an ROI based on initial
-    corner_ROI, image_ROI = generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters, num_beacons)
+    corner_ROI, image_ROI = generatePointSourceROI(pixel_map, pixel_line_beacon_i, ROI_parameters, num_beacons)
 
     for i in range(0, num_beacons):
         # determine average value of region of interest border, subtract from rest of pixel map
-        image_ROI[i] = apply_ROI_border(image_ROI[i], ROI_parameters)
+        image_ROI[i] = applyROIBborder(image_ROI[i], ROI_parameters)
 
         # calculate centroid position and ROI brigtness value <-- centroid location is pixel number not index value (starts with 1)
         loc_centroid[i], DN[i] = find_centroid(image_ROI[i], corner_ROI[i], ROI_parameters)

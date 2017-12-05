@@ -53,7 +53,16 @@ attde_sc = dyn.eulerDCM_321(math.radians(251.115), math.radians(-32.842), math.r
 # load example image from image generation module
 do_CDR_beacon = True
 if do_CDR_beacon:
-    file_in = np.load('CDR_save_files/90_deg_orig.npz')
+    ROI_parameters = {}
+    ROI_parameters['signal_threshold'] = .01
+    ROI_parameters['noise_threshold'] = .001
+    ROI_parameters['ROI_size'] = 100
+    ROI_parameters['ROI_border_width'] = 2
+    ROI_parameters['max_search_dist'] = 50
+
+    ROI_estimates = ((256, 256),)# (270, 238))# (390, 256))#, (240, 245))
+
+    file_in = np.load('CDR_save_files/0_deg_orig.npz')
     pos_beacon = np.vstack((file_in['earth_pos'], file_in['moon_pos']))
     pos_sc = file_in['sc_pos']
     attde_sc = file_in['sc_dcm']
@@ -62,6 +71,12 @@ if do_CDR_beacon:
     ex_image = file_in['detector_array']
     ex_image = (ex_image / max(ex_image)) * 256
     ex_image = ex_image.reshape(512, 512)
+
+    for i in range (379, 399):
+        for j in range (245, 267):
+            if (ex_image[j][i] >= .01):
+                ex_image[j-15][i-116] = ex_image[j][i] + ex_image[j-15][i-116]
+
     # plt.imshow(ex_image)
     # plt.show()
     cam_res = (512, 512)
@@ -74,6 +89,17 @@ if do_CDR_beacon:
 
 do_CDR_stars = False
 if do_CDR_stars:
+    ROI_parameters = {}
+    ROI_parameters['signal_threshold'] = 1.5
+    ROI_parameters['noise_threshold'] = 1E-6
+    ROI_parameters['ROI_size'] = 100
+    ROI_parameters['ROI_border_width'] = 1
+    ROI_parameters['max_search_dist'] = 50
+
+
+    #ROI_estimates = [(282, 122), (330, 112), (23, 29)]
+    ROI_estimates = [(1, 1), (510, 509)]
+
     file_in = np.load('CDR_save_files/stars_only.npz')
 
     pos_sc = file_in['sc_pos']
@@ -83,6 +109,17 @@ if do_CDR_stars:
     ex_image = file_in['detector_array']
     ex_image = (ex_image/np.amax(ex_image)) * 255
     ex_image = ex_image.reshape(512,512)
+
+    for i in range(280, 285):
+        for j in range(121, 126):
+            if (ex_image[j][i] > 5):
+                ex_image[j - 121][i - 280] = ex_image[j][i]
+            elif (ex_image[j][i] >= 1.5):
+                ex_image[j - 121][i - 280] = 5
+
+    for i in range(318, 322):
+        for j in range(122, 126):
+            ex_image[j + 386][i + 190] = ex_image[j][i] * 5
 
     cam_res = (512, 512)
     cam_pixel_size = (39E-6, 39E-6)         # horizontal, vertical [m]
@@ -100,6 +137,15 @@ if do_CDR_stars:
 
 do_CDR_stars2 = False
 if do_CDR_stars2:
+    ROI_parameters = {}
+    ROI_parameters['signal_threshold'] = 1
+    ROI_parameters['noise_threshold'] = .001
+    ROI_parameters['ROI_size'] = 100
+    ROI_parameters['ROI_border_width'] = 2
+    ROI_parameters['max_search_dist'] = 50
+
+    ROI_estimates = [(282, 122), (330, 112), (23, 29)]
+
     ex_image = misc.imread('psf_examples/bct_nsc1.png')
     print ex_image.shape
 
@@ -122,12 +168,12 @@ fname_catalog = 'star_catalog/tycho_mag7cutoff.db'
 
 # TODO calculate/select ROI parameters <-- unclear if handled by image gen already
 # signal_threshold, noise_threshold, ROI_size (n x n pixel border), single side ROI_border_width
-ROI_parameters = {}
-ROI_parameters['signal_threshold'] = .01
-ROI_parameters['noise_threshold'] = .001
-ROI_parameters['ROI_size'] = 100
-ROI_parameters['ROI_border_width'] = 2
-ROI_parameters['max_search_dist'] = 50
+#ROI_parameters = {}
+#ROI_parameters['signal_threshold'] = 1
+#ROI_parameters['noise_threshold'] = .001
+#ROI_parameters['ROI_size'] = 100
+#ROI_parameters['ROI_border_width'] = 2
+#ROI_parameters['max_search_dist'] = 50
 
 
 ##################################################
@@ -197,7 +243,6 @@ for ind in range(4):
 #                                                                         ROI_parameters, 3)
 
 # PLACEHOLDER ---- Included (240, 245) to check for finding same beacon twice
-ROI_estimates = ((256, 256), (390, 256), (240, 245))
 pixel_line_centroid, DN = imfunc.find_center_resolved_body(ex_image, ROI_estimates, ROI_parameters)
 
 print '\nPixel Line Centroid Locations:'
@@ -226,7 +271,7 @@ if doplot_isearch == True:
         plt.scatter(pixel_line_beacon_i[0][0], pixel_line_beacon_i[1][0], color='r', marker='+', s=30)
         plt.scatter(390, 256, color='r', marker='+', s=30)
 
-        #plt.savefig('CDR_save_files/90_deg_orig_initial_estimate.png')
+        #plt.savefig('SER_output/earth.png')
 
     if do_CDR_stars or do_CDR_stars2:
 

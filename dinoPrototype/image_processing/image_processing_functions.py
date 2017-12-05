@@ -48,6 +48,8 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
     corner_ROI = []
     image_ROI = []
 
+    print pixel_line_beacon_i
+
     # Find the corner ROI and image ROI for each beacon
     for i in range(0, len(pixel_line_beacon_i)):
         # calculate starting pixel-line value to initiate ROI
@@ -284,7 +286,8 @@ def find_centroid(pixel_map, corner_ROI, ROI_parameters):
         print pixel_map_ROI
         print loc_centroid_row, loc_centroid_col
         plt.imshow(pixel_map_ROI, interpolation='none', cmap='viridis')
-        plt.scatter(loc_centroid_row, loc_centroid_col, marker='x', s=150, linewidth=2, c='r')
+        plt.scatter(loc_centroid_row, loc_centroid_col, marker='x', s=150, linewidth=0, c='r')
+        plt.savefig('SER_output/star.png')
         plt.show()
         #plt.suptitle('Search Region with Centroid Marked', fontsize=12, fontweight='bold')
 
@@ -347,7 +350,7 @@ def find_highest_pixel(initial_pixel_loc, pixel_map, threshold):
 
     # Continue trying to find a pixel farther up until we have found the uppermost pixel and next_y is not at the top
     # of the map
-    while (not found_upper_pixel) and current_y < max_y:
+    while (not found_upper_pixel) and current_y < max_y - 1:
         # Save the next values because we now know they are on and farther up than the previous values.
         next_y = current_y + 1
 
@@ -377,6 +380,8 @@ def find_highest_pixel(initial_pixel_loc, pixel_map, threshold):
         else:
             found_upper_pixel = True
 
+    print "Top:", current_y
+
     return current_y
 
 ##################################################
@@ -398,7 +403,7 @@ def find_lowest_pixel(initial_pixel_loc, pixel_map, threshold):
 
     # Continue trying to find a pixel farther down until we have found the lowermost pixel and next_y is not at the
     # bottom of the map
-    while (not found_lower_pixel) and current_y >= 0:
+    while (not found_lower_pixel) and current_y > 0:
         # Save the next values because we now know they are on and farther up than the previous values.
         next_y = current_y - 1
 
@@ -428,6 +433,8 @@ def find_lowest_pixel(initial_pixel_loc, pixel_map, threshold):
         else:
             found_lower_pixel = True
 
+    print "Bottom:", current_y
+
     return current_y
 
 ##################################################
@@ -449,7 +456,7 @@ def find_right_pixel(initial_pixel_loc, pixel_map, threshold):
 
     # Continue trying to find a pixel farther up until we have found the uppermost pixel and current_y is not at the top
     # of the map
-    while (not found_right_pixel) and current_x < max_x:
+    while (not found_right_pixel) and current_x < max_x - 1:
         # Save the next values because we now know they are on and farther up than the previous values.
         next_x = current_x + 1
 
@@ -528,6 +535,8 @@ def find_left_pixel(initial_pixel_loc, pixel_map, threshold):
         # Otherwise, we don't have any other pixels that meet the threshold.  We have found the lefttmost pixel.
         else:
             found_left_pixel = True
+
+    print "Left:", current_x
 
     return current_x
 
@@ -614,9 +623,10 @@ def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18
         print '\nInternal Hough Transform Output: ', circles
         fig, ax = plt.subplots(1)
         plt.imshow(img, interpolation='none', cmap='viridis')
-        plt.scatter(circles[0], circles[1], marker='x', s=150, linewidth=2, c='r')
+        plt.scatter(circles[0], circles[1], marker=',', s=0, linewidth=2, c='r')
+        plt.savefig('SER_output/earth.png')
         circ = plt.Circle((circles[0], circles[1]), circles[2], color='w', fill=False)
-        ax.add_patch(circ)
+        #ax.add_patch(circ)
         plt.show()
 
     return circles
