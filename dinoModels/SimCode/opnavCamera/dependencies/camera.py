@@ -145,8 +145,10 @@ class camera:
 		dnBinSize,
 		dnDepthMax,
 		psfSigma,
-		sc,
-		msg,
+		dt,
+		scState,
+		scDCM,
+		bodies,
 		**kwargs
 		):
 
@@ -158,6 +160,18 @@ class camera:
 		except:
 			db = 'db/tycho.db'
 		
+		try:
+			msg = kwargs['debug']
+		except:
+			import bodies as bod
+			msg = { 'bodies': [
+			bod.earth,
+			bod.luna
+			], 
+			'addStars': 1,'rmOcc': 1, 'addBod': 1, 'psf': 1, 
+			'raster': 1, 'photon': 1, 'dark': 1, 'read': 1}
+
+
 		FOV = self.calculateFOV(
 			focalLength,
 			detectorHeight, 
@@ -225,7 +239,6 @@ class camera:
 		self.detectorWidth = detectorWidth
 		self.focalLength = focalLength
 		self.readSigma = readSigma
-		self.sc = sc
 		self.effectiveArea = effectiveArea
 		self.darkCurrent = darkCurrent
 		self.images = {}
@@ -233,6 +246,10 @@ class camera:
 		self.dnBinSize = dnBinSize
 		self.dnDepthMax = dnDepthMax
 		self.psfSigma = psfSigma
+		self.dt = dt
+		self.bodies = bodies
+		self.scState = scState
+		self.scDCM = scDCM
 
 	###########################################################################
 	#	loadAllStars() is used to load stellar data from a database (nominally
@@ -646,7 +663,7 @@ class image:
 			#self.camera.msg['takeImage'] is set to zero and
 			#image.updateState() is run.
 			self.DCM.append(self.camera.body2cameraDCM.dot(
-				self.camera.sc.attitudeDCM))
+				self.camera.scDCM))
 		else:
 			from scipy.linalg import inv
 			from numpy import arctan2, arcsin, array, zeros, pi, floor
@@ -829,7 +846,7 @@ class image:
 							eachScene.psfPixel,
 							eachScene.psfLine,
 							eachScene.psfI
-							)*self.camera.msg['dt']
+							)*self.camera.dt
 
 					if self.camera.msg['dark']:
 						eachScene.detectorArray = \
@@ -940,20 +957,19 @@ class image:
 		from numpy import array, deg2rad, sin, cos, append, sqrt, zeros, ones, logical_and
 		from numpy.linalg import norm
 
-		if len(msg['bodies']) != 0:
+		if len(self.camera.bodies) != 0:
 
 			n = 1	
-			bodies = msg['bodies']
+			bodies = self.camera.bodies
 
 			#calculate how far each body is from the sc
-			for body in bodies: body.distFromSc = norm(body.state[0:3] - self.camera.sc.state[0:3])
+			for body in bodies: body.distFromSc = norm(body.state[0:3] - self.camera.scState[0:3])
 			#sort bodies by how far they are from the sc
 			#this needs to be done 
 			bodies.sort(key=lambda x:x.distFromSc, reverse=True)
 
 			for body in bodies:
 				n+=1
-				if body.name == 'SC': continue
 				if msg['rmOcc']:
 					occCheck = self.removeOccultations(body,n1,n2,n3)
 					n1 = n1[occCheck]
@@ -969,10 +985,10 @@ class image:
 
 				if msg['addBod']:
 					from lightSimFunctions import lightSim
-					DCM = self.camera.body2cameraDCM.dot(self.camera.sc.attitudeDCM)
+					DCM = self.camera.body2cameraDCM.dot(self.camera.scDCM)
 					facets = lightSim(
 						DCM,
-						self.camera.sc.state[0:3],
+						self.camera.scState[0:3],
 						body.state[0:3],
 						(
 							self.camera.angularHeight,
@@ -1001,9 +1017,9 @@ class image:
 					surf_n3 += body.state[2]
 
 					#camera to facet vectors
-					surf_n1 -= self.camera.sc.state[0]
-					surf_n2 -= self.camera.sc.state[1]
-					surf_n3 -= self.camera.sc.state[2]
+					surf_n1 -= self.camera.scState[0]
+					surf_n2 -= self.camera.scState[1]
+					surf_n3 -= self.camera.scState[2]
 
 					surf_r = surf_n1**2 + surf_n2**2 + surf_n3**2
 					#turn to unit vectors
@@ -1153,7 +1169,7 @@ class image:
 		v = stack([n1,n2,n3])
 		#agnostic to coordinate frame origin. Just needs same axis
 		#directions as v.
-		y_0 = self.camera.sc.state[0:3] - body.state[0:3]
+		y_0 = self.camera.scState[0:3] - body.state[0:3]
 		#1xn
 		vTAy_0 = (v.T.dot(A).dot(y_0)).T
 		#1xn
@@ -1391,7 +1407,7 @@ class image:
 	def addZodiacalLight(self):
 		from numpy import array, identity, flip, vstack, hstack, transpose
 		from numpy import arctan2, pi, rad2deg, arcsin, argmin
-		sunAngleRad = arctan2(self.camera.sc.attitudeDCM[1],self.camera.sc.attitudeDCM[0]) + pi
+		sunAngleRad = arctan2(self.camera.scDCM[1],self.camera.scDCM[0]) + pi
 		sunAngleDeg = rad2deg(sunAngleRad)
 
 		raBins = array([
@@ -1400,9 +1416,9 @@ class image:
 		decBins = array([
 			0,5,10,15,20,25,30,45,60,75
 			])
-		C12 = self.camera.sc.attitudeDCM[0,1]
-		C11 = self.camera.sc.attitudeDCM[0,0]
-		C13 = self.camera.sc.attitudeDCM[0,2]
+		C12 = self.camera.scDCM[0,1]
+		C11 = self.camera.scDCM[0,0]
+		C13 = self.camera.scDCM[0,2]
 
 		camRArad = arctan2(C12,C11)
 		camDErad = -arcsin(C13)
@@ -1469,9 +1485,9 @@ class image:
 			160,170,180,190,200,210,220,230,240,250,260,270,280,290,300,310,
 			320,330,340,350])
 
-		C12 = self.camera.body2cameraDCM.dot(self.camera.sc.attitudeDCM)[0,1]
-		C11 = self.camera.body2cameraDCM.dot(self.camera.sc.attitudeDCM)[0,0]
-		C13 = self.camera.body2cameraDCM.dot(self.camera.sc.attitudeDCM)[0,2]
+		C12 = self.camera.body2cameraDCM.dot(self.camera.scDCM)[0,1]
+		C11 = self.camera.body2cameraDCM.dot(self.camera.scDCM)[0,0]
+		C13 = self.camera.body2cameraDCM.dot(self.camera.scDCM)[0,2]
 
 		camRArad = arctan2(C12,C11)
 		camDErad = -arcsin(C13)
