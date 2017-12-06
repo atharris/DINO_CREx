@@ -62,7 +62,7 @@ def writingText(itr, referenceState, estimatedState, trueEphemeris, extraData, i
     err = referenceState[:, 0:6] - trueEphemeris['spacecraft'].T
 
     # compare the estimated and true trajectories: estimated state errors
-    stateErrorHat = estimatedState[:, 0:6] - trueEphemeris['spacecraft'].T
+    stateDevHat = estimatedState[:, 0:6] - trueEphemeris['spacecraft'].T
 
     resultString = ''
 
@@ -70,7 +70,7 @@ def writingText(itr, referenceState, estimatedState, trueEphemeris, extraData, i
     resultString += 'Iteration number '+ str(itr) + '\n'
     resultString += '---------------------------------------------------'+ '\n'
     resultString += '\n'
-    resultString += 'Estimated x_hat_0 = ' + str(extraData['x_hat_0'])+ '\n'
+    resultString += 'Estimated x_hat_0 = ' + str(extraData['stateDevHat'])+ '\n'
     resultString += 'Actual Error = ' + str(initialPositionError) + str(initialVelocityError) + '\n'
     resultString += '\n'
 
@@ -81,12 +81,12 @@ def writingText(itr, referenceState, estimatedState, trueEphemeris, extraData, i
     resultString += 'Ref Y Vel err = ' + str(err[-1, 4]) + '\n'
     resultString += 'Ref Z Vel err = ' + str(err[-1, 5]) + '\n'
     resultString += '\n'
-    resultString += 'Est X Pos err = ' + str(stateErrorHat[-1, 0]) + '\n'
-    resultString += 'Est Y Pos err = ' + str(stateErrorHat[-1, 1]) + '\n'
-    resultString += 'Est Z Pos err = ' + str(stateErrorHat[-1, 2]) + '\n'
-    resultString += 'Est X Vel err = ' + str(stateErrorHat[-1, 3]) + '\n'
-    resultString += 'Est Y Vel err = ' + str(stateErrorHat[-1, 4]) + '\n'
-    resultString += 'Est Z Vel err = ' + str(stateErrorHat[-1, 5]) + '\n'
+    resultString += 'Est X Pos err = ' + str(stateDevHat[-1, 0]) + '\n'
+    resultString += 'Est Y Pos err = ' + str(stateDevHat[-1, 1]) + '\n'
+    resultString += 'Est Z Pos err = ' + str(stateDevHat[-1, 2]) + '\n'
+    resultString += 'Est X Vel err = ' + str(stateDevHat[-1, 3]) + '\n'
+    resultString += 'Est Y Vel err = ' + str(stateDevHat[-1, 4]) + '\n'
+    resultString += 'Est Z Vel err = ' + str(stateDevHat[-1, 5]) + '\n'
     resultString += '\n'
 
     print resultString
@@ -312,7 +312,7 @@ def main():
     phi0 = np.identity(IC.shape[0])
 
     # initiate a priori deviation
-    stateErrorBar = np.zeros(IC.shape)
+    stateDevBar = np.zeros(IC.shape)
 
     # initiate a filter output dictionary
     filterOutputs = {}
@@ -328,8 +328,8 @@ def main():
 
     # Get the observation data (dataObservations). This dictionary contains the SPICE data
     # from which values are calculated (key = 'SPICE'), the true observations before
-    # uncertainty is added (key = 'truth') and the measured observations (key = 'data').
-    # These are the 'data' values that are now simulating an actual observation, 
+    # uncertainty is added (key = 'truth') and the measured observations (key = 'measurements').
+    # These are the 'measurements' values that are now simulating an actual observation, 
     # and they are to be processed by the filter. 
     # The dictionary also contains the list of beacons by name and order of processing. 
     # This list of strings (key = 'beacons') is needed for 
@@ -339,7 +339,7 @@ def main():
     # create dictionary for observation data to be inputs in filter. This is a more limited
     # dictionary than dataObservations and serves as the most "real" input
     filterObservations = {}
-    filterObservations['measurements'] = dataObservations['data']
+    filterObservations['measurements'] = dataObservations['measurements']
     filterObservations['beaconIDs']    = dataObservations['beacons']
 
     ##################################################################################
@@ -353,7 +353,7 @@ def main():
 
         if itr > 0:
             IC     = estimatedState[0, :]
-            stateErrorBar -= extraData['stateErrorHatArray'][0, :]
+            stateDevBar -= extraData['stateDevHatArray'][0, :]
 
         if itr==0:
             extras['oldPost'] = np.zeros([len(timeSpan), 2])
@@ -362,14 +362,14 @@ def main():
         # data dictionary, a priori uncertainty, and the measurables' uncertainty,
         # as well as any extras
         filterInputs = (IC, phi0, timeSpan, filterObservations,\
-                         covBar, observationUncertainty, stateErrorBar, angles, extras)
+                         covBar, observationUncertainty, stateDevBar, angles, extras)
         # run filter function
         referenceState, estimatedState, extraData = run_batch(filterInputs)
         extras['oldPost'] = extraData['postfit residuals']
 
         # Check for anomaly:
 
-        [anomaly_bool , anomaly_num] = extra_data['anomaly_detected']
+        [anomaly_bool , anomaly_num] = extraData['anomaly_detected']
         if anomaly_bool == True:
             print '**********************************************************'
             print 'Anomaly Detected - Estimates are not to be trusted'
@@ -432,6 +432,13 @@ def main():
         pklFile.flush()
 
         pklFile.close()
+
+    [anomaly_bool , anomaly_num] = extraData['anomaly_detected']
+    if anomaly_bool == True:
+        print '**********************************************************'
+        print 'Anomaly Detected - Estimates are not to be trusted'
+        print '**********************************************************'
+        print anomaly_num, 'Residuals out of bounds'
 
     return
 

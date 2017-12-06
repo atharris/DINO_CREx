@@ -176,16 +176,16 @@ import pdb
 # Given these calculations, we are now able to solve for the state deviation at the initial time:
 # ~~~~~~~~~~~~~~~~~{.py}
 #  # perform least squares on the infoMatrix and observation matrix to compute the residuals
-#    stateErrorHat = np.reshape(np.linalg.lstsq( infoMatrix, normalMatrix )[0], [stateDimension])
+#    stateDevHat = np.reshape(np.linalg.lstsq( infoMatrix, normalMatrix )[0], [stateDimension])
 # ~~~~~~~~~~~~~~~~~
 #
-# The variable `stateErrorHat` is therefore the state deviation at the initial time found in Eq. 4.6.1. We are able to map this to future times with associated STMs and add the result to the reference state to get a best estimate, i.e., 
+# The variable `stateDevHat` is therefore the state deviation at the initial time found in Eq. 4.6.1. We are able to map this to future times with associated STMs and add the result to the reference state to get a best estimate, i.e., 
 # ~~~~~~~~~~~~~~~~~{.py}
 #      # linearly transform deviation and at it to the referenceState and save
-#      stateErrorHatArray[ii,:] = np.dot( phi_t_t0, stateErrorHat ).T
+#      stateDevHatArray[ii,:] = np.dot( phi_t_t0, stateDevHat ).T
 #   ...
 #      # add the deviation to the reference state 
-#     estimatedState[ii,:]   = referenceState[ii,0:stateDimension] + stateErrorHatArray[ii,:]
+#     estimatedState[ii,:]   = referenceState[ii,0:stateDimension] + stateDevHatArray[ii,:]
 # ~~~~~~~~~~~~~~~~~
 #
 # These calculation occur in a loop that also contains mappings of the covariance matrix (calculated by inverting the `infoMatrix`) via the STM. 
@@ -272,8 +272,8 @@ def run_batch( input ) :
   # observed measurement data
   observations = filterObservations['measurements']
 
-  # initiate stateErrorHat
-  stateErrorHat = np.zeros( (stateDimension,) )
+  # initiate stateDevHat
+  stateDevHat = np.zeros( (stateDimension,) )
 
   IC0  = np.copy( IC )
 
@@ -362,7 +362,7 @@ def run_batch( input ) :
   ##################################################################################
     
   # perform least squares on the infoMatrix and observation matrix to compute the state deviation
-  stateErrorHat = np.reshape(np.linalg.lstsq( infoMatrix, normalMatrix )[0], [stateDimension])
+  stateDevHat = np.reshape(np.linalg.lstsq( infoMatrix, normalMatrix )[0], [stateDimension])
 
   # initiate a filtered referenceState
   estimatedState = np.zeros( (referenceState.shape[0],stateDimension) )
@@ -374,19 +374,19 @@ def run_batch( input ) :
   P = aInv( infoMatrix )
 
   # initiate an array for the state deviation vectors
-  stateErrorHatArray = np.zeros( (nObservations, stateDimension) )
-  stateErrorBarArray = np.zeros( (nObservations, stateDimension) )
+  stateDevHatArray = np.zeros( (nObservations, stateDimension) )
+  stateDevBarArray = np.zeros( (nObservations, stateDimension) )
 
   for ii in xrange( referenceState.shape[0] ) :
     # pull the STM that is able to transform from the current time to t0
     phi_t_t0  = np.reshape( referenceState[ii,stateDimension:],\
                             (stateDimension,stateDimension) )
     # linearly transform deviation and at it to the referenceState and save
-    stateErrorHatArray[ii,:] = np.dot( phi_t_t0, stateErrorHat ).T
-    stateErrorBarArray[ii,:] = np.dot( phi_t_t0, x_bar ).T
+    stateDevHatArray[ii,:] = np.dot( phi_t_t0, stateDevHat ).T
+    stateDevBarArray[ii,:] = np.dot( phi_t_t0, x_bar ).T
     covArray[ii,:,:] = np.dot(np.dot( phi_t_t0, P ),  phi_t_t0.T)
     # add the deviation to the reference state 
-    estimatedState[ii,:]   = referenceState[ii,0:stateDimension] + stateErrorHatArray[ii,:]
+    estimatedState[ii,:]   = referenceState[ii,0:stateDimension] + stateDevHatArray[ii,:]
     # store the transformed covariance matrix
     # covArray[ii,:,:]   = np.dot( np.dot( phi_t_t0, P ), phi_t_t0.T )
 
@@ -397,13 +397,17 @@ def run_batch( input ) :
   estimatedObservations = fncG( estimatedObservationInputs )
 
   # compute the postfits using the updated observables and the measured values
-  postfits      = np.zeros([np.shape(stateErrorHatArray)[0], \
+  postfits      = np.zeros([np.shape(stateDevHatArray)[0], \
                             np.shape(observationDeviations)[1]])
-  postfitsDelta = np.zeros([np.shape(stateErrorHatArray)[0], \
+  postfitsDelta = np.zeros([np.shape(stateDevHatArray)[0], \
                             np.shape(observationDeviations)[1]])
 
+  for ii in range(np.shape(stateDevHatArray)[0]):
+    postfitsDelta[ii,:] = extras['oldPost'][ii,:] - observationDeviations[ii,:] + np.dot(mappingMatrix[0+2*ii:2+2*ii,:], stateDevHatArray[ii,0:np.shape(mappingMatrix)[1]])
+    postfits[ii,:] = observationDeviations[ii,:] - np.dot(mappingMatrix[0+2*ii:2+2*ii,:], stateDevHatArray[ii,:])
+
   # Anomaly detection
-  for ii in range(np.shape(stateErrorHatArray)[0]):
+  for ii in range(np.shape(stateDevHatArray)[0]):
     for jj in range(np.shape(postfits)[1]):
       if np.abs(postfits[ii,jj]) - 3*observationUncertainty[jj, jj] > 0:
         extras['anomaly_num']+=1
@@ -412,28 +416,20 @@ def run_batch( input ) :
   if extras['anomaly_num'] > extras['anomaly_threshold']:
     extras['anomaly'] = True
 
-  prefits = np.zeros([np.shape(stateErrorHatArray)[0], np.shape(observationDeviations)[1]])
-  for ii in range(1,np.shape(stateErrorHatArray)[0]):
-    prefits[ii,:] = observationDeviations[ii,:] - np.dot(H_tilde[0+2*(ii):2+2*(ii),:], x_bar_array[ii,:])
-
-
-
-  prefits = np.zeros([np.shape(stateErrorHatArray)[0], np.shape(observationDeviations)[1]])
-  for ii in range(1,np.shape(stateErrorHatArray)[0]):
-    prefits[ii,:] = observationDeviations[ii,:] - np.dot(mappingMatrix[0+2*(ii):2+2*(ii),:],\
-                    stateErrorBarArray[ii,:])
+  prefits = np.zeros([np.shape(stateDevHatArray)[0], np.shape(observationDeviations)[1]])
+  for ii in range(1,np.shape(stateDevHatArray)[0]):
+    prefits[ii,:] = observationDeviations[ii,:] - np.dot(mappingMatrix[0+2*(ii):2+2*(ii),:], stateDevBarArray[ii,:])
 
   # store various arrays in a data dictionary
-  extra_data                      = {}
-  extra_data['Y']                 = Y_obs
-  extra_data['P_array']           = P_array
-  extra_data['x_hat_array']       = stateErrorHatArray
-  extra_data['prefit residuals']  = prefits
-  extra_data['postfit residuals'] = postfits
-  extra_data['postfit changes'] = postfitsDelta
-  extras['x_hat_0']               += stateErrorHat
-  extra_data['x_hat_0']           = extras['x_hat_0']
-  extra_data['anomaly_detected']  = [extras['anomaly'], extras['anomaly_num']]
+  extraData                       = {}
+  extraData['Y']                  = observations
+  extraData['covArray']           = covArray
+  extraData['stateDevHatArray']   = stateDevHatArray
+  extraData['prefit residuals']   = prefits
+  extraData['postfit residuals']  = postfits
+  extraData['postfit changes']    = postfitsDelta
+  extraData['stateDevHat']        = extras['x_hat_0']
+  extraData['anomaly_detected']   = [extras['anomaly'], extras['anomaly_num']]
 
 
   return referenceState, estimatedState, extraData

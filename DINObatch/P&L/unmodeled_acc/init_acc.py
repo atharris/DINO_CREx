@@ -70,7 +70,7 @@ def writingText(itr, referenceState, estimatedState, trueEphemeris, extraData, i
     resultString += 'Iteration number '+ str(itr) + '\n'
     resultString += '---------------------------------------------------'+ '\n'
     resultString += '\n'
-    resultString += 'Estimated x_hat_0 = ' + str(extraData['x_hat_0'])+ '\n'
+    resultString += 'Estimated x_hat_0 = ' + str(extraData['stateDevHat'])+ '\n'
     resultString += 'Actual Error = ' + str(initialPositionError) + str(initialVelocityError) + '\n'
     resultString += '\n'
 
@@ -260,7 +260,7 @@ def main():
     tt_switch = 5
 
     print '------------------'
-    print 'Filter Image Span : ' , (t_span[-1] - t_span[0])/(60*60*24), 'days'
+    print 'Filter Image Span : ' , (timeSpan[-1] - timeSpan[0])/(60*60*24), 'days'
     print '------------------'
 
 
@@ -324,7 +324,7 @@ def main():
     phi0 = np.identity(IC.shape[0])
 
     # initiate a priori deviation
-    stateErrorBar = np.zeros(IC.shape)
+    stateDevBar = np.zeros(IC.shape)
 
     # initiate a filter output dictionary
     filterOutputs = {}
@@ -340,8 +340,8 @@ def main():
 
     # Get the observation data (dataObservations). This dictionary contains the SPICE data
     # from which values are calculated (key = 'SPICE'), the true observations before
-    # uncertainty is added (key = 'truth') and the measured observations (key = 'data').
-    # These are the 'data' values that are now simulating an actual observation, 
+    # uncertainty is added (key = 'truth') and the measured observations (key = 'measurements').
+    # These are the 'measurements' values that are now simulating an actual observation, 
     # and they are to be processed by the filter. 
     # The dictionary also contains the list of beacons by name and order of processing. 
     # This list of strings (key = 'beacons') is needed for 
@@ -351,7 +351,7 @@ def main():
     # create dictionary for observation data to be inputs in filter. This is a more limited
     # dictionary than dataObservations and serves as the most "real" input
     filterObservations = {}
-    filterObservations['measurements'] = dataObservations['data']
+    filterObservations['measurements'] = dataObservations['measurements']
     filterObservations['beaconIDs']    = dataObservations['beacons']
 
     ##################################################################################
@@ -365,11 +365,8 @@ def main():
 
         if itr > 0:
             # IC = est_state[0, :]
-            IC += extra_data['x_hat_array'][0, :]
-            x_bar -= extra_data['x_hat_array'][0, :]
-
-        position_error = IC[0:3] - true_ephem['spacecraft'][0:3, 0]
-        velocity_error = IC[3:6] - true_ephem['spacecraft'][3:6, 0]
+            IC += extraData['stateDevHatArray'][0, :]
+            stateDevBar -= extraData['stateDevHatArray'][0, :]
 
         # the arguments for the filter are the IC, the first STM, the time span, the observables
         # data dictionary, a priori uncertainty, and the measurables' uncertainty,
@@ -378,7 +375,7 @@ def main():
             extras['oldPost'] = np.zeros([len(timeSpan), 2])
 
         filterInputs = (IC, phi0, timeSpan, filterObservations,\
-                         covBar, observationUncertainty, stateErrorBar, angles, extras)
+                         covBar, observationUncertainty, stateDevBar, angles, extras)
         # run filter function
         referenceState, estimatedState, extraData = run_batch(filterInputs)
 
@@ -428,14 +425,6 @@ def main():
         plotData['acc_est']         = 'ON'
         PF( plotData )
 
-    [anomaly_bool , anomaly_num] = extra_data['anomaly_detected']
-    if anomaly_bool == True:
-        print '**********************************************************'
-        print 'Anomaly Detected - Estimates are not to be trusted'
-        print '**********************************************************'
-        print anomaly_num, 'Residuals out of bounds'
-
-
         #  Write the output to the pickle file
         fileTag = 'nominal'
         file = dirIt+'/'+fileTag+'_data.pkl'
@@ -444,6 +433,16 @@ def main():
         pklFile.flush()
 
         pklFile.close()
+
+    [anomaly_bool , anomaly_num] = extraData['anomaly_detected']
+    if anomaly_bool == True:
+        print '**********************************************************'
+        print 'Anomaly Detected - Estimates are not to be trusted'
+        print '**********************************************************'
+        print anomaly_num, 'Residuals out of bounds'
+
+
+
 
     return
 
