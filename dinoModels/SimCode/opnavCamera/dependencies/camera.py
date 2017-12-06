@@ -170,7 +170,8 @@ class camera:
 			bod.luna
 			], 
 			'addStars': 1,'rmOcc': 1, 'addBod': 1, 'psf': 1, 
-			'raster': 1, 'photon': 1, 'dark': 1, 'read': 1}
+			'raster': 1, 'photon': 1, 'dark': 1, 'read': 1, 
+			'verbose': 0}
 
 
 		FOV = self.calculateFOV(
@@ -530,6 +531,29 @@ class camera:
 			else:
 				self.images[openImageKey].imageOpen = 0
 				self.images[openImageKey].updateState()
+				try: 
+					verbose == 1
+				except:
+					delattr(self.images[openImageKey],'RA')
+					delattr(self.images[openImageKey],'DE')
+					delattr(self.images[openImageKey],'DCM')
+					delattr(self.images[openImageKey],'alpha')
+					delattr(self.images[openImageKey],'beta')
+					delattr(self.images[openImageKey],'gamma')
+					delattr(self.images[openImageKey],'scenes')
+					delattr(self.images[openImageKey],'c1')
+					delattr(self.images[openImageKey],'c2')
+					delattr(self.images[openImageKey],'c3')
+					delattr(self.images[openImageKey],'n1')
+					delattr(self.images[openImageKey],'n2')
+					delattr(self.images[openImageKey],'n3')
+					delattr(self.images[openImageKey],'BVT')
+					delattr(self.images[openImageKey],'VT')
+					delattr(self.images[openImageKey],'starID')
+					delattr(self.images[openImageKey],'camera')
+					delattr(self.images[openImageKey],'solidAngleSubtended')
+					delattr(self.images[openImageKey],'I')
+					delattr(self.images[openImageKey],'T')
 		else:
 			if takeImage == 1.:
 				#if we have no open image, count the number of open images
@@ -541,6 +565,12 @@ class camera:
 				self.images[newKey] = image(self,self.msg)
 				#give the image its first update.
 				self.images[newKey].updateState()
+				
+				#a bunch of attributes are only ever saved to the camera
+				#as debugging artifacts. If verbose == 0 or it is not
+				#set, then we go into the except section and destroy
+				#all the unneeded artifacts. That way we don't need to
+				#unnessarily blow up RAM when saving a lot of images.
 
 		return
 
