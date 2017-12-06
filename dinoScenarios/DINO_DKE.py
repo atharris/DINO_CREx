@@ -231,8 +231,8 @@ class DynamicsClass():
 
         self.gyroModel.sensorPos_B = imu_sensor.DoubleVector([0.0, 0.0, 0.0])
         self.gyroModel.setBodyToPlatformDCM(0.0, 0.0, 0.0)
-        self.gyroModel.accelLSB = 0.0
-        self.gyroModel.gyroLSB = 0.0
+        # self.gyroModel.accelLSB = 0.0
+        # self.gyroModel.gyroLSB = 0.0
         self.gyroModel.senRotBias = [0.0] * 3
         self.gyroModel.senTransBias = [0.0] * 3
         self.gyroModel.senRotMax = 1.0e6

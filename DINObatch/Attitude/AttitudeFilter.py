@@ -17,11 +17,15 @@ sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 
 import ekfFunctions as ekf
-import simulationArchTypes
-import imu_sensor
-import star_tracker
-import simple_nav
-import RigidBodyKinematics as rbk
+try:
+    import simulationArchTypes
+    import imu_sensor
+    import spacecraftPlus
+except ImportError:
+    from Basilisk.utilities import simulationArchTypes
+    import Basilisk.utilities.RigidBodyKinematics as rbk
+    from Basilisk.simulation import spacecraftPlus, imu_sensor, star_tracker, simple_nav
+
 
 # if this script is run from a custom folder outside of the Basilisk folder, then uncomment the
 # following line and specify the absolute bath to the Basilisk folder
