@@ -259,7 +259,7 @@ def main():
     tt_switch = 5
 
     print '------------------'
-    print 'Filter Image Span : ' ,(t_span[-1] - t_span[0])/(60*60*24), 'days'
+    print 'Filter Image Span : ' ,(timeSpan[-1] - timeSpan[0])/(60*60*24), 'days'
     print '------------------'
 
     # number and keys of beacons. note that the true ephem is going to have one spot for the
