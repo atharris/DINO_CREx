@@ -5,6 +5,7 @@ bskName = 'Basilisk'
 bskPath = '../..' + '/' + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
+sys.path.append('../dinoModels/SimCode/opnavCamera/')
 
 import macros as mc
 import unitTestSupport as sp
@@ -19,6 +20,7 @@ import ephemeris_converter
 import radiation_pressure
 import star_tracker
 import imu_sensor
+import opnavCamera
 
 #   Define the base class for simulation dynamics
 class DynamicsClass():
@@ -29,9 +31,9 @@ class DynamicsClass():
         self.taskName = "DynamicsTask"
         self.taskTimeStep = mc.sec2nano(10)
 
-        # Create task
+        # Create tasks
         SimBase.dynProc.addTask(SimBase.CreateNewTask(self.taskName, self.taskTimeStep))
-
+        SimBase.dynPyProc.createPythonTask("opnavCameraTask", self.taskTimeStep,True, 30)
 
         # Instantiate Dyn modules as objects
         self.scObject = spacecraftPlus.SpacecraftPlus()
@@ -59,6 +61,9 @@ class DynamicsClass():
         SimBase.AddModelToTask(self.taskName, self.srpDynEffector, None, 18)
         SimBase.AddModelToTask(self.taskName, self.starTracker,None, 8)
         SimBase.AddModelToTask(self.taskName, self.gyroModel,None,7)
+        SimBase.dynPyProc.addModelToTask("opnavCameraTask",self.opnavCamera)
+        import pdb
+        pdb.set_trace()
 
         beaconInd = 21
         for beacon in self.beaconList:
@@ -142,8 +147,8 @@ class DynamicsClass():
         self.spiceObject.UTCCalInit = "11 Jul 2020 00:00:37.034"
         self.spiceObject.ModelTag = "SpiceInterfaceData"
         self.spiceObject.SPICEDataPath = bskPath + 'External/EphemerisData/'
-        self.spiceObject.OutputBufferCount = 10000
-        self.spiceObject.PlanetNames = spice_interface.StringVector(self.spicePlanetNames)
+        self.spiceObject.outputBufferCount = 10000
+        self.spiceObject.planetNames = spice_interface.StringVector(self.spicePlanetNames)
         print '\n' + 'SPICE DATA'
         print 'Spice cel bodies: ', self.spicePlanetNames
         # By default the SPICE object will use the solar system barycenter as the inertial origin
@@ -208,8 +213,8 @@ class DynamicsClass():
         PMatrix[0 * 3 + 0] = PMatrix[1 * 3 + 1] = PMatrix[2 * 3 + 2] = senNoiseStd
 
         errorBounds = [1e6] * 3
-        self.starTracker.walkBounds = sim_model.DoubleVector(errorBounds)
-        self.starTracker.PMatrix = sim_model.DoubleVector(PMatrix)
+        self.starTracker.walkBounds = np.array(errorBounds)
+        self.starTracker.PMatrix = np.array(PMatrix).reshape(3,3)
 
     def AddGyro(self):
         self.gyroModel = imu_sensor.ImuSensor()
@@ -234,10 +239,19 @@ class DynamicsClass():
         PMatrixAccel = [0.0] * 3 * 3
         errorBoundsAccel = [1e6] * 3
         
-        self.gyroModel.PMatrixGyro = sim_model.DoubleVector(PMatrixGyro)
-        self.gyroModel.walkBoundsGyro = sim_model.DoubleVector(errorBoundsGyro)
-        self.gyroModel.PMatrixAccel = sim_model.DoubleVector(PMatrixAccel)
-        self.gyroModel.walkBoundsAccel = sim_model.DoubleVector(errorBoundsAccel)
+        self.gyroModel.PMatrixGyro = np.array(PMatrixGyro).reshape(3,3)
+        self.gyroModel.walkBoundsGyro = np.array(errorBoundsGyro)
+        self.gyroModel.PMatrixAccel = np.array(PMatrixAccel).reshape(3,3)
+        self.gyroModel.walkBoundsAccel = np.array(errorBoundsAccel)
+
+    def AddOpnavCamera(self):
+        self.opnavCamera = opnavCamera.opnavCamera("opnavCamera")
+        import pdb
+        pdb.set_trace()
+        self.opnavCamera.ModelTag = "opnavCamera"
+        self.opnavCamera.InputStateMsg = self.scObject.scStateOutMsgName
+        self.opnavCamera.OutputDataMsg = "opnavCameraOutputMsg"
+
 
     # Global call to initialize every module
     def InitAllDynObjects(self):
@@ -249,4 +263,6 @@ class DynamicsClass():
         self.SetSRPModel()
         self.SetBeacons()
         self.AddStarTracker()
+        self.AddOpnavCamera()
         self.AddGyro()
+
