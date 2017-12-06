@@ -9,6 +9,7 @@ bskName = 'Basilisk'
 bskPath = '../..' + '/' + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
+sys.path.append('../dinoModels/SimCode/opnavCamera/')
 
 
 import BSK_plotting as BSKPlt
@@ -24,6 +25,8 @@ except ImportError:
     import Basilisk.utilities.orbitalMotion as om
     import Basilisk.utilities.RigidBodyKinematics as rbk
     from Basilisk.fswAlgorithms import *
+
+import opnavCamera
 
 # ------------------------------------- DATA LOGGING ------------------------------------------------------ #
 
@@ -64,8 +67,8 @@ def pull_DynCelestialOutputs(TheDynSim):
     r_mars = TheDynSim.pullMessageLogData(TheDynSim.DynClass.marsGravBody.bodyInMsgName + '.PositionVector', range(3))
     r_moon = TheDynSim.pullMessageLogData(TheDynSim.DynClass.moonGravBody.bodyInMsgName + '.PositionVector', range(3))
     r_beacons = []
-    for ind in range(0,len(TheDynSim.DynClass.beaconList)):
-        r_beacons.append(TheDynSim.pullMessageLogData(TheDynSim.DynClass.beaconList[ind].scStateOutMsgName + '.r_BN_N', range(3)))
+#    for ind in range(0,len(TheDynSim.DynClass.beaconList)):
+#        r_beacons.append(TheDynSim.pullMessageLogData(TheDynSim.DynClass.beaconList[ind].scStateOutMsgName + '.r_BN_N', range(3)))
 
     # Print Dyn Celestial Outputs
     print '\n\n'
@@ -101,7 +104,7 @@ def pull_DynCelestialOutputs(TheDynSim):
         'moon': [r_moon, 'cyan'],
         'earth': [r_earth, 'dodgerblue'],
         'mars': [r_mars, 'r'],
-        'r_beacon_0': [r_beacons[0], 'g'],
+#        'r_beacon_0': [r_beacons[0], 'g'],
         # 'r_beacon_1': [r_beacons[1], 'g'],
         # 'r_beacon_2': [r_beacons[2], 'g'],
         # 'r_beacon_3': [r_beacons[3], 'g'],
@@ -287,7 +290,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     """
     # Log data for post-processing and plotting
     #   Set length of simulation in nanoseconds from the simulation start.
-    simulationTime = mc.sec2nano(139643.532)
+    simulationTime = mc.sec2nano(10)
     #   Set the number of data points to be logged, and therefore the sampling frequency
     numDataPoints = 100000
     samplingTime = simulationTime / (numDataPoints - 1)
@@ -342,9 +345,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     ephemFile.close()
 
-
-
-
     # Configure a simulation stop time time and execute the simulation run
     TheDynSim.ConfigureStopTime(simulationTime)
     TheDynSim.ExecuteSimulation()
@@ -353,6 +353,72 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     pull_DynOutputs(TheDynSim)
     pull_senseOutputs(TheDynSim)
     pull_DynCelestialOutputs(TheDynSim)
+
+    ##  Post-Process sim data using camera, image processing, batch filter DINO modules
+
+
+
+    ###############################################################################
+    #
+    #       Pull in canned QE and Transmission curves from DINO C-REx files
+    #
+    ###############################################################################
+
+    # load tranmission curve for Canon 20D
+    _20D = np.load('../dinoModels/SimCode/opnavCamera/tc/20D.npz')
+    tc = {}
+    tc['lambda'] = _20D['x']
+    tc['throughput'] = _20D['y']
+
+    # load QE curve for Hubble Space Telecope Advanced Camera for Surveys SITe CCD
+    ACS = np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz')
+    qe = {}
+    qe['lambda'] = ACS['x']
+    qe['throughput'] = ACS['y']
+
+    ###############################################################################
+    #
+    #       Initialize camera
+    #
+    ###############################################################################
+    import bodies as bod
+    from constants import au
+    bod.earth.state = np.array([au, 0, 0, 0, 0, 0])
+    bod.luna.state = bod.earth.state + 250000 * np.array([0, 1, 0, 0, 0, 0])
+    scState = bod.earth.state - 250000 * np.array([1, 0, 0, 0, 0, 0])
+    scDCM = np.identity(3)
+
+    bodies = [bod.earth, bod.luna]
+    takeImage = 0
+
+    # create camera with no stars in it for tests that don't need them
+    # They will run significantly faster without them.
+    cam = opnavCamera.camera(
+        0.019968,  # detector_height
+        0.019968,  # detector_width
+        0.05,  # focal_length
+        512,  # resolution_height
+        512,  # resolution_width
+        np.identity(3),  # body2cameraDCM
+        1000,  # maximum magnitude
+        -1000,  # minimum magnitude (for debugging)
+        qe,
+        tc,
+        1,
+        0.01 ** 2,  # effective area in m^2
+        100,  # dark current in electrons per second
+        100,  # std for read noise in electrons
+        1000,  # bin size
+        2 ** 32,  # max bin depth
+        1,
+        0.01,  # simulation timestep
+        scState,  # position state of s/c
+        scDCM,  # intertal 2 body DCM for s/c
+        bodies,  # bodies to track in images
+        takeImage,  # takeImage message
+        db='../dinoModels/SimCode/opnavCamera/db/tycho.db'  # stellar database
+    )
+
     plt.show()
 
 def attFilter_dynScenario(TheDynSim):

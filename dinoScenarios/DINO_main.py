@@ -29,11 +29,15 @@ class DINO_DynSim(SimulationBaseClass.SimBaseClass):
         self.dynProc = self.CreateNewProcess(self.DynamicsProcessName)
         self.fswProc = self.CreateNewProcess(self.FSWProcessName)
         self.fswPyProc = self.CreateNewPythonProcess(self.FSWPyProcessName)
+#        self.dynPyProc = self.CreateNewPythonProcess(self.DynPyProcessName)
 
         #   Create SysInterfaces for each process (jesus)
         self.dyn2fswInterface = sim_model.SysInterface()
         self.dyn2pyFswInterface = sim_model.SysInterface()
         self.fsw2pyFswInterface = sim_model.SysInterface()
+        self.dyn2dynPyInterface = sim_model.SysInterface()
+        self.dyn2dynPyInterface.addNewInterface(
+            self.DynPyProcessName, self.DynamicsProcessName)
         self.dyn2fswInterface.addNewInterface(self.DynamicsProcessName,self.FSWProcessName)
         self.dyn2pyFswInterface.addNewInterface(self.DynamicsProcessName, self.FSWPyProcessName)
         self.fsw2pyFswInterface.addNewInterface(self.FSWPyProcessName, self.FSWPyProcessName)
@@ -43,10 +47,8 @@ class DINO_DynSim(SimulationBaseClass.SimBaseClass):
         self.fswPyProc.addInterfaceRef(self.dyn2pyFswInterface)
         self.fswPyProc.addInterfaceRef(self.fsw2pyFswInterface)
 
-        self.dyn2dynPyInterface = sim_model.SysInterface()
-        self.dyn2dynPyInterface.addNewInterface(
-            self.DynPyProcessName, self.DynamicsProcessName)
-        self.dynPyProc.addInterfaceRef(self.dyn2dynPyInterface)
+
+ #       self.dynPyProc.addInterfaceRef(self.dyn2dynPyInterface)
         # Crate sim subclasses
         self.DynClass = DINO_DKE.DynamicsClass(self)
         self.FSWClass = DINO_FSW.FSWClass(self)

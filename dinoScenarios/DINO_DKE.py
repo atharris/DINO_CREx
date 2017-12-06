@@ -44,7 +44,7 @@ class DynamicsClass():
 
         # Create tasks
         SimBase.dynProc.addTask(SimBase.CreateNewTask(self.taskName, self.taskTimeStep))
-        SimBase.dynPyProc.createPythonTask("opnavCameraTask", self.taskTimeStep,True, 30)
+        #SimBase.dynPyProc.createPythonTask("opnavCameraTask", self.taskTimeStep,True, 30)
 
         # Instantiate Dyn modules as objects
         self.scObject = spacecraftPlus.SpacecraftPlus()
@@ -72,10 +72,7 @@ class DynamicsClass():
         SimBase.AddModelToTask(self.taskName, self.srpDynEffector, None, 18)
         SimBase.AddModelToTask(self.taskName, self.starTracker,None, 8)
         SimBase.AddModelToTask(self.taskName, self.gyroModel,None,7)
-        SimBase.dynPyProc.addModelToTask("opnavCameraTask",self.opnavCamera)
-        import pdb
-        pdb.set_trace()
-
+        #SimBase.dynPyProc.addModelToTask("opnavCameraTask",self.opnavCamera)
         beaconInd = 21
 #        for beacon in self.beaconList:
 #            SimBase.AddModelToTask(self.taskName, beacon, None, beaconInd)
@@ -256,8 +253,6 @@ class DynamicsClass():
 
     def AddOpnavCamera(self):
         self.opnavCamera = opnavCamera.opnavCamera("opnavCamera")
-        import pdb
-        pdb.set_trace()
         self.opnavCamera.ModelTag = "opnavCamera"
         self.opnavCamera.InputStateMsg = self.scObject.scStateOutMsgName
         self.opnavCamera.OutputDataMsg = "opnavCameraOutputMsg"
@@ -273,6 +268,6 @@ class DynamicsClass():
         self.SetSRPModel()
         #self.SetBeacons()
         self.AddStarTracker()
-        self.AddOpnavCamera()
+        #self.AddOpnavCamera()
         self.AddGyro()
 

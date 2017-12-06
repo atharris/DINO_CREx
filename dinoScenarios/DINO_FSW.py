@@ -17,6 +17,7 @@ except ImportError:
     import Basilisk.utilities.macros as mc
     from Basilisk.fswAlgorithms import ephem_difference, ephem_nav_converter
 
+import AttitudeFilter as aekf
 
 class FSWClass():
     def __init__(self, SimBase):
