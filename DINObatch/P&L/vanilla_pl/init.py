@@ -192,7 +192,7 @@ def main():
     extras['SRP'] = 0.3**2/14. * 149597870.**2 * 1358. / 299792458. / 1000. # turboprop document Eq (64)
 
     # coefficient of reflectivity
-    extras['cR'] = 1
+    extras['cR'] = 100.
 
     # number of observations per beacon until moving to the next
     extras['repeat_obs'] = 1
@@ -293,8 +293,8 @@ def main():
     covBar[5, 5] = .1**2
 
     # add uncertainty to the IC
-    initialPositionError = 1000 * np.divide(IC[0:3], norm(IC[0:3]))
-    initialVelocityError = 0.01 * np.divide(IC[3:6], norm(IC[3:6]))
+    initialPositionError = 1000 * np.divide(IC[0:3], np.linalg.norm(IC[0:3]))
+    initialVelocityError = 0.01 * np.divide(IC[3:6], np.linalg.norm(IC[3:6]))
 
     IC[0:6] += np.append(initialPositionError, initialVelocityError)
 

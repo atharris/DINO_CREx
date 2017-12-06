@@ -342,7 +342,7 @@ def run_batch( input ) :
   extraData['prefit residuals']   = prefits
   extraData['postfit residuals']  = postfits
   extraData['postfit changes']    = postfitsDelta
-  extraData['stateDevHat']        = extras['x_hat_0']
+  extraData['stateDevHat']        = stateDevHat
   extraData['anomaly_detected']   = [extras['anomaly'], extras['anomaly_num']]
 
 

@@ -69,32 +69,32 @@ def main() :
         os.makedirs(saveDir)
 
     nominal_path = dirIt+'/nominal_data.pkl'
-    debug_path   = dirIt+'/debug_data.pkl'
+    SRP_test_path   = dirIt+'/SRP_test_data.pkl'
 
     nominal_vanilla_data_path = path + '/vanilla_pl/' + nominal_path
     nominal_vanilla_file      = open( nominal_vanilla_data_path, 'rb' )
     nominal_vanilla           = pickle.load( nominal_vanilla_file )
     nominal_vanilla_file.close()
 
-    true_ephem = nominal_vanilla['true_ephem']
+    trueEphemeris = nominal_vanilla['trueEphemeris']
     est_states = nominal_vanilla['states']
-    covar_vanilla = np.array([[np.sum(nominal_vanilla['P_array'][0:3,0:3]), 0.], [0.,np.sum(nominal_vanilla['P_array'][3:6,3:6]) ]])
-    t_span     = nominal_vanilla['t_span']
+    covar_vanilla = np.array([[np.sum(nominal_vanilla['covArray'][0:3,0:3]), 0.], [0.,np.sum(nominal_vanilla['covArray'][3:6,3:6]) ]])
+    timeSpan     = nominal_vanilla['timeSpan']
     
     posErrNormNmnlVanilla, velErrNormNmnlVanilla = \
-        errorNorm( true_ephem['spacecraft'], est_states )
+        errorNorm( trueEphemeris['spacecraft'], est_states )
 
-    debug_vanilla_data_path = path + '/vanilla_pl/' + debug_path
-    debug_vanilla_file      = open( debug_vanilla_data_path, 'rb' )
-    debug_vanilla           = pickle.load( debug_vanilla_file )
-    debug_vanilla_file.close()
+    SRP_test_vanilla_data_path = path + '/vanilla_pl/' + SRP_test_path
+    SRP_test_vanilla_file      = open( SRP_test_vanilla_data_path, 'rb' )
+    SRP_test_vanilla           = pickle.load( SRP_test_vanilla_file )
+    SRP_test_vanilla_file.close()
 
-    true_ephem = debug_vanilla['true_ephem']
-    est_states = debug_vanilla['states']
-    covar_vanilla_debug = np.array([[np.sum(debug_vanilla['P_array'][0:3,0:3]), 0.], [0.,np.sum(debug_vanilla['P_array'][3:6,3:6]) ]])
+    trueEphemeris = SRP_test_vanilla['trueEphemeris']
+    est_states = SRP_test_vanilla['states']
+    covar_vanilla_SRP_test = np.array([[np.sum(SRP_test_vanilla['covArray'][0:3,0:3]), 0.], [0.,np.sum(SRP_test_vanilla['covArray'][3:6,3:6]) ]])
     
     posErrNormDbgVanilla, velErrNormDbgVanilla = \
-        errorNorm( true_ephem['spacecraft'], est_states )
+        errorNorm( trueEphemeris['spacecraft'], est_states )
 
 
     nominal_unmodeled_acc_data_path = path + '/unmodeled_acc/' + nominal_path
@@ -102,24 +102,24 @@ def main() :
     nominal_unmodeled_acc           = pickle.load( nominal_unmodeled_acc_file )
     nominal_unmodeled_acc_file.close()
 
-    true_ephem = nominal_unmodeled_acc['true_ephem']
+    trueEphemeris = nominal_unmodeled_acc['trueEphemeris']
     est_states = nominal_unmodeled_acc['states']
-    covar_unmodeledAcc = np.array([[np.sum(nominal_unmodeled_acc['P_array'][0:3,0:3]), 0.], [0.,np.sum(nominal_unmodeled_acc['P_array'][3:6,3:6]) ]])
+    covar_unmodeledAcc = np.array([[np.sum(nominal_unmodeled_acc['covArray'][0:3,0:3]), 0.], [0.,np.sum(nominal_unmodeled_acc['covArray'][3:6,3:6]) ]])
     
     posErrNormNmnlUnmodeledAcc, velErrNormNmnlUnmodeledAcc = \
-        errorNorm( true_ephem['spacecraft'], est_states )
+        errorNorm( trueEphemeris['spacecraft'], est_states )
 
-    debug_unmodeled_acc_data_path = path + '/unmodeled_acc/' + debug_path
-    debug_unmodeled_acc_file      = open( debug_unmodeled_acc_data_path, 'rb' )
-    debug_unmodeled_acc           = pickle.load( debug_unmodeled_acc_file )
-    debug_unmodeled_acc_file.close()
+    SRP_test_unmodeled_acc_data_path = path + '/unmodeled_acc/' + SRP_test_path
+    SRP_test_unmodeled_acc_file      = open( SRP_test_unmodeled_acc_data_path, 'rb' )
+    SRP_test_unmodeled_acc           = pickle.load( SRP_test_unmodeled_acc_file )
+    SRP_test_unmodeled_acc_file.close()
 
-    true_ephem = debug_unmodeled_acc['true_ephem']
-    est_states = debug_unmodeled_acc['states']
-    covar_unmodeledAcc_debug = np.array([[np.sum(debug_unmodeled_acc['P_array'][0:3,0:3]), 0.], [0.,np.sum(debug_unmodeled_acc['P_array'][3:6,3:6]) ]])
+    trueEphemeris = SRP_test_unmodeled_acc['trueEphemeris']
+    est_states = SRP_test_unmodeled_acc['states']
+    covar_unmodeledAcc_SRP_test = np.array([[np.sum(SRP_test_unmodeled_acc['covArray'][0:3,0:3]), 0.], [0.,np.sum(SRP_test_unmodeled_acc['covArray'][3:6,3:6]) ]])
 
     posErrNormDbgUnmodeledAcc, velErrNormDbgUnmodeledAcc = \
-        errorNorm( true_ephem['spacecraft'], est_states )
+        errorNorm( trueEphemeris['spacecraft'], est_states )
 
     ###########################################################
     # 
@@ -127,11 +127,11 @@ def main() :
     #
     ###########################################################
 
-    refState_nominal = nominal_vanilla['ref_state']
+    refState_nominal = nominal_vanilla['referenceState']
 
-    refState_debug   = debug_vanilla['ref_state']
+    refState_SRP_test   = SRP_test_vanilla['referenceState']
 
-    refDifference    = refState_nominal.T - refState_debug.T
+    refDifference    = refState_nominal.T - refState_SRP_test.T
 
     ###########################################################
     # 
@@ -139,15 +139,15 @@ def main() :
     #
     ###########################################################
    
-    debug_abs_residual   = np.zeros( (2,len(t_span)) ) # R[pos,vel] C[length]
-    nominal_abs_residual = np.zeros( (2,len(t_span)) ) # R[pos,vel] C[length]
-    debug_rel_residual   = np.zeros( (2,len(t_span)) ) # R[pos,vel] C[length]
-    nominal_rel_residual = np.zeros( (2,len(t_span)) ) # R[pos,vel] C[length]
+    SRP_test_abs_residual   = np.zeros( (2,len(timeSpan)) ) # R[pos,vel] C[length]
+    nominal_abs_residual = np.zeros( (2,len(timeSpan)) ) # R[pos,vel] C[length]
+    SRP_test_rel_residual   = np.zeros( (2,len(timeSpan)) ) # R[pos,vel] C[length]
+    nominal_rel_residual = np.zeros( (2,len(timeSpan)) ) # R[pos,vel] C[length]
 
-    debug_rel_residual[0,:] = np.divide(\
+    SRP_test_rel_residual[0,:] = np.divide(\
                           np.array([posErrNormDbgVanilla-posErrNormDbgUnmodeledAcc]),\
                           np.array(posErrNormDbgVanilla))
-    debug_rel_residual[1,:] = np.divide(\
+    SRP_test_rel_residual[1,:] = np.divide(\
                           np.array([velErrNormDbgVanilla-velErrNormDbgUnmodeledAcc]),\
                           np.array(velErrNormDbgVanilla))
 
@@ -158,8 +158,8 @@ def main() :
                           np.array([velErrNormNmnlVanilla-velErrNormNmnlUnmodeledAcc]),\
                           np.array(velErrNormNmnlVanilla))
 
-    debug_abs_residual[0,:] = np.array([posErrNormDbgVanilla-posErrNormDbgUnmodeledAcc])
-    debug_abs_residual[1,:] = np.array([velErrNormDbgVanilla-velErrNormDbgUnmodeledAcc])
+    SRP_test_abs_residual[0,:] = np.array([posErrNormDbgVanilla-posErrNormDbgUnmodeledAcc])
+    SRP_test_abs_residual[1,:] = np.array([velErrNormDbgVanilla-velErrNormDbgUnmodeledAcc])
 
     nominal_abs_residual[0,:] = np.array([posErrNormNmnlVanilla-posErrNormNmnlUnmodeledAcc])
     nominal_abs_residual[1,:] = np.array([velErrNormNmnlVanilla-velErrNormNmnlUnmodeledAcc])
@@ -173,12 +173,12 @@ def main() :
 
 
     plt.subplot(121)
-    plt.plot(t_span/t_span[-1],posErrNormDbgUnmodeledAcc, 'b', label='W/O SRP EOM')
-    # plt.plot(t_span / t_span[-1], posErrNormDbgUnmodeledAcc + 0.1*np.sqrt(covar_unmodeledAcc_debug[0,0]**2), 'b--')
-    # plt.plot(t_span / t_span[-1], posErrNormDbgUnmodeledAcc - 0.1*np.sqrt(covar_unmodeledAcc_debug[0,0]**2), 'b--')
-    plt.plot(t_span/t_span[-1],posErrNormNmnlUnmodeledAcc, 'r', label='With SRP EOM')
-    # plt.plot(t_span / t_span[-1], posErrNormNmnlUnmodeledAcc + 0.1*np.sqrt(covar_unmodeledAcc[0,0]**2), 'r--')
-    # plt.plot(t_span / t_span[-1], posErrNormNmnlUnmodeledAcc - 0.1*np.sqrt(covar_unmodeledAcc[0,0]**2), 'r--')
+    plt.plot(timeSpan/timeSpan[-1],posErrNormDbgUnmodeledAcc, 'b', label='W/O SRP EOM')
+    # plt.plot(timeSpan / timeSpan[-1], posErrNormDbgUnmodeledAcc + 0.1*np.sqrt(covar_unmodeledAcc_SRP_test[0,0]**2), 'b--')
+    # plt.plot(timeSpan / timeSpan[-1], posErrNormDbgUnmodeledAcc - 0.1*np.sqrt(covar_unmodeledAcc_SRP_test[0,0]**2), 'b--')
+    plt.plot(timeSpan/timeSpan[-1],posErrNormNmnlUnmodeledAcc, 'r', label='With SRP EOM')
+    # plt.plot(timeSpan / timeSpan[-1], posErrNormNmnlUnmodeledAcc + 0.1*np.sqrt(covar_unmodeledAcc[0,0]**2), 'r--')
+    # plt.plot(timeSpan / timeSpan[-1], posErrNormNmnlUnmodeledAcc - 0.1*np.sqrt(covar_unmodeledAcc[0,0]**2), 'r--')
     # plt.ylabel('N/A')
     #plt.yticks(np.linspace(PosCovarNormMax.max(), PosCovarNormMin.min(), 12))
     plt.xticks([])
@@ -189,12 +189,12 @@ def main() :
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(122)
-    plt.plot(t_span/t_span[-1],velErrNormDbgUnmodeledAcc, 'b', label='W/O SRP EOM')
-    # plt.plot(t_span / t_span[-1], velErrNormDbgUnmodeledAcc + 0.1*np.sqrt(covar_unmodeledAcc_debug[1,1]**2), 'b--')
-    # plt.plot(t_span / t_span[-1], velErrNormDbgUnmodeledAcc - 0.1*np.sqrt(covar_unmodeledAcc_debug[1,1]**2), 'b--')
-    plt.plot(t_span/t_span[-1],velErrNormNmnlUnmodeledAcc, 'r', label='With SRP EOM')
-    # plt.plot(t_span / t_span[-1], velErrNormNmnlUnmodeledAcc + 0.1*np.sqrt(covar_unmodeledAcc[1,1]**2), 'r--')
-    # plt.plot(t_span / t_span[-1], velErrNormNmnlUnmodeledAcc - 0.1*np.sqrt(covar_unmodeledAcc[1,1]**2), 'r--')
+    plt.plot(timeSpan/timeSpan[-1],velErrNormDbgUnmodeledAcc, 'b', label='W/O SRP EOM')
+    # plt.plot(timeSpan / timeSpan[-1], velErrNormDbgUnmodeledAcc + 0.1*np.sqrt(covar_unmodeledAcc_SRP_test[1,1]**2), 'b--')
+    # plt.plot(timeSpan / timeSpan[-1], velErrNormDbgUnmodeledAcc - 0.1*np.sqrt(covar_unmodeledAcc_SRP_test[1,1]**2), 'b--')
+    plt.plot(timeSpan/timeSpan[-1],velErrNormNmnlUnmodeledAcc, 'r', label='With SRP EOM')
+    # plt.plot(timeSpan / timeSpan[-1], velErrNormNmnlUnmodeledAcc + 0.1*np.sqrt(covar_unmodeledAcc[1,1]**2), 'r--')
+    # plt.plot(timeSpan / timeSpan[-1], velErrNormNmnlUnmodeledAcc - 0.1*np.sqrt(covar_unmodeledAcc[1,1]**2), 'r--')
     #plt.ylabel('km/s')
     #plt.yticks(np.linspace(VelCovarNormMax.max(), VelCovarNormMin.min(), 12))
     plt.xticks([])
@@ -214,12 +214,12 @@ def main() :
 
 
     plt.subplot(121)
-    plt.plot(t_span/t_span[-1],posErrNormDbgVanilla, 'b', label='W/O SRP EOM')
-    # plt.plot(t_span / t_span[-1], posErrNormDbgVanilla + 0.1*np.sqrt(covar_vanilla_debug[0,0]**2), 'b--')
-    # plt.plot(t_span / t_span[-1], posErrNormDbgVanilla - 0.1*np.sqrt(covar_vanilla_debug[0,0]**2), 'b--')
-    plt.plot(t_span/t_span[-1],posErrNormNmnlVanilla, 'r', label='With SRP EOM')
-    # plt.plot(t_span / t_span[-1], posErrNormNmnlVanilla + 0.1*np.sqrt(covar_vanilla[0,0]**2), 'r--')
-    # plt.plot(t_span / t_span[-1], posErrNormNmnlVanilla - 0.1*np.sqrt(covar_vanilla[0,0]**2), 'r--')
+    plt.plot(timeSpan/timeSpan[-1],posErrNormDbgVanilla, 'b', label='W/O SRP EOM')
+    # plt.plot(timeSpan / timeSpan[-1], posErrNormDbgVanilla + 0.1*np.sqrt(covar_vanilla_SRP_test[0,0]**2), 'b--')
+    # plt.plot(timeSpan / timeSpan[-1], posErrNormDbgVanilla - 0.1*np.sqrt(covar_vanilla_SRP_test[0,0]**2), 'b--')
+    plt.plot(timeSpan/timeSpan[-1],posErrNormNmnlVanilla, 'r', label='With SRP EOM')
+    # plt.plot(timeSpan / timeSpan[-1], posErrNormNmnlVanilla + 0.1*np.sqrt(covar_vanilla[0,0]**2), 'r--')
+    # plt.plot(timeSpan / timeSpan[-1], posErrNormNmnlVanilla - 0.1*np.sqrt(covar_vanilla[0,0]**2), 'r--')
     # plt.ylabel('N/A')
     #plt.yticks(np.linspace(PosCovarNormMax.max(), PosCovarNormMin.min(), 12))
     plt.xticks([])
@@ -230,12 +230,12 @@ def main() :
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(122)
-    plt.plot(t_span/t_span[-1],velErrNormDbgVanilla, 'b', label='W/O SRP EOM')
-    # plt.plot(t_span / t_span[-1], velErrNormDbgVanilla + 0.1*np.sqrt(covar_vanilla_debug[1,1]**2), 'b--')
-    # plt.plot(t_span / t_span[-1], velErrNormDbgVanilla - 0.1*np.sqrt(covar_vanilla_debug[1,1]**2), 'b--')
-    plt.plot(t_span/t_span[-1],velErrNormNmnlVanilla, 'r', label='With SRP EOM')
-    # plt.plot(t_span / t_span[-1], velErrNormNmnlVanilla + 0.1*np.sqrt(covar_vanilla[1,1]**2), 'r--')
-    # plt.plot(t_span / t_span[-1], velErrNormNmnlVanilla - 0.1*np.sqrt(covar_vanilla[1,1]**2), 'r--')
+    plt.plot(timeSpan/timeSpan[-1],velErrNormDbgVanilla, 'b', label='W/O SRP EOM')
+    # plt.plot(timeSpan / timeSpan[-1], velErrNormDbgVanilla + 0.1*np.sqrt(covar_vanilla_SRP_test[1,1]**2), 'b--')
+    # plt.plot(timeSpan / timeSpan[-1], velErrNormDbgVanilla - 0.1*np.sqrt(covar_vanilla_SRP_test[1,1]**2), 'b--')
+    plt.plot(timeSpan/timeSpan[-1],velErrNormNmnlVanilla, 'r', label='With SRP EOM')
+    # plt.plot(timeSpan / timeSpan[-1], velErrNormNmnlVanilla + 0.1*np.sqrt(covar_vanilla[1,1]**2), 'r--')
+    # plt.plot(timeSpan / timeSpan[-1], velErrNormNmnlVanilla - 0.1*np.sqrt(covar_vanilla[1,1]**2), 'r--')
     #plt.ylabel('km/s')
     #plt.yticks(np.linspace(VelCovarNormMax.max(), VelCovarNormMin.min(), 12))
     plt.xticks([])
@@ -254,8 +254,8 @@ def main() :
     ####################################################################################
 
     plt.subplot(121)
-    plt.plot(t_span/t_span[-1],np.abs(debug_rel_residual[0,:]), 'b', label='W/O SRP EOM')
-    plt.plot(t_span/t_span[-1],np.abs(nominal_rel_residual[0,:]), 'r', label='With SRP EOM')
+    plt.plot(timeSpan/timeSpan[-1],(SRP_test_rel_residual[0,:]), 'b', label='W/O SRP EOM')
+    plt.plot(timeSpan/timeSpan[-1],(nominal_rel_residual[0,:]), 'r', label='With SRP EOM')
     plt.ylabel('N/A')
     #plt.yticks(np.linspace(PosCovarNormMax.max(), PosCovarNormMin.min(), 12))
     plt.xticks([])
@@ -266,8 +266,8 @@ def main() :
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(122)
-    plt.plot(t_span/t_span[-1],np.abs(debug_rel_residual[1,:]), 'b', label='W/O SRP EOM')
-    plt.plot(t_span/t_span[-1],np.abs(nominal_rel_residual[1,:]), 'r', label='With SRP EOM')
+    plt.plot(timeSpan/timeSpan[-1],(SRP_test_rel_residual[1,:]), 'b', label='W/O SRP EOM')
+    plt.plot(timeSpan/timeSpan[-1],(nominal_rel_residual[1,:]), 'r', label='With SRP EOM')
     #plt.ylabel('km/s')
     #plt.yticks(np.linspace(VelCovarNormMax.max(), VelCovarNormMin.min(), 12))
     plt.xticks([])
@@ -286,8 +286,8 @@ def main() :
     ####################################################################################
 
     plt.subplot(121)
-    plt.plot(t_span/t_span[-1],np.abs(debug_abs_residual[0,:]), 'b', label='W/O SRP EOM')
-    plt.plot(t_span/t_span[-1],np.abs(nominal_abs_residual[0,:]), 'r', label='With SRP EOM')
+    plt.plot(timeSpan/timeSpan[-1],(SRP_test_abs_residual[0,:]), 'b', label='W/O SRP EOM')
+    plt.plot(timeSpan/timeSpan[-1],(nominal_abs_residual[0,:]), 'r', label='With SRP EOM')
     plt.ylabel('km')
     #plt.yticks(np.linspace(PosCovarNormMax.max(), PosCovarNormMin.min(), 12))
     plt.xticks([])
@@ -298,8 +298,8 @@ def main() :
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(122)
-    plt.plot(t_span/t_span[-1],np.abs(debug_abs_residual[1,:]), 'b', label='W/O SRP EOM')
-    plt.plot(t_span/t_span[-1],np.abs(nominal_abs_residual[1,:]), 'r', label='With SRP EOM')
+    plt.plot(timeSpan/timeSpan[-1],(SRP_test_abs_residual[1,:]), 'b', label='W/O SRP EOM')
+    plt.plot(timeSpan/timeSpan[-1],(nominal_abs_residual[1,:]), 'r', label='With SRP EOM')
     plt.ylabel('km/s')
     #plt.yticks(np.linspace(VelCovarNormMax.max(), VelCovarNormMin.min(), 12))
     plt.xticks([])
@@ -318,9 +318,9 @@ def main() :
     ####################################################################################
 
     plt.subplot(121)
-    plt.plot(t_span/t_span[-1],refDifference[0,:], 'b', label='X')
-    plt.plot(t_span/t_span[-1],refDifference[1,:], 'r', label='Y')
-    plt.plot(t_span/t_span[-1],refDifference[2,:], 'g', label='Z')
+    plt.plot(timeSpan/timeSpan[-1],refDifference[0,:], 'b', label='X')
+    plt.plot(timeSpan/timeSpan[-1],refDifference[1,:], 'r', label='Y')
+    plt.plot(timeSpan/timeSpan[-1],refDifference[2,:], 'g', label='Z')
     plt.ylabel('km')
     #plt.yticks(np.linspace(PosCovarNormMax.max(), PosCovarNormMin.min(), 12))
     plt.xticks([])
@@ -331,9 +331,9 @@ def main() :
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(122)
-    plt.plot(t_span/t_span[-1],refDifference[3,:], 'b', label='$\dot{X}$')
-    plt.plot(t_span/t_span[-1],refDifference[4,:], 'r', label='$\dot{Y}$')
-    plt.plot(t_span/t_span[-1],refDifference[5,:], 'g', label='$\dot{Z}$')
+    plt.plot(timeSpan/timeSpan[-1],refDifference[3,:], 'b', label='$\dot{X}$')
+    plt.plot(timeSpan/timeSpan[-1],refDifference[4,:], 'r', label='$\dot{Y}$')
+    plt.plot(timeSpan/timeSpan[-1],refDifference[5,:], 'g', label='$\dot{Z}$')
     plt.ylabel('km/s')
     #plt.yticks(np.linspace(VelCovarNormMax.max(), VelCovarNormMin.min(), 12))
     plt.xticks([])
@@ -352,13 +352,13 @@ def main() :
     ####################################################################################
 
     plt.subplot(121)
-    plt.plot(t_span/t_span[-1],nominal_vanilla['states'][:,0], 'b', label='$X_{vanilla}$')
-    #plt.plot(t_span/t_span[-1],nominal_vanilla['states'][:,1], 'r', label='$Y_{vanilla}$')
-    #plt.plot(t_span/t_span[-1],nominal_vanilla['states'][:,2], 'g', label='$Z_{vanilla}$')
-    plt.plot(t_span/t_span[-1],nominal_unmodeled_acc['states'][:,0], 'b--', label='$X_{acc}$')
-    plt.plot(t_span/t_span[-1],true_ephem['spacecraft'][0,:], 'r--', label='$X_{truth}$')
-    #plt.plot(t_span/t_span[-1],nominal_unmodeled_acc['states'][:,1], 'r--', label='$Y_{acc}$')
-    #plt.plot(t_span/t_span[-1],nominal_unmodeled_acc['states'][:,2], 'g--', label='$Z_{acc}$')
+    plt.plot(timeSpan/timeSpan[-1],nominal_vanilla['states'][:,0], 'b', label='$X_{vanilla}$')
+    #plt.plot(timeSpan/timeSpan[-1],nominal_vanilla['states'][:,1], 'r', label='$Y_{vanilla}$')
+    #plt.plot(timeSpan/timeSpan[-1],nominal_vanilla['states'][:,2], 'g', label='$Z_{vanilla}$')
+    plt.plot(timeSpan/timeSpan[-1],nominal_unmodeled_acc['states'][:,0], 'b--', label='$X_{acc}$')
+    plt.plot(timeSpan/timeSpan[-1],trueEphemeris['spacecraft'][0,:], 'r--', label='$X_{truth}$')
+    #plt.plot(timeSpan/timeSpan[-1],nominal_unmodeled_acc['states'][:,1], 'r--', label='$Y_{acc}$')
+    #plt.plot(timeSpan/timeSpan[-1],nominal_unmodeled_acc['states'][:,2], 'g--', label='$Z_{acc}$')
     plt.ylabel('km')
     #plt.yticks(np.linspace(PosCovarNormMax.max(), PosCovarNormMin.min(), 12))
     plt.xticks([])
@@ -369,11 +369,11 @@ def main() :
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(122)
-    plt.plot(t_span/t_span[-1],nominal_vanilla['states'][:,3], 'b', label='$\dot{X}_{vanilla}$')
-    plt.plot(t_span/t_span[-1],nominal_unmodeled_acc['states'][:,3], 'b', label='$\dot{X}_{acc}$')
-    plt.plot(t_span/t_span[-1],true_ephem['spacecraft'][3,:], 'r--', label='$X_{truth}$')
-    #plt.plot(t_span/t_span[-1],refDifference[4,:], 'r', label='$\dot{Y}$')
-    #plt.plot(t_span/t_span[-1],refDifference[5,:], 'g', label='$\dot{Z}$')
+    plt.plot(timeSpan/timeSpan[-1],nominal_vanilla['states'][:,3], 'b', label='$\dot{X}_{vanilla}$')
+    plt.plot(timeSpan/timeSpan[-1],nominal_unmodeled_acc['states'][:,3], 'b', label='$\dot{X}_{acc}$')
+    plt.plot(timeSpan/timeSpan[-1],trueEphemeris['spacecraft'][3,:], 'r--', label='$X_{truth}$')
+    #plt.plot(timeSpan/timeSpan[-1],refDifference[4,:], 'r', label='$\dot{Y}$')
+    #plt.plot(timeSpan/timeSpan[-1],refDifference[5,:], 'g', label='$\dot{Z}$')
     plt.ylabel('km/s')
     #plt.yticks(np.linspace(VelCovarNormMax.max(), VelCovarNormMin.min(), 12))
     plt.xticks([])
@@ -395,26 +395,26 @@ def main() :
     #
     ############################################################
 
-    debug_rms   = np.zeros( (2,2) ) # R[pos,vel] C[vanilla,unmodeled]
+    SRP_test_rms   = np.zeros( (2,2) ) # R[pos,vel] C[vanilla,unmodeled]
     nominal_rms = np.zeros( (2,2) ) # R[pos,vel] C[vanilla,unmodeled]
 
-    debug_rms[0,:]   = np.array([rms(posErrNormDbgVanilla),rms(posErrNormDbgUnmodeledAcc)])
-    debug_rms[1,:]   = np.array([rms(velErrNormDbgVanilla),rms(velErrNormDbgUnmodeledAcc)])
+    SRP_test_rms[0,:]   = np.array([rms(posErrNormDbgVanilla),rms(posErrNormDbgUnmodeledAcc)])
+    SRP_test_rms[1,:]   = np.array([rms(velErrNormDbgVanilla),rms(velErrNormDbgUnmodeledAcc)])
 
     nominal_rms[0,:] = np.array([rms(posErrNormNmnlVanilla),rms(posErrNormNmnlUnmodeledAcc)])
     nominal_rms[1,:] = np.array([rms(velErrNormNmnlVanilla),rms(velErrNormNmnlUnmodeledAcc)])
 
-    print debug_rms
+    print SRP_test_rms
     print nominal_rms
 
     print 'Without SRP EOM, position vanilla/unmodeled'
-    print debug_rms[0,0]/debug_rms[0,1]
+    print SRP_test_rms[0,0]/SRP_test_rms[0,1]
 
     print 'With SRP EOM, position vanilla/unmodeled'
     print nominal_rms[0,0]/nominal_rms[0,1]
 
     print 'Without SRP EOM, velocity vanilla/unmodeled'
-    print debug_rms[0,0]/debug_rms[0,1]
+    print SRP_test_rms[0,0]/SRP_test_rms[0,1]
 
     print 'With SRP EOM, velocity vanilla/unmodeled'
     print nominal_rms[1,0]/nominal_rms[1,1]
