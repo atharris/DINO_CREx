@@ -5,3 +5,4 @@ dinoBuild/dinoModels/modules/
 *.idea
 *.png
 *.txt
+*.DS_Store
