@@ -10,6 +10,7 @@ bskPath = '../..' + '/' + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 sys.path.append('../dinoModels/SimCode/opnavCamera/')
+sys.path.append('../dinoModels/SimCode/opnavCamera/dependencies')
 
 
 import BSK_plotting as BSKPlt
@@ -26,7 +27,7 @@ except ImportError:
     import Basilisk.utilities.RigidBodyKinematics as rbk
     from Basilisk.fswAlgorithms import *
 
-import opnavCamera
+import camera
 
 # ------------------------------------- DATA LOGGING ------------------------------------------------------ #
 
@@ -392,19 +393,26 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     ###############################################################################
     import bodies as bod
     from constants import au
-    bod.earth.state = np.array([au, 0, 0, 0, 0, 0])
-    bod.luna.state = bod.earth.state + 250000 * np.array([0, 1, 0, 0, 0, 0])
-    scState = bod.earth.state - 250000 * np.array([1, 0, 0, 0, 0, 0])
-    scDCM = np.identity(3)
 
-    bodies = [bod.earth, bod.luna]
+    bod.earth.state = -1
+    bod.luna.state = -1
+    bod.mars.state = -1
+
+    # bod.earth.albedo = -1
+    # bod.luna.albedo = -1
+    # bod.mars.albedo = -1
+
+    scState = -1
+    scDCM = -1
+
+    bodies = [bod.earth, bod.luna, bod.mars]
     takeImage = 0
 
     # create camera with no stars in it for tests that don't need them
     # They will run significantly faster without them.
-    cam = opnavCamera.camera(
-        0.019968,  # detector_height
-        0.019968,  # detector_width
+    cam = camera.camera(
+        0.01,  # detector_height
+        0.01,  # detector_width
         0.05,  # focal_length
         512,  # resolution_height
         512,  # resolution_width
@@ -428,6 +436,79 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         db='../dinoModels/SimCode/opnavCamera/db/tycho.db'  # stellar database
     )
 
+    #this is spoofing the output of the nav exec
+    #telling the camera when to take an image.
+    takeImage = np.zeros(len(r_sc))
+    takeImage[100] = 1
+    takeImage[200] = 1
+    takeImage[300] = 1
+    takeImage[400] = 1
+
+    imgMap = []
+    imgTime = []
+    beaconPos = []
+    beaconID = [
+        bod.mars.name,
+        bod.luna.name,
+        bod.earth.name
+        ]
+    beaconRadius = [
+        bod.mars.r_eq,
+        bod.luna.r_eq,
+        bod.earth.r_eq
+        ]
+
+    cameraParam = {
+        'resolution': (cam.resolutionHeight,cam.resolutionWidth),
+        'focalLength': cam.focalLength,
+        'sensorSize': (cam.detectorHeight,cam.detectorWidth),
+        'FOV': (cam.angularHeight,cam.angularWidth),
+        'pixelSize': (cam.detectorHeight/cam.resolutionHeight,
+            cam.detectorWidth/cam.resolutionWidth)
+    }
+
+    lastTakeImage = 0
+    for i in range(0,len(r_sc)):
+        cam.scState = r_sc[i][1:4]
+        bod.earth.state = r_earth[i][1:4]
+        bod.luna.state = r_moon[i][1:4]
+        bod.mars.state = r_mars[i][1:4]
+        cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
+        cam.takeImage = takeImage[i]
+        cam.updateState()
+
+        if lastTakeImage: 
+            imgTime.append(r_sc[i][0])
+            beaconPos.append(
+                np.array(
+                    [
+                        bod.earth.state,
+                        bod.luna.state,
+                        bod.mars.state
+                    ]
+                )
+                )
+            imgMap.append(
+                cam.images[0].detectorArray.reshape(
+                    cam.resolutionWidth,
+                    cam.resolutionHeight
+                    )
+                )
+            cam.images = {}
+        lastTakeImage = cam.takeImage
+        #r_beacons
+
+    # beaconRadius = 
+
+    # imageMap
+
+
+    for i in range(0,len(imgMap)):
+        plt.figure()
+        plt.imshow(imgMap[i])
+
+    pdb.set_trace()
+    
     plt.show()
 
 def attFilter_dynScenario(TheDynSim):
