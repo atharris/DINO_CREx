@@ -403,18 +403,18 @@ def run_batch( input ) :
                             np.shape(observationDeviations)[1]])
 
   # Anomaly detection
-  for ii in range(np.shape(x_hat_array)[0]):
+  for ii in range(np.shape(stateErrorHatArray)[0]):
     for jj in range(np.shape(postfits)[1]):
-      if np.abs(postfits[ii,jj]) - 3*observation_uncertainty[jj, jj] > 0:
+      if np.abs(postfits[ii,jj]) - 3*observationUncertainty[jj, jj] > 0:
         extras['anomaly_num']+=1
         print 'Anomalous measurement detected at time ' , ii , 'on measurement type ', jj
 
   if extras['anomaly_num'] > extras['anomaly_threshold']:
     extras['anomaly'] = True
 
-  prefits = np.zeros([np.shape(x_hat_array)[0], np.shape(y)[1]])
-  for ii in range(1,np.shape(x_hat_array)[0]):
-    prefits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*(ii):2+2*(ii),:], x_bar_array[ii,:])
+  prefits = np.zeros([np.shape(stateErrorHatArray)[0], np.shape(observationDeviations)[1]])
+  for ii in range(1,np.shape(stateErrorHatArray)[0]):
+    prefits[ii,:] = observationDeviations[ii,:] - np.dot(H_tilde[0+2*(ii):2+2*(ii),:], x_bar_array[ii,:])
 
 
 
@@ -427,11 +427,11 @@ def run_batch( input ) :
   extra_data                      = {}
   extra_data['Y']                 = Y_obs
   extra_data['P_array']           = P_array
-  extra_data['x_hat_array']       = x_hat_array
+  extra_data['x_hat_array']       = stateErrorHatArray
   extra_data['prefit residuals']  = prefits
   extra_data['postfit residuals'] = postfits
   extra_data['postfit changes'] = postfitsDelta
-  extras['x_hat_0']               += x_hat
+  extras['x_hat_0']               += stateErrorHat
   extra_data['x_hat_0']           = extras['x_hat_0']
   extra_data['anomaly_detected']  = [extras['anomaly'], extras['anomaly_num']]
 
