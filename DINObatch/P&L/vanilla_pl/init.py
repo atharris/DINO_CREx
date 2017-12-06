@@ -53,9 +53,6 @@ import pdb
 ################################################################################
 
 # -------------------------------------------------------------------------------
-def norm(input):
-    norm = np.sqrt(sum(np.square(input)))
-    return norm
 
 def writingText(itr, referenceState, estimatedState, trueEphemeris, extraData, initialPositionError , initialVelocityError):
     # calculate the difference between the perturbed reference and true trajectories: reference state errors
