@@ -47,6 +47,7 @@ from beaconBinSPICE import getObs
 import pickle
 
 import pdb
+
 ################################################################################
 #                  S E C O N D A R Y     F U N C T I O N S:
 ################################################################################
@@ -219,7 +220,8 @@ def main():
 
     # Focal Length (mm)
     extras['FoL'] = 100.
-    extras['DCM_BI'] = np.eye(3)
+    angles = []
+    extras['DCM_BI']  = np.eye(3)
     extras['DCM_TVB'] = np.eye(3)
 
     # Camera resolution (pixels)
@@ -234,7 +236,7 @@ def main():
     extras['line_direction'] = 1.
 
     # Are we using the real dynamics for the ref or the trueData
-    extras['realData']= 'OFF'
+    extras['realData'] = 'OFF'
 
     # Add anomaly detection parameters
     extras['anomaly']= False
@@ -322,7 +324,7 @@ def main():
     ##################################################################################
         
     # observation inputs
-    observationInputs = (trueEphemeris, observationUncertainty, extras)
+    observationInputs = (trueEphemeris, observationUncertainty, angles, extras)
 
     # Get the observation data (dataObservations). This dictionary contains the SPICE data
     # from which values are calculated (key = 'SPICE'), the true observations before
@@ -360,7 +362,7 @@ def main():
         # data dictionary, a priori uncertainty, and the measurables' uncertainty,
         # as well as any extras
         filterInputs = (IC, phi0, timeSpan, filterObservations,\
-                         covBar, observationUncertainty, stateErrorBar, extras)
+                         covBar, observationUncertainty, stateErrorBar, angles, extras)
         # run filter function
         referenceState, estimatedState, extraData = run_batch(filterInputs)
         extras['oldPost'] = extraData['postfit residuals']
@@ -421,7 +423,7 @@ def main():
         plotData['extras']          = extras
         plotData['acc_est']         = 'OFF'
         PF( plotData )
-        pdb.set_trace()
+
         #  Write the output to the pickle file
         fileTag = 'nominal'
         file = dirIt+'/'+fileTag+'_data.pkl'

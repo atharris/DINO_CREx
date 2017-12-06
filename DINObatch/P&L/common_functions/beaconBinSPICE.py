@@ -31,6 +31,7 @@ def getObs(input):
     # pull out the inputs for the generation of observation data
     spiceData              = input[0]
     observationUncertainty = input[1]
+    angles = input[2]
     extras                 = input[-1]
     nUniqueBeacons         = extras['n_unique_beacons']
     # number of observations in a mini observation set per beacon
@@ -137,7 +138,7 @@ def getObs(input):
 
             break
     extras['obs_beacons'] = list(obs['beacons'])
-    G_ref_inputs = (referenceState, obs['SPICE'], extras)
+    G_ref_inputs = (referenceState, obs['SPICE'], angles, extras)
     # calculate the estimated observables and organize into an array
     obs['truth'] = np.copy(fncG(G_ref_inputs))
     obs['data'] = np.copy(fncG(G_ref_inputs)) + observationNoise

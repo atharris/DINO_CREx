@@ -31,14 +31,87 @@ from numpy.linalg import inv as aInv
 
 import pdb
 
+## \defgroup batch_acc Batch Filter - unmodeled acceleration
+##   @{
+## The module for the unmodeled acceleration estimation batch filter.
+#
+# Overview {#overview}
+# ====
+#
+# Purpose
+# -----
+# This script contains two functions that may be exported for the purposes of reference trajectory propagation and the running of a batch filter. 
+#
+# It is noted here and in latter sections of this document, this module is largely identical to that of the vanilla batch filter \ref batch_vanilla "`batchFilter.py`". The exception is the equations of motions (EOMs) that are imported. Rather than utilizing \ref EOMS_vanilla "`posVel.py`", the EOM function containing support for a constant acceleration in the x, y and z coordinates is imported as \ref EOMs_acc "`posVelAcc.py`". 
+#
+# A significant amount of material originiates from Statistical Orbit Determination (2004) a work by Tapley, Schutz, and Born. Therefore, equation numbers from the text will be included with the theory and presentation. The purpose of this documentation is to provide a succinct foundation of theory as well as a walkthrough of the overall code structure.
+#
+# Contents
+# -----
+# The following functions are contained in this module:
+#
+# - `runRef.py`
+# - `run_batch.py`
+#
+# The former (`runRef.py`) is an exportable function that parses inputs and calls an ODE solver for specified equations of motion (EOMs). The outputs are an integrated state and state transition matrix (STM). 
+#
+# The latter function (`run_batch.py`) is also an exportable function. It organizes inputs, calls the reference propagator runRef.py, runs beaconStates to create reference beacon positions, creates reference observations and associated H matrix by calling fncG and fncH, respectively, and computes deviations using a batch algorithm.
+#
+# Neither function is a stand alone script. As with other modules in the state estimation nav filter, there is a reliance on the `extras` dictionary to pass through parameters to various functions. It is noted that the `extras` dictionary should never be an output from a function.
+#
+# The Code
+# =====
+#
+# `runRef.py` 
+# -----
+# The purpose of this function is relatively straightforward: calculate a reference trajectory when given an initial condition, a set of times, and a dictionary of extras. The following is a table of inputs and associated brief descriptions:
+#
+# Name      | Description                                           | Size/Type
+# -----     | -------------------                                   | -----
+# IC0       | initial conditions of state                           | (d,N) numpy array  
+# phi0      | initial condition of STM                              | (d,d) numpy array
+# timeSpan  | an array of times to integrate to                     | (N,) numpy array
+# extras    | dictionary of various parameters                      | dictionary
+#
+# The same is repeated for outputs:
+#
+# Name      | Description         | Size/Type
+# -----     | ------------------- | -----
+# state     | propagated state    | (N,d(1+d)) numpy array
+#
+# Thusly, we have established the purpose of this function. It is noted that the output variable `state` contains the quantities of interest for the scenario (position, velocity, etc) as well as the propagates STM that has been resized to (,dXd). 
+#
+# `run_batch.py`
+# -----
+# This function consists of the meat of the batch filter algorithm. As previously described, it contains and calls a variety of calculations. To begin, we once again list inputs: 
+#
+# Name      | Description                                           | Size/Type
+# -----     | -------------------                                   | -----
+# IC        | initial conditions of state                           | (d,) numpy array  
+# phi       | initial condition of STM                              | (d,d) numpy array
+# timeSpan  | an array of times to integrate to                     | (N,) numpy array
+# filterObservations | dictionary of observation related data     | dictionary
+# P_bar     | initial covariance                                    | (d,d) numpy array
+# observationUncertainty | a priori uncertainty of measurements. diagonal array | (m,m) numpy array
+# x_bar     | a priori state deviation                              | (d,) numpy array  
+# extras    | dictionary of various parameters                      | dictionary
+#
+# The same is repeated for outputs:
+#
+# Name      | Description         | Size/Type
+# -----     | ------------------- | -----
+# referenceState | propagated reference state | (N,d(1+d)) numpy array
+# estimatedState | propagated reference state + estimated state deviations | (N,d) numpy array
+# extraData | dictionary of various outputs, e.g., deviations | dictionary
+#
+# As previously stated, the code contained within this module is identical to that of \ref batch_vanilla "`batchFilter.py`" with the exception of the imported EOM functions. Rather than utilizing \ref EOMS_vanilla "`posVel.py`", the EOM function containing support for a constant acceleration in the x, y and z coordinates is imported as \ref EOMs_acc "`posVelAcc.py`". 
+## @}
+
 ################################################################################
 #                  E X P O R T E D     F U N C T I O N S:
 ################################################################################
 
 #-------------------------------------------------------------------------------
-def norm( input ) :
-  norm = np.sqrt( sum( np.square( input ) ) )
-  return norm
 
 def runRef( input ) :
 
@@ -100,6 +173,7 @@ def run_batch( input ) :
   P_bar        = input[4]
   observationUncertainty = input[5]
   x_bar        = input[6]
+  angles       = input[7]
   extras       = input[-1]
 
   # number of estimated states
@@ -163,14 +237,14 @@ def run_batch( input ) :
   W = aInv( observationUncertainty )
 
   # inputs for referenceObservations (G) calculation
-  referenceObservationInputs = ( referenceState[:,0:stateDimension], beaconStateArray, extras )
+  referenceObservationInputs = ( referenceState[:,0:stateDimension], beaconStateArray, angles, extras )
 
   # calculate the estimated observables and organize into an array
   referenceObservations = fncG( referenceObservationInputs )
 
 
   # using the inputs of G, calculate the H matrix
-  mappingMatrixInputs  = ( referenceState[:,0:stateDimension], beaconStateArray, extras )
+  mappingMatrixInputs  = ( referenceState[:,0:stateDimension], beaconStateArray, angles, extras )
   mappingMatrix        = fncH( mappingMatrixInputs )
 
 
@@ -231,7 +305,7 @@ def run_batch( input ) :
     # covArray[ii,:,:]   = np.dot( np.dot( phi_t_t0, P ), phi_t_t0.T )
 
   # inputs for estimatedObservations (G) calculation
-  estimatedObservationInputs = ( estimatedState[:,0:stateDimension], beaconStateArray, extras )
+  estimatedObservationInputs = ( estimatedState[:,0:stateDimension], beaconStateArray, angles, extras )
 
   # calculate the estimated observables and organize into an array
   estimatedObservations = fncG( estimatedObservationInputs )
