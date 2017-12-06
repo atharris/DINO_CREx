@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['fnch',['fncH',['../namespacepixel_line_batch.html#a951747d072c0bfe61e0dbcd1aedd67a1',1,'pixelLineBatch.fncH()'],['../namespacerng_rng_rt.html#a6b2de9801889f96e57b7e8292792e473',1,'rngRngRt.fncH()']]]
+  ['getobs',['getObs',['../namespacebeacon_bin_s_p_i_c_e.html#ac1bac777cd96c6c148928eb8bbefbc0e',1,'beaconBinSPICE']]]
 ];

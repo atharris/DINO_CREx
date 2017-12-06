@@ -1,4 +1,11 @@
 var searchData=
 [
-  ['norm',['norm',['../namespacebatch_filter__old__naming.html#aab393d186c8e2c6aaf2f48c4b0c09913',1,'batchFilter_old_naming.norm()'],['../namespacebatch_filter_debug.html#a0d1e6d1e35570966e811470aa9d6644c',1,'batchFilterDebug.norm()'],['../namespacebeacon_s_p_i_c_e.html#aab118ed6af7e5e415a7ecb1f88568df3',1,'beaconSPICE.norm()'],['../namespacebatch_filter_acc_debug.html#a2c8fd0cf22625c76d83d7c39b08d6b7f',1,'batchFilterAccDebug.norm()'],['../namespacecheck_filter.html#a4f7bf499574989d2615e43262cabad0f',1,'checkFilter.norm()'],['../namespaceinit__acc.html#a7cffc5d386792de6b992d459246283ee',1,'init_acc.norm()'],['../namespaceinit__acc__debug.html#ab5f4985c5088ff1edb6f5dfa994ae473',1,'init_acc_debug.norm()'],['../namespaceinit.html#a434f999e2b132d864cdb969a9aca5838',1,'init.norm()'],['../namespaceinit__debug.html#a5145eda922e2943f7e371ef451d4aa44',1,'init_debug.norm()'],['../namespaceinit__test_p_l.html#a97c5d5eb023294f8c6be4be18cce8be7',1,'init_testPL.norm()']]]
+  ['pixel_20and_20line_20_2d_20measurements_20generation',['Pixel and Line - measurements generation',['../group__pixel__and__line.html',1,'']]],
+  ['pixellinebatch',['pixelLineBatch',['../namespacepixel_line_batch.html',1,'']]],
+  ['plotfilter',['plotFilter',['../namespaceplot_filter.html',1,'']]],
+  ['plotfunction',['plotFunction',['../namespaceplot_filter.html#acf4decf406d799ce3fcbe20a0d642c60',1,'plotFilter']]],
+  ['posvel',['posVel',['../namespacepos_vel.html',1,'']]],
+  ['posvelacc',['posVelAcc',['../namespacepos_vel_acc.html',1,'']]],
+  ['posvelaccdebug',['posVelAccDebug',['../namespacepos_vel_acc_debug.html',1,'']]],
+  ['posveldebug',['posVelDebug',['../namespacepos_vel_debug.html',1,'']]]
 ];

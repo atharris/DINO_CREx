@@ -192,7 +192,7 @@ def main():
     extras['SRP'] = 0.3**2/14. * 149597870.**2 * 1358. / 299792458. / 1000. # turboprop document Eq (64)
 
     # coefficient of reflectivity
-    extras['cR'] = 1
+    extras['cR'] = 100.
 
     # number of observations per beacon until moving to the next
     extras['repeat_obs'] = 1
@@ -248,7 +248,7 @@ def main():
     trueEphemeris, timeSpan = dg.generate_data(sc_ephem_file=DINO_kernel,
                                           planet_beacons = ['earth','mars barycenter'],
                                           beaconIDs=[],
-                                          n_observations=48,
+                                          n_observations=24,
                                           start_et=start_et,
                                           end_et=end_et,
                                           extras = extras,
@@ -305,8 +305,8 @@ def main():
     covBar[8, 8] = (10**(-8))**2
 
     # add uncertainty to the IC
-    initialPositionError = 1000 * np.divide(IC[0:3], norm(IC[0:3]))
-    initialVelocityError = 0.01 * np.divide(IC[3:6], norm(IC[3:6]))
+    initialPositionError = 1000 * np.divide(IC[0:3], np.linalg.norm(IC[0:3]))
+    initialVelocityError = 0.01 * np.divide(IC[3:6], np.linalg.norm(IC[3:6]))
 
     IC[0:6] += np.append(initialPositionError, initialVelocityError)
 

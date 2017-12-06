@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['datastore',['DataStore',['../classtest__batch_1_1_data_store.html',1,'test_batch']]]
+  ['eoms_20_2d_20unmodeled_20acceleration',['EOMs - unmodeled acceleration',['../group___e_o_ms__acc.html',1,'']]],
+  ['eoms_20_2d_20position_20and_20velocity',['EOMs - position and velocity',['../group___e_o_ms__vanilla.html',1,'']]]
 ];

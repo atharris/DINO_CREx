@@ -22,7 +22,7 @@ from numpy import cos as cos
 from numpy import sin as sin
 
 
-## \defgroup pixel_and_line Pixel and Line
+## \defgroup pixel_and_line Pixel and Line - measurements generation
 ##   @{
 ## The module for the creation of pixel and line data.
 #
