@@ -3,7 +3,6 @@ import math as m
 import numpy as np
 import sys, os, inspect
 
-# set below to DINO path 
 sys.path.append('../dinoModels/fswAlgorithms/imageProcessing/dependencies/')
 
 import dynamicFunctions as dyn
@@ -21,16 +20,17 @@ import dynamicFunctions as dyn
 # Script options
 makeSearchCatalog = True
 makeObjectIDCatalog = True
-checkNumEntries = True
+checkNumEntries = False
+checkNumEntries2 = True
 
 # BTmag cutoff for generated reference catalogs
-M_CUTOFF = 6.
+M_CUTOFF = 6.25
 
 # Decimal places in dtheta entries in objectID catalog
 nDecimal = 7
 
 # Maximum angular separation between stars for generated object ID reference catalog
-DTHETA_MAX = 15.
+DTHETA_MAX = 12.
 
 #############################################################
 #############################################################
@@ -252,5 +252,4 @@ if checkNumEntries:
 
         print 'Number of Catalog Entries for BTmag <= ', M_CUTOFF, ': ', nStars
         print 'Average # of Stars Per 100 sq deg: ', averagePerSqDeg*100
-
 

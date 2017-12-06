@@ -6,23 +6,8 @@
 import math         #common math functions
 import numpy as np  #matrix algebra
 import matplotlib.pyplot as plt
-import sqlite3 as sql
 import cv2
 
-##################################################
-##################################################
-
-# function to convert s/c state and beacon position to initial estimate of beacon centroid pixel/line location
-# may not be necessary if pixel line location can be directly provided by navigation module
-
-def initial_beacon_estimate(pos_beacon, pos_sc, attde_sc, cam_res, cam_fov):
-
-    # TODO update function to convert nav module output into pixel/line estimate
-    pixel = 10
-    line = 10
-
-    pl_beacon = (pixel, line)
-    return pl_beacon
 
 ##################################################
 ##################################################
@@ -39,8 +24,6 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
 
     # Pull out threshold parameters
     signal_threshold = ROI_parameters['signal_threshold']
-    noise_threshold = ROI_parameters['noise_threshold']
-    ROI_size = ROI_parameters['ROI_size']
     ROI_border_width = ROI_parameters['ROI_border_width']
     max_search_pixels = ROI_parameters['max_search_dist']
     pixel_map_height, pixel_map_width = pixel_map.shape
@@ -91,7 +74,6 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
                                     and not already_found_ROI((current_row, current_col), corner_ROI, image_ROI):
                                 center_ROI_array = np.vstack((center_ROI_array, np.array([current_col, current_row])))
                                 signal_found = True
-                                print "\n\nAdding thing for: ", pixel_line_beacon_i[i][0], pixel_line_beacon_i[i][1]
 
                     # cycle through vertical edges of search border
                     else:
@@ -102,12 +84,11 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
                                     and not already_found_ROI((current_row, search_col_min), corner_ROI, image_ROI):
                             center_ROI_array = np.vstack((center_ROI_array, np.array([search_col_min, current_row])))
                             signal_found = True
-                            print "\n\nAdding thing for: ", pixel_line_beacon_i[i][0], pixel_line_beacon_i[i][1]
+
                         elif current_value_right >= signal_threshold \
                                     and not already_found_ROI((current_row, search_col_max), corner_ROI, image_ROI):
                             center_ROI_array = np.vstack((center_ROI_array, np.array([search_col_max, current_row])))
                             signal_found = True
-                            print "\n\nAdding thing for: ", pixel_line_beacon_i[i][0], pixel_line_beacon_i[i][1]
 
                 # if no pixels above threshold found expand ROI
                 #if center_ROI_array.size > 0:
@@ -139,18 +120,9 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
         # create a pixel_map of the region of interest only if we found a signal
         if signal_found:
 
-            # TODO - add method of choosing center of ROI if multiple pixels above threshold are found in border
-            # placeholder currently selects first entry
-
             center_ROI = np.empty([2], dtype=int)
             center_ROI[0] = center_ROI_array[0, 0]
             center_ROI[1] = center_ROI_array[0, 1]
-
-            # TODO - add method of dynamically creating ROI around identified grouping of pixels above threshold
-            # placeholder creates preset sized ROI centered around identified pixel
-
-            print "\nC ROI"
-            print center_ROI_array[0]
 
             ROI_min_row = find_lowest_pixel(center_ROI_array[0], pixel_map, signal_threshold)
             ROI_min_col = find_left_pixel(center_ROI_array[0], pixel_map, signal_threshold)
@@ -169,28 +141,12 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
 
             image_ROI.append(pixel_map[int(ROI_min_row):int(ROI_max_row+1), int(ROI_min_col):int(ROI_max_col+1)])
 
-            print '\nROI center location and value'
-            print center_ROI, pixel_map[int(center_ROI[1]), int(center_ROI[0])]
-            print 'ROI limits'
-            print (ROI_min_row, ROI_max_row), (ROI_min_col, ROI_max_col)
+            # print '\nROI center location and value'
+            # print center_ROI, pixel_map[int(center_ROI[1]), int(center_ROI[0])]
+            # print 'ROI limits'
+            # print (ROI_min_row, ROI_max_row), (ROI_min_col, ROI_max_col)
 
             corner_ROI.append([ROI_min_row, ROI_min_col])
-
-        # else:
-        #     #print "Image append else"
-        #     #print image_ROI
-        #     #print "Map"
-        #     #print pixel_map
-        #     image_ROI.append(pixel_map)
-        #     #print "Done"
-        #     #print image_ROI
-        #     corner_ROI.append([0, 0])
-
-        do_plots = False
-        if do_plots == True:
-            #plt.figure(299)
-            plt.imshow(image_ROI[i], extent=[0, ROI_size, 0, ROI_size], interpolation='none', cmap='viridis')
-            plt.show()
 
     return (corner_ROI, image_ROI)
 
@@ -352,7 +308,9 @@ def find_highest_pixel(initial_pixel_loc, pixel_map, threshold):
 
     # Continue trying to find a pixel farther up until we have found the uppermost pixel and next_y is not at the top
     # of the map
+
     while (not found_upper_pixel) and current_y < max_y-1:
+
         # Save the next values because we now know they are on and farther up than the previous values.
         next_y = current_y + 1
 
@@ -403,7 +361,7 @@ def find_lowest_pixel(initial_pixel_loc, pixel_map, threshold):
 
     # Continue trying to find a pixel farther down until we have found the lowermost pixel and next_y is not at the
     # bottom of the map
-    while (not found_lower_pixel) and current_y >= 0:
+    while (not found_lower_pixel) and current_y > 0:
         # Save the next values because we now know they are on and farther up than the previous values.
         next_y = current_y - 1
 
@@ -455,6 +413,7 @@ def find_right_pixel(initial_pixel_loc, pixel_map, threshold):
     # Continue trying to find a pixel farther up until we have found the uppermost pixel and current_y is not at the top
     # of the map
     while (not found_right_pixel) and current_x < max_x-1:
+
         # Save the next values because we now know they are on and farther up than the previous values.
         next_x = current_x + 1
 
@@ -625,7 +584,7 @@ def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18
         # plt.savefig('centerfinding_roi.png')
         plt.show()
 
-    print 'LOCAL MAX: ', np.amax(img)
+    # print 'LOCAL MAX: ', np.amax(img)
 
     return circles
 
@@ -636,7 +595,7 @@ def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18
 # Output:   loc_centroid        (x, y) pixel/line coordinate of centroid locations
 #           DN                  total signal count of ROI
 
-def find_centroid_point_source(pixel_map, pixel_line_beacon_i, ROI_parameters):
+def findCentroidPointSource(pixel_map, pixel_line_beacon_i, ROI_parameters):
 
     loc_centroid = np.empty([len(pixel_line_beacon_i)], dtype=tuple)
     DN = np.empty([len(pixel_line_beacon_i)], dtype=int)
@@ -656,13 +615,8 @@ def find_centroid_point_source(pixel_map, pixel_line_beacon_i, ROI_parameters):
     return loc_centroid, DN
 
 
-##################################################
-##################################################
 
-# Output    loc_center      list of (x,y) pixel/line coordinates of center locations
-#           DN              total signal content of ROI
-
-def find_center_resolved_body(pixel_map, pixel_line_beacon_i, ROI_parameters):
+def findCenterResolvedBody(pixel_map, pixel_line_beacon_i, ROI_parameters):
 
     loc_center = np.empty([len(pixel_line_beacon_i)], dtype=tuple)
     DN = np.empty([len(pixel_line_beacon_i)], dtype=int)
@@ -681,10 +635,10 @@ def find_center_resolved_body(pixel_map, pixel_line_beacon_i, ROI_parameters):
         # np.savez('saved_output/cropped_image_' + str(i)  + '.npz')
 
         maxROIvalue = np.amax(image_ROI[i])
-        print maxROIvalue
+        # print maxROIvalue
 
         # normalize ROI for center-finding function
-        currentROI = (image_ROI[i]/maxROIvalue) * 255.
+        currentROI = (image_ROI[i] / maxROIvalue) * 255.
 
         center = hough_circles(currentROI, center_dist=50, canny_thresh=175, blur=5, accum=5, show_img=False)
 
@@ -742,6 +696,67 @@ def already_found_ROI(pixel_loc, corner_ROI, image_ROI):
     return alreadyFound
 
 
+##################################################
+##################################################
 
+def checkBeaconStatus(posBeacons, posSC, DCM_BN, camFoV, radiusBeacons, angularSizeMin):
+    """Check current status of beacons in target beacon lists
+       :param pos_cb: list of target beacon position (1x3) numpy arrays in heliocentric coordinates [km]
+       :param pos_obs: position of camera in heliocentric coordinates [km]
+       :param DCM_NB: direction cosine matrix of observer attitude [body to heliocentric coord. frame]
+       :param radiusBeacons: field of view tuple (horizontal, vertical) [degrees]
+       :param angularSizeMin: minimum beacon size for it to be treated as a resolved body [deg]
+       :return: list of beacon status as defined below
+                        '0' if beacon is not in camera field of view
+                        '1' if beacon is in camera field of view as a point source
+                        '2' if beacon is in camera field of view as a resolved body
+       """
 
+    numBeacons = len(posBeacons)
+    beaconStatus = []
 
+    for ind in range(numBeacons):
+
+        #################################################
+        # Determine if beacon is in camera field of view
+
+        # compute relative position of celestial body to observer in body coordinates
+        pos_obs2cb_helio = (posBeacons[ind] - posSC)
+        pos_obs2cb_body = np.matmul(DCM_BN, pos_obs2cb_helio)
+        e_obs2cb_body = pos_obs2cb_body / np.linalg.norm(pos_obs2cb_body)
+
+        # take field of view angles from centerline
+        horiz_fovcenter = camFoV[0] / 2.
+        vert_fovcenter = camFoV[1] / 2.
+
+        # compute azimuth and elevation of celestial body
+        az = math.degrees(math.atan2(e_obs2cb_body[1], e_obs2cb_body[0]))
+        el = math.degrees(math.asin(e_obs2cb_body[2]))
+
+        # check if limits in camera specs
+        chkFoV = True
+        if (abs(az) > horiz_fovcenter) or (abs(el) > vert_fovcenter):
+            chkFoV = False
+            currentStatus = 0
+
+        if np.linalg.norm(pos_obs2cb_body) < radiusBeacons[ind]:
+            chkFoV = False
+            currentStatus = 0
+
+        #################################################
+        # Determine if beacon should be treated as a point-source or a resolved body
+
+        if chkFoV == True:
+
+            angularSizeBeacon = 2*math.degrees(math.atan(radiusBeacons[ind]/np.linalg.norm(pos_obs2cb_helio)))
+
+            # print 'Check Beacon Status Angular Size: ', angularSizeBeacon
+
+            if angularSizeBeacon < angularSizeMin:
+                currentStatus = 1
+            else:
+                currentStatus = 2
+
+        beaconStatus.append(currentStatus)
+
+    return beaconStatus

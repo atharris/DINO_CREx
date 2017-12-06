@@ -6,46 +6,52 @@
 import math         # common math functions
 import numpy as np  # matrix algebra
 import sqlite3 as sql
-import dynamics as dyn
+import dynamicFunctions as dyn
 import matplotlib.pyplot as plt
 
+import sys, os, inspect
+sys.path.append('../../../../external')
+
 
 ##################################################
 ##################################################
 
-# Function to convert s/c state and beacon position to initial estimate of beacon centroid pixel/line location
-# (may not be necessary if pixel line location can be directly provided by navigation module)
-# input:    pos_beacon              position of beacon in inertial heliocentric coordinates [km]
-#                                   (n x 3) array
-#           pos_sc                  position of s/c in inertial heliocentric coordinates [km]
-#           attde_sc                BN direction cosine matrix of s/c attitude
-#                                   (b1 = camera bore-sight, b2 = left, b3 = up)
-#           cam_res                 Resolution of camera sensor (horizontal, vertical)
-#           cam_focal_length        Camera focal length [mm]
-#           cam_pixel_size          Camera pixel size (width, height) [mm]
+def initial_beacons_estimate(N_r_beacons, N_r_sc, BN_dcm_sc, cameraParameters):
+    """
+    Generates initial pixel, line coordinate estimates for beacons in the camera field of view.
+    @param N_r_beacons: list of (1x3) numpy arrays of beacons positions in HCI coordinate frame [km]
+    @param N_r_sc: (1x3) numpy array of spacecraft position in HCI coordinate frame [km]
+    @param BN_dcm_sc: (3x3) numpy array of the BN direction cosine matrix (HCI to camera body coord. frame)
+    @param cameraParameters: python dict with the following entries
+                            ['resolution'] tuple of horizontal x vertical camera sensor resolution
+                            ['focal length'] camera sensor effective focal length [m]
+                            ['pixel size'] tuple of horizontal x vertical camera sensor pixel size [m]
+    @return pixelLine: list of (pixel, line) coordinate initial estimates tuples
+    """
 
-def initial_beacons_estimate(pos_beacon, pos_sc, attde_sc, cam_res, cam_focal_length, cam_pixel_size):
+    cam_res = cameraParameters['resolution']
+    cam_focal_length = cameraParameters['focal length']
+    cam_pixel_size = cameraParameters['pixel size']
 
-    n_beacons = pos_beacon.shape[0]
+    n_beacons = len(N_r_beacons)
 
     # image upper left corner distance
     x_upperleft = cam_res[0] / 2. * cam_pixel_size[0]
     y_upperleft = cam_res[1] / 2. * cam_pixel_size[1]
 
     # cycle through each beacon position and determine pixel / line estimate
-    pixel = []
-    line = []
+    pixel_line = []
     for ind_beacon in range(n_beacons):
 
         # compute unit direction from s/c to beacon in camera body coordinates
-        current_pos_beacon = pos_beacon[ind_beacon, :]
-        pos_sc2beacon = current_pos_beacon - pos_sc
-        e_sc2beacon = pos_sc2beacon / np.linalg.norm(pos_sc2beacon)
-        e_sc2beacon_cam = np.matmul(attde_sc, e_sc2beacon)
+        N_r_currentBeacon = N_r_beacons[ind_beacon]
+        N_r_sc2beacon = N_r_currentBeacon - N_r_sc
+        N_e_sc2beacon = N_r_sc2beacon / np.linalg.norm(N_r_sc2beacon)
+        B_e_sc2beacon = np.matmul(BN_dcm_sc, N_e_sc2beacon)
 
         # convert to pixel/line coordinates and shift origin to upper left corner
-        x_focal = -(cam_focal_length/e_sc2beacon_cam[0]) * e_sc2beacon_cam[1] + x_upperleft
-        y_focal = -(cam_focal_length/e_sc2beacon_cam[0]) * e_sc2beacon_cam[2] + y_upperleft
+        x_focal = -(cam_focal_length/B_e_sc2beacon[0]) * B_e_sc2beacon[1] + x_upperleft
+        y_focal = -(cam_focal_length/B_e_sc2beacon[0]) * B_e_sc2beacon[2] + y_upperleft
 
         # convert to pixel units
         current_pixel = x_focal / cam_pixel_size[0]
@@ -54,43 +60,38 @@ def initial_beacons_estimate(pos_beacon, pos_sc, attde_sc, cam_res, cam_focal_le
         # check to see if beacon is in field of view
         if current_pixel >= 0 and current_pixel <= cam_res[0] and \
             current_line >= 0 and current_line <= cam_res[1]:
-            pixel.append(current_pixel)
-            line.append(current_line)
+            pixel_line.append((current_pixel, current_line))
 
-    #if len(pixel) != 0:
-    #    pixel_out = np.resize(pixel, (1, n_beacons))
-    #    line_out = np.resize(line, (1, n_beacons))
-    #else:
-    #    pixel_out = np.empty((1,0))
-    #    line_out = np.empty((1,0))
-
-    return (pixel, line)
-    #return (pixel_out, line_out)
+    return pixel_line
 
 
 ##################################################
 ##################################################
 
-# Function to convert s/c state and beacon position to initial estimate of beacon centroid pixel/line location
-# (may not be necessary if pixel line location can be directly provided by navigation module)
-# Input:
-#           attde_sc                BN direction cosine matrix of s/c attitude
-#                                   (b1 = camera boresight, b2 = left, b3 = up)
-#           cam_res                 Resolution of camera sensor (horizontal, vertical)
-#           cam_focal_length        Camera focal length [mm]
-#           cam_pixel_size          Camera pixel size (width, height) [mm]
-#           fname_catalog           Filename for star catalog file to be used
-# Output:
-#           (pixel, line, catalog_ID)           Tuple of 1D lists of pixel and line coordinates and IDs
-
-def initial_stars_estimate(attde_sc, cam_res, cam_focal_length, cam_pixel_size, fname_catalog):
+def initial_stars_estimate(BN_dcm_sc, cameraParameters, fname_catalog):
+    """
+    Generates initial pixel, line coordinate estimates for stars in the camera field of view using a reference catalog
+    @param BN_dcm_sc: (3x3) numpy array of the BN direction cosine matrix (HCI to camera body coord. frame)
+    @param cameraParameters: python dict with the following entries
+                            ['resolution'] tuple of horizontal x vertical camera sensor resolution
+                            ['focal length'] camera sensor effective focal length [m]
+                            ['pixel size'] tuple of horizontal x vertical camera sensor pixel size [m]
+                            ['field of view'] tuple of horizontal x vertical camera field of view [deg]
+    @param fname_catalog: reference catalog filename in '.db' SQL database format with the following fields
+                            'id' unique ID
+                            'BTmag' visual magnitude
+                            'RA' HCI right ascension [deg]
+                            'DEC' HCI declination [deg]
+    @return pixelLine: list of (pixel, line) coordinate initial estimates tuples
+    @return referenceID: list of reference catalog IDs of stars in field of view
+    """
 
     # Currently utilizes subset of Tycho2 catalog (average error for RA and Dec is 10E-8 degrees)
 
-    # generate additional camera parameters
-    cam_sensor_size = (cam_res[0] * cam_pixel_size[0], cam_res[1] * cam_pixel_size[1])  # [mm]
-    cam_fov = (2 * math.degrees(math.atan2(cam_sensor_size[0] / 2., cam_focal_length)),
-               2 * math.degrees(math.atan2(cam_sensor_size[1] / 2., cam_focal_length)))
+    cam_res = cameraParameters['resolution']
+    cam_focal_length = cameraParameters['focal length']
+    cam_pixel_size = cameraParameters['pixel size']
+    cam_fov = cameraParameters['field of view']
 
     # print 'Cam FoV (Initial Star Estimate Function): ', cam_fov
 
@@ -108,10 +109,10 @@ def initial_stars_estimate(attde_sc, cam_res, cam_focal_length, cam_pixel_size, 
     lowerright = np.array([e1, -e2, -e3])
 
     # convert unit vectors from body frame to heliocentric inertial frame
-    ul_helio = np.matmul(attde_sc.T, upperleft)
-    ur_helio = np.matmul(attde_sc.T, upperright)
-    ll_helio = np.matmul(attde_sc.T, lowerleft)
-    lr_helio = np.matmul(attde_sc.T, lowerright)
+    ul_helio = np.matmul(BN_dcm_sc.T, upperleft)
+    ur_helio = np.matmul(BN_dcm_sc.T, upperright)
+    ll_helio = np.matmul(BN_dcm_sc.T, lowerleft)
+    lr_helio = np.matmul(BN_dcm_sc.T, lowerright)
 
     # calculate inertial RA and Dec from inertial unit vectors
     ra_N_ul = math.degrees(math.atan2(ul_helio[1], ul_helio[0]))
@@ -143,32 +144,31 @@ def initial_stars_estimate(attde_sc, cam_res, cam_focal_length, cam_pixel_size, 
     radec_stars = find_stars_in_FoV((radec_N_ul, radec_N_ur, radec_N_ll, radec_N_lr), fname_catalog)
 
     # convert stars in catalog to pixel / line values
-    pixel, line = radec_to_pixelline(
-        radec_stars, attde_sc, cam_res, cam_focal_length, cam_pixel_size)
+    pixel_line = radec_to_pixelline(
+        radec_stars, BN_dcm_sc, cameraParameters)
 
-    n_stars = len(pixel)
-    # pixel_out = np.resize(pixel, (1, n_stars))
-    # line_out = np.resize(line, (1, n_stars))
-    pixel_out = pixel
-    line_out = line
     catalog_id = radec_stars[2]
 
-    return (pixel_out, line_out, catalog_id)
+    return pixel_line, catalog_id
 
 
 ##################################################
 ##################################################
-
-# Function to convert right ascension and declination into pixel / line estimates
-# Note this currently returns all entries in inertial normal rectangular field of view (does not account for rotation)
-# Inputs:   radec_corners   list of tuple values for each corner right ascension and declination value
-#                           [deg, deg] (inertial coord.)
-#           fname_catalog   filename of star catalog sql database file
-# Outputs:  radec_inertial  tuple of ra, dec, and id lists
 
 def find_stars_in_FoV(radec_corners, fname_catalog):
-
-    M_CUTOFF = 7.
+    """
+    Returns all stars in field of view in a reference star catalog based on right ascension and declination bounds.
+    @param radec_corners: list of tuple values for each right ascension and declination corner point (ra, dec) [deg]
+                            (upper left, upper right, lower left, lower right)
+    @param fname_catalog: reference catalog filename in '.db' SQL database format with the following fields
+                            'id' unique ID
+                            'BTmag' visual magnitude
+                            'RA' HCI right ascension [deg]
+                            'DEC' HCI declination [deg]
+    @return ra: list of right ascension matches [deg]
+    @return dec: list of declination matches [deg]
+    @return id: list of reference catalog id matches
+    """
 
     # open star catalog
     star_catalog = sql.connect(fname_catalog)
@@ -183,7 +183,20 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
 
     # check if field of view covers inertial poles (will determine if max declination needs to extend to cover poles)
     # (process assumes max angular field of view in either direction is 180 degrees)
-    if ra_max - ra_min  > 180:
+
+    # check if the delta between the corner RA values exceed 135 degrees
+    # (assume field of view cannot exceed 180 degrees)
+    deltaRA1 = abs(radec_corners[0][0] - radec_corners[3][0])
+    deltaRA2 = abs(radec_corners[1][0] - radec_corners[2][0])
+    deltaRA = ra_max-ra_min
+    if deltaRA1 > 180:
+        deltaRA1 = 360 - deltaRA
+
+    if deltaRA2 > 180:
+        deltaRA2 = 360 - deltaRA2
+
+    # if deltaRA > 90:
+    if deltaRA1 > 135 or deltaRA2 > 135:
 
         # check which pole the field of view covers
         # +k covered
@@ -206,9 +219,8 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
     s.execute("SELECT * FROM tycho_data WHERE RA BETWEEN (?) AND (?)"
               " AND DEC BETWEEN (?) AND (?)"
               " AND BTmag IS NOT NULL "
-              " AND BTmag <= (?)"
               " ORDER BY BTmag ASC",
-              (ra_min, ra_max, dec_min, dec_max, M_CUTOFF))
+              (ra_min, ra_max, dec_min, dec_max))
     rows = s.fetchall()
     n_stars = len(rows)
 
@@ -224,50 +236,52 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
         dec.append(rows[ind][2])
         id.append(rows[ind][0])
 
-    radec_inertial = (ra, dec, id)
-
-    return radec_inertial
+    return (ra, dec, id)
 
 
 ##################################################
 ##################################################
 
-# Function to convert right ascension and declination into pixel / line estimates
-# Note:     Currently takes min/max RA and Dec values and calculates pixel / line estimates.
-#           Only those within sensor dimensions are returned.
-#
-# Inputs:   radec_inertial      [n x 2] array of right ascension and declination of stars in field of view [deg, deg]
-#           attde_sc            BN transformation matrix
-#           cam_res             camera sensor resolution [horiz, vertical]
-#           cam_focal_length    camera focal length [mm]
-#           cam_pixel_size      individual pixel size [horiz mm, vertical mm]
-# Outputs:  (pixel, line)       tuple of 1D numpy arrays for pixel and line coordinates
+def radec_to_pixelline(N_radec, BN_dcm_cam, cameraParameters):
+    """
+    Converts right ascension and declination values to pixel line coordinates.
+    @param N_radec: list of tuple values for each HCI right ascension and declination coordinate [deg]
+    @param BN_dcm_cam: reference catalog filename in '.db' SQL database format with the following fields
+    @param BN_dcm_sc: (3x3) numpy array of the BN direction cosine matrix (HCI to camera body coord. frame)
+    @param cameraParameters: python dict with the following entries
+                            ['resolution'] tuple of horizontal x vertical camera sensor resolution
+                            ['focal length'] camera sensor effective focal length [m]
+                            ['pixel size'] tuple of horizontal x vertical camera sensor pixel size [m]
+                            ['field of view'] tuple of horizontal x vertical camera field of view [deg]
+    @return pixel_line: list of (pixel, line) coordinate tuples
+    """
 
-def radec_to_pixelline(radec_inertial, attde_sc, cam_res, cam_focal_length, cam_pixel_size):
+    cam_res = cameraParameters['resolution']
+    cam_focal_length = cameraParameters['focal length']
+    cam_pixel_size = cameraParameters['pixel size']
 
-    n_stars = len(radec_inertial[0])
+    n_stars = len(N_radec[0])
 
     # image upper left corner distance
     x_upperleft = cam_res[0] / 2. * cam_pixel_size[0]
     y_upperleft = cam_res[1] / 2. * cam_pixel_size[1]
 
     # cycle through each star position and determine pixel / line estimate
-    pixel = []
-    line = []
+    pixel_line = []
     for ind in range(n_stars):
 
         # compute unit direction from s/c to star in camera body coordinates
-        ra = radec_inertial[0][ind]
-        dec = radec_inertial[1][ind]
+        ra = N_radec[0][ind]
+        dec = N_radec[1][ind]
 
         ehat = dyn.radec_to_unitvector((ra,dec))
         e_star_helio = np.array([ehat[0], ehat[1], ehat[2]])
 
-        e_star_cam = np.matmul(attde_sc, e_star_helio)
+        e_star_cam = np.matmul(BN_dcm_cam, e_star_helio)
 
         #print 'Unit vector to star (HCI): ', e_star_helio
         #print 'Unit vector to star (camera coord.): ', e_star_cam
-        e1_cam_helio = np.matmul(attde_sc.T, np.array([1,0,0]))
+        e1_cam_helio = np.matmul(BN_dcm_cam.T, np.array([1,0,0]))
         # print 'e1 camera unit vector (HCI): ', e1_cam_helio
         # print 'Angular separation: ', math.degrees(math.acos(np.dot(e_star_helio, e1_cam_helio)))
 
@@ -278,18 +292,11 @@ def radec_to_pixelline(radec_inertial, attde_sc, cam_res, cam_focal_length, cam_
         current_pixel = x_focal / cam_pixel_size[0]
         current_line = y_focal / cam_pixel_size[1]
 
-        #print 'Current RA / Dec: ', ra, dec
-        #print 'Current pixel/line coordinate: ', current_pixel, current_line
-
         # check to make sure pixel and line coordinates are within sensor limits
         if current_pixel <= cam_res[0] and current_pixel >= 0 \
                 and current_line <= cam_res[1] and current_line >= 0:
-            pixel.append(current_pixel)
-            line.append(current_line)
+            pixel_line.append((current_pixel, current_line))
             #print 'STAR IN FIELD OF VIEW FOUND'
 
-    # pixel_out = np.resize(pixel, (1, n_stars))
-    # line_out = np.resize(line, (1, n_stars))
-
-    return (pixel, line)
+    return pixel_line
 

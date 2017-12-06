@@ -1,0 +1,17 @@
+XX_deg.npz files show earth and moon at various phases. No stars are present in these files.
+
+stars_only.npz shows all stars in FOV. Many are very dim. All are point sources.
+
+XX_deg.npz
+	sun_pos: Position of sun in HCI (always at origin)
+	earth_pos: Position of Earth in HCI (always at [1 au, 0, 0])
+	moon_pos: Position of Moon in HCI
+	sc_pos: Position of spacecraft in HCI
+	sc_dcm: describes rotation from inertial frame to camera frame
+	detector_array: array of pixel intensities
+
+stars_only.npz
+	sun_pos: Position of sun in HCI (always at origin)
+	sc_pos: Position of spacecraft in HCI
+	sc_dcm: describes rotation from inertial frame to camera frame
+	detector_array: array of pixel intensities
