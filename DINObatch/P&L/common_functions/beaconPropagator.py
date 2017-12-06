@@ -40,6 +40,56 @@ import numpy as np
 
 import pdb
 
+## \defgroup beacon_propagator Beacon Propagator
+##   @{
+## The module for the reference propagation of beacons.
+#
+# Overview {#overview}
+# ====
+#
+# Purpose
+# -----
+# This script contain a single exportable function. The function takes a list of times and beacon IDs in order to propagate the chosen beacons to the desired times. Propagations are done using SPICE.
+#
+# Contents
+# -----
+# The following function is contained in this module:
+#
+# - `beaconState.py`
+#
+# As with other modules in the state estimation nav filter, there is a reliance on the `extras` dictionary to pass through parameters to various functions. It is noted that the `extras` dictionary should never be an output from a function.
+#
+# The Code
+# =====
+#
+# `beaconState.py` 
+# -----
+# `beaconState.py` is a function that is used to propagate an object to a specified time using SPICE. The following is a table of inputs and associated brief descriptions:
+#
+# Name      | Description                                           | Size/Type
+# -----     | -------------------                                   | -----
+# beaconList | list of beacon IDs. one for each observation time    | N list  
+# observationTimes | times at which observations occur              | (N,) numpy array
+# extras    | dictionary of various parameters                      | dictionary
+#
+# The same is repeated for outputs:
+#
+# Name      | Description         | Size/Type
+# -----     | ------------------- | -----
+# beaconStates | propagated beacon states | (N,6) numpy array
+#
+# It is noted that the output is not the state of each beacon for each observation state. It is more specific. The state of a beacon at a given time is only the particular state of the beacon observed at that time. 
+#
+# This behavior can be seen within the observation loop:
+# ~~~~~~~~~~~~~~~~{.py}
+#  pyswice.spkezr_c( beaconList[ii], observationTimes[ii], extras['ref_frame'],\
+#                    'None', 'SUN', state, lt)
+# ~~~~~~~~~~~~~~~~
+#
+# Where the index variable ii indicates that only the beacon chosen at the ii-th observation time will be propagated.
+#
+## @}
+
 ################################################################################
 #                  E X P O R T E D     F U N C T I O N S:
 ################################################################################

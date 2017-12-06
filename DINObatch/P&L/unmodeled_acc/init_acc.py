@@ -221,6 +221,7 @@ def main():
 
     # Focal Length (mm)
     extras['FoL'] = 100.
+    angles = []
     extras['DCM_BI'] = np.eye(3)
     extras['DCM_TVB'] = np.eye(3)
 
@@ -249,7 +250,7 @@ def main():
     # parsed in any way. Ephemerides for all objects at all times are given.
     trueEphemeris, timeSpan = dg.generate_data(sc_ephem_file=DINO_kernel,
                                           planet_beacons = ['earth','mars barycenter'],
-                                          beacon_ids=[],
+                                          beaconIDs=[],
                                           n_observations=48,
                                           start_et=start_et,
                                           end_et=end_et,
@@ -335,7 +336,7 @@ def main():
     ##################################################################################
         
     # observation inputs
-    observationInputs = (trueEphemeris, observationUncertainty, extras)
+    observationInputs = (trueEphemeris, observationUncertainty, angles, extras)
 
     # Get the observation data (dataObservations). This dictionary contains the SPICE data
     # from which values are calculated (key = 'SPICE'), the true observations before
@@ -377,7 +378,7 @@ def main():
             extras['oldPost'] = np.zeros([len(timeSpan), 2])
 
         filterInputs = (IC, phi0, timeSpan, filterObservations,\
-                         covBar, observationUncertainty, stateErrorBar, extras)
+                         covBar, observationUncertainty, stateErrorBar, angles, extras)
         # run filter function
         referenceState, estimatedState, extraData = run_batch(filterInputs)
 
