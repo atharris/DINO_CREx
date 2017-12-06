@@ -192,7 +192,7 @@ def main():
     extras['SRP'] = 0.3**2/14. * 149597870.**2 * 1358. / 299792458. / 1000. # turboprop document Eq (64)
 
     # coefficient of reflectivity
-    extras['cR'] = 100.
+    extras['cR'] = 1.
 
     # number of observations per beacon until moving to the next
     extras['repeat_obs'] = 1
