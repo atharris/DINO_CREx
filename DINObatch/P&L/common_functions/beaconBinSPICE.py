@@ -68,7 +68,7 @@ def getObs(input):
 
     # create a list for the beacon names associated with each measurement
     obs['beacons'] = list()
-    obs['data']    = np.zeros((nObservations, 2))
+    obs['measurements']    = np.zeros((nObservations, 2))
     obs['truth']   = np.zeros((nObservations, 2))
     obs['SPICE']   = np.zeros((nObservations, 6))
 
@@ -141,7 +141,7 @@ def getObs(input):
     G_ref_inputs = (referenceState, obs['SPICE'], angles, extras)
     # calculate the estimated observables and organize into an array
     obs['truth'] = np.copy(fncG(G_ref_inputs))
-    obs['data'] = np.copy(fncG(G_ref_inputs)) + observationNoise
+    obs['measurements'] = np.copy(fncG(G_ref_inputs)) + observationNoise
     return obs
 
 ################################################################################

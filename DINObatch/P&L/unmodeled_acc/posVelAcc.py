@@ -251,7 +251,7 @@ def EOM(state, et, primary_index, secondary_indices, nSecondaries, muPrimary, mu
 
     # SRP force
     fSRP = cR * kSRP * state[0:3] / np.linalg.norm(state[0:3]) ** 3
-
+    pdb.set_trace()
     # total force (acceleration) vector
     f = fPrimary + f3rdBodies + fSRP + state[6:9]
 

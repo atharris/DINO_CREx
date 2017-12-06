@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import pylab
 import numpy as np
 
+import pdb
 
 ################################################################################
 #                  E X P O R T E D     F U N C T I O N S:
@@ -28,7 +29,7 @@ import numpy as np
 def plotFunction(dataDictionary):
 
     estimatedStates        = dataDictionary['states']
-    stateErrorHatArray     = dataDictionary['stateErrorHatArray']
+    stateDevHatArray     = dataDictionary['stateDevHatArray']
     covArray               = dataDictionary['covArray']
     prefits                = dataDictionary['prefit residuals']
     postfits               = dataDictionary['postfit residuals']
@@ -45,199 +46,61 @@ def plotFunction(dataDictionary):
     extras                 = dataDictionary['extras']
     postDelta              = dataDictionary['postfit changes']
 
-    stand_devs = 3. * np.array([np.sqrt(np.fabs(np.diag(P))) for P in P_array])
+    stand_devs = 3. * np.array([np.sqrt(np.fabs(np.diag(P))) for P in covArray])
+
     plt.figure(1)
     plt.subplot(321)
-    plt.plot(t_span, stand_devs[:, 0], 'r--', t_span, -1 * stand_devs[:, 0], 'r--')
-    plt.plot(t_span, err_hat[:, 0], 'k.')
+    plt.plot(timeSpan, stand_devs[:, 0], 'r--', timeSpan, -1 * stand_devs[:, 0], 'r--')
+    plt.plot(timeSpan, stateErrorHat[:, 0], 'k.')
     plt.ylabel('x (km)')
     plt.xticks([])
     plt.title('Position')
     plt.ylim((-1.1*np.max(stand_devs[:, 0]), 1.1*np.max(stand_devs[:, 0])))
 
     plt.subplot(323)
-    plt.plot(t_span, stand_devs[:, 1], 'r--', t_span, -1 * stand_devs[:, 1], 'r--')
-    plt.plot(t_span, err_hat[:, 1], 'k.')
+    plt.plot(timeSpan, stand_devs[:, 1], 'r--', timeSpan, -1 * stand_devs[:, 1], 'r--')
+    plt.plot(timeSpan, stateErrorHat[:, 1], 'k.')
     plt.ylabel('y (km)')
     plt.xticks([])
     plt.ylim((-1.1*np.max(stand_devs[:, 1]), 1.1*np.max(stand_devs[:, 1])))
 
     plt.subplot(325)
-    plt.plot(t_span, stand_devs[:, 2], 'r--', t_span, -1 * stand_devs[:, 2], 'r--')
-    plt.plot(t_span, err_hat[:, 2], 'k.')
+    plt.plot(timeSpan, stand_devs[:, 2], 'r--', timeSpan, -1 * stand_devs[:, 2], 'r--')
+    plt.plot(timeSpan, stateErrorHat[:, 2], 'k.')
     plt.ylabel('z (km)')
-    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+    plt.xticks([min(timeSpan), max(timeSpan)], rotation=30, ha='right')
     ax = plt.gca()
     ax.set_xticklabels(['t_0', 't_f'])
     plt.ylim((-1.1*np.max(stand_devs[:, 2]), 1.1*np.max(stand_devs[:, 2])))
 
     plt.subplot(322)
-    plt.plot(t_span, stand_devs[:, 3], 'r--', t_span, -1 * stand_devs[:, 3], 'r--')
-    plt.plot(t_span, err_hat[:, 3], 'k.')
+    plt.plot(timeSpan, stand_devs[:, 3], 'r--', timeSpan, -1 * stand_devs[:, 3], 'r--')
+    plt.plot(timeSpan, stateErrorHat[:, 3], 'k.')
     plt.ylabel('vx (km/s)')
     plt.xticks([])
     plt.title('Velocity')
     plt.ylim((-1.1*np.max(stand_devs[:, 3]), 1.1*np.max(stand_devs[:, 3])))
 
     plt.subplot(324)
-    plt.plot(t_span, stand_devs[:, 4], 'r--', t_span, -1 * stand_devs[:, 4], 'r--')
-    plt.plot(t_span, err_hat[:, 4], 'k.')
+    plt.plot(timeSpan, stand_devs[:, 4], 'r--', timeSpan, -1 * stand_devs[:, 4], 'r--')
+    plt.plot(timeSpan, stateErrorHat[:, 4], 'k.')
     plt.ylabel('vy (km/s)')
     plt.xticks([])
     plt.ylim((-1.1*np.max(stand_devs[:, 4]), 1.1*np.max(stand_devs[:, 4])))
 
     plt.subplot(326)
-    plt.plot(t_span, stand_devs[:, 5], 'r--', t_span, -1 * stand_devs[:, 5], 'r--')
-    plt.plot(t_span, err_hat[:, 5], 'k.')
+    plt.plot(timeSpan, stand_devs[:, 5], 'r--', timeSpan, -1 * stand_devs[:, 5], 'r--')
+    plt.plot(timeSpan, stateErrorHat[:, 5], 'k.')
     plt.ylabel('vz (km/s)')
-    plt.xticks([min(t_span), max(t_span)], rotation=30, ha='right')
+    plt.xticks([min(timeSpan), max(timeSpan)], rotation=30, ha='right')
     ax = plt.gca()
     ax.set_xticklabels(['t_0', 't_f'])
     plt.ylim((-1.1*np.max(stand_devs[:, 5]), 1.1*np.max(stand_devs[:, 5])))
 
-    plt.suptitle('State Errors' + ' $\hat{x}$' + ' and Covariance Bounds')
+    plt.suptitle('Error Between Estimated State' + ' $\hat{X}$ ' + ' and Truth with Covariance Bounds')
     plt.tight_layout()
     plt.subplots_adjust(top=.9)
     plt.savefig(dirIt+'/State Errors and Covariance Bounds.png', dpi=300, format='png')
-
-
-    if data_dict['acc_est'] == 'OFF':
-      plt.figure(1)
-      plt.subplot(321)
-      plt.plot(timeSpan, stand_devs[:, 0], 'r--', timeSpan, -1 * stand_devs[:, 0], 'r--')
-      plt.plot(timeSpan, stateErrorHatArray[:, 0], 'k.')
-      plt.ylabel('x (km)')
-      plt.xticks([])
-      plt.title('Position')
-      plt.ylim((-1.1*np.max(stand_devs[:, 0]), 1.1*np.max(stand_devs[:, 0])))
-
-      plt.subplot(323)
-      plt.plot(timeSpan, stand_devs[:, 1], 'r--', timeSpan, -1 * stand_devs[:, 1], 'r--')
-      plt.plot(timeSpan, stateErrorHatArray[:, 1], 'k.')
-      plt.ylabel('y (km)')
-      plt.xticks([])
-      plt.ylim((-1.1*np.max(stand_devs[:, 1]), 1.1*np.max(stand_devs[:, 1])))
-
-      plt.subplot(325)
-      plt.plot(timeSpan, stand_devs[:, 2], 'r--', timeSpan, -1 * stand_devs[:, 2], 'r--')
-      plt.plot(timeSpan, stateErrorHatArray[:, 2], 'k.')
-      plt.ylabel('z (km)')
-      plt.xticks([min(timeSpan), max(timeSpan)], rotation=30, ha='right')
-      ax = plt.gca()
-      ax.set_xticklabels(['t_0', 't_f'])
-      plt.ylim((-1.1*np.max(stand_devs[:, 2]), 1.1*np.max(stand_devs[:, 2])))
-
-      plt.subplot(322)
-      plt.plot(timeSpan, stand_devs[:, 3], 'r--', timeSpan, -1 * stand_devs[:, 3], 'r--')
-      plt.plot(timeSpan, stateErrorHatArray[:, 3], 'k.')
-      plt.ylabel('vx (km/s)')
-      plt.xticks([])
-      plt.title('Velocity')
-      plt.ylim((-1.1*np.max(stand_devs[:, 3]), 1.1*np.max(stand_devs[:, 3])))
-
-
-      plt.subplot(324)
-      plt.plot(timeSpan, stand_devs[:, 4], 'r--', timeSpan, -1 * stand_devs[:, 4], 'r--')
-      plt.plot(timeSpan, stateErrorHatArray[:, 4], 'k.')
-      plt.ylabel('vy (km/s)')
-      plt.xticks([])
-      plt.ylim((-1.1*np.max(stand_devs[:, 4]), 1.1*np.max(stand_devs[:, 4])))
-
-      plt.subplot(326)
-      plt.plot(timeSpan, stand_devs[:, 5], 'r--', timeSpan, -1 * stand_devs[:, 5], 'r--')
-      plt.plot(timeSpan, stateErrorHatArray[:, 5], 'k.')
-      plt.ylabel('vz (km/s)')
-      plt.xticks([min(timeSpan), max(timeSpan)], rotation=30, ha='right')
-      ax = plt.gca()
-      ax.set_xticklabels(['t_0', 't_f'])
-      plt.ylim((-1.1*np.max(stand_devs[:, 5]), 1.1*np.max(stand_devs[:, 5])))
-
-      plt.suptitle('State Errors' + ' $\hat{x}$' + ' and Covariance Bounds')
-      plt.tight_layout()
-      plt.subplots_adjust(top=.9)
-      plt.savefig(dirIt+'/$x_hat$ and Covariance Bounds.png', dpi=300, format='png')
-    elif data_dict['acc_est'] == 'ON':
-      plt.figure(1)
-      plt.subplot(331)
-      plt.plot(timeSpan, stand_devs[:, 0], 'r--', timeSpan, -1 * stand_devs[:, 0], 'r--')
-      plt.plot(timeSpan, stateErrorHatArray[:, 0], 'k.')
-      plt.ylabel('x (km)')
-      plt.xticks([])
-      plt.title('Position')
-      plt.ylim((-np.max(stand_devs[:, 0]), np.max(stand_devs[:, 0])))
-
-      plt.subplot(334)
-      plt.plot(timeSpan, stand_devs[:, 1], 'r--', timeSpan, -1 * stand_devs[:, 1], 'r--')
-      plt.plot(timeSpan, stateErrorHatArray[:, 1], 'k.')
-      plt.ylabel('y (km)')
-      plt.xticks([])
-      plt.ylim((-np.max(stand_devs[:, 1]), np.max(stand_devs[:, 1])))
-
-      plt.subplot(337)
-      plt.plot(timeSpan, stand_devs[:, 2], 'r--', timeSpan, -1 * stand_devs[:, 2], 'r--')
-      plt.plot(timeSpan, stateErrorHatArray[:, 2], 'k.')
-      plt.ylabel('z (km)')
-      plt.xticks([min(timeSpan), max(timeSpan)], rotation=30, ha='right')
-      ax = plt.gca()
-      ax.set_xticklabels(['t_0', 't_f'])
-      plt.ylim((-np.max(stand_devs[:, 2]), np.max(stand_devs[:, 2])))
-
-      plt.subplot(332)
-      plt.plot(timeSpan, stand_devs[:, 3], 'r--', timeSpan, -1 * stand_devs[:, 3], 'r--')
-      plt.plot(timeSpan, stateErrorHatArray[:, 3], 'k.')
-      plt.ylabel('vx (km/s)')
-      plt.xticks([])
-      plt.title('Velocity')
-      plt.ylim((-np.max(stand_devs[:, 3]), np.max(stand_devs[:, 3])))
-
-
-      plt.subplot(335)
-      plt.plot(timeSpan, stand_devs[:, 4], 'r--', timeSpan, -1 * stand_devs[:, 4], 'r--')
-      plt.plot(timeSpan, stateErrorHatArray[:, 4], 'k.')
-      plt.ylabel('vy (km/s)')
-      plt.xticks([])
-      plt.ylim((-np.max(stand_devs[:, 4]), np.max(stand_devs[:, 4])))
-
-      plt.subplot(338)
-      plt.plot(timeSpan, stand_devs[:, 5], 'r--', timeSpan, -1 * stand_devs[:, 5], 'r--')
-      plt.plot(timeSpan, stateErrorHatArray[:, 5], 'k.')
-      plt.ylabel('vz (km/s)')
-      plt.xticks([min(timeSpan), max(timeSpan)], rotation=30, ha='right')
-      ax = plt.gca()
-      ax.set_xticklabels(['t_0', 't_f'])
-      plt.ylim((-np.max(stand_devs[:, 5]), np.max(stand_devs[:, 5])))
-
-      plt.subplot(333)
-      plt.plot(timeSpan, stand_devs[:, 6], 'r--', timeSpan, -1 * stand_devs[:, 6], 'r--')
-      plt.plot(timeSpan, stateErrorHatArray[:, 6], 'k.')
-      plt.ylabel('ax (km/s)')
-      plt.xticks([])
-      plt.title('Accelerations')
-      plt.ylim((-1.1*np.max(stand_devs[:, 6]), 1.1*np.max(stand_devs[:, 6])))
-
-
-      plt.subplot(336)
-      plt.plot(timeSpan, stand_devs[:, 7], 'r--', timeSpan, -1 * stand_devs[:, 7], 'r--')
-      plt.plot(timeSpan, stateErrorHatArray[:, 7], 'k.')
-      plt.ylabel('ay (km/s)')
-      plt.xticks([])
-      plt.ylim((-1.1*np.max(stand_devs[:, 7]), 1.1*np.max(stand_devs[:, 7])))
-
-      plt.subplot(339)
-      plt.plot(timeSpan, stand_devs[:, 8], 'r--', timeSpan, -1 * stand_devs[:, 8], 'r--')
-      plt.plot(timeSpan, stateErrorHatArray[:, 8], 'k.')
-      plt.ylabel('az (km/s)')
-      plt.xticks([min(timeSpan), max(timeSpan)], rotation=30, ha='right')
-      ax = plt.gca()
-      ax.set_xticklabels(['t_0', 't_f'])
-      plt.ylim((-1.1*np.max(stand_devs[:, 8]), 1.1*np.max(stand_devs[:, 8])))
-
-      plt.suptitle('State Errors' + ' $\hat{x}$' + ' and Covariance Bounds')
-      plt.tight_layout()
-      plt.subplots_adjust(top=.9)
-      plt.savefig(dirIt+'/$x_hat$ and Covariance Bounds.png', dpi=300, format='png')
-    else:
-      print 'Did not specify if plotting estimated accelerations was on or off'
 
 
     if dataDictionary['acc_est'] == 'OFF':
@@ -352,20 +215,20 @@ def plotFunction(dataDictionary):
 
     plt.figure(2)
     plt.subplot(321)
-    plt.plot(timeSpan, stateErrorHatArray[:, 0])
+    plt.plot(timeSpan, stateDevHatArray[:, 0])
     plt.ylabel('x (km)')
     plt.xticks([])
     plt.title('Position')
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(323)
-    plt.plot(timeSpan, stateErrorHatArray[:, 1])
+    plt.plot(timeSpan, stateDevHatArray[:, 1])
     plt.ylabel('y (km)')
     plt.xticks([])
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(325)
-    plt.plot(timeSpan, stateErrorHatArray[:, 2])
+    plt.plot(timeSpan, stateDevHatArray[:, 2])
     plt.ylabel('z (km)')
     plt.xticks([min(timeSpan), max(timeSpan)], rotation=30, ha='right')
     ax = plt.gca()
@@ -373,29 +236,29 @@ def plotFunction(dataDictionary):
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(322)
-    plt.plot(timeSpan, stateErrorHatArray[:, 3])
+    plt.plot(timeSpan, stateDevHatArray[:, 3])
     plt.ylabel('vx (km/s)')
     plt.xticks([])
     plt.title('Velocity')
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(324)
-    plt.plot(timeSpan, stateErrorHatArray[:, 4])
+    plt.plot(timeSpan, stateDevHatArray[:, 4])
     plt.ylabel('vy (km/s)')
     plt.xticks([])
     # plt.ylim((-ymax, ymax))
 
     plt.subplot(326)
-    plt.plot(timeSpan, stateErrorHatArray[:, 5])
+    plt.plot(timeSpan, stateDevHatArray[:, 5])
     plt.ylabel('vz (km/s)')
     plt.xticks([min(timeSpan), max(timeSpan)], rotation=30, ha='right')
     ax = plt.gca()
     ax.set_xticklabels(['t_0', 't_f'])
     # plt.ylim((-ymax, ymax))
-    plt.suptitle('State Error Estimates ' + '$\hat{x}$')
+    plt.suptitle('State Deviation Estimates ' + '$\hat{x}$')
     plt.tight_layout()
     plt.subplots_adjust(top=.9)
-    plt.savefig(dirIt + '/State Error Estimates.png', dpi=300, format='png')
+    plt.savefig(dirIt + '/State Deviation Estimates.png', dpi=300, format='png')
 
     plt.figure(3)
     plt.subplot(321)
@@ -432,7 +295,7 @@ def plotFunction(dataDictionary):
     plt.xticks([min(timeSpan), max(timeSpan)], rotation=30, ha='right')
     ax = plt.gca()
     ax.set_xticklabels(['t_0', 't_f'])
-    plt.suptitle('Reference Trajectory Error vs Spice Trajectory: Dynamics Errors')
+    plt.suptitle('Reference Trajectory Error vs Truth Trajectory: Dynamics Errors')
     plt.tight_layout()
     plt.subplots_adjust(top=.9)
     plt.savefig(dirIt + '/Reference Trajectory Error.png', dpi=300, format='png')
@@ -516,55 +379,6 @@ def plotFunction(dataDictionary):
     plt.subplots_adjust(top=.9)
     plt.savefig(dirIt + '/Postfit Delta.png', dpi=300, format='png')
 
-    plt.figure(7)
-    plt.subplot(321)
-    plt.plot(timeSpan, trueEphemeris['spacecraft'].T[:, 0] - estimatedStates[:, 0])
-    plt.ylabel('$\delta$ x (km)')
-    plt.xticks([])
-    plt.title('Position')
-    # plt.ylim((-ymax, ymax))
-
-    plt.subplot(323)
-    plt.plot(timeSpan, trueEphemeris['spacecraft'].T[:, 1] - estimatedStates[:, 1])
-    plt.ylabel('$\delta$ y (km)')
-    plt.xticks([])
-    # plt.ylim((-ymax, ymax))
-
-    plt.subplot(325)
-    plt.plot(timeSpan, trueEphemeris['spacecraft'].T[:, 2] - estimatedStates[:, 2])
-    plt.ylabel('$\delta$ z (km)')
-    plt.xticks([min(timeSpan), max(timeSpan)], rotation=30, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(['t_0', 't_f'])
-    # plt.ylim((-ymax, ymax))
-
-    plt.subplot(322)
-    plt.plot(timeSpan, trueEphemeris['spacecraft'].T[:, 3] - estimatedStates[:, 3])
-    plt.ylabel('$\delta$ vx (km/s)')
-    plt.xticks([])
-    plt.title('Velocity')
-    # plt.ylim((-ymax, ymax))
-
-    plt.subplot(324)
-    plt.plot(timeSpan, trueEphemeris['spacecraft'].T[:, 4] - estimatedStates[:, 4])
-    plt.ylabel('$\delta$ vy (km/s)')
-    plt.xticks([])
-    # plt.ylim((-ymax, ymax))
-
-    plt.subplot(326)
-    plt.plot(timeSpan, trueEphemeris['spacecraft'].T[:, 5] - estimatedStates[:, 5])
-    plt.ylabel('$\delta$ vz (km/s)')
-    plt.xticks([min(timeSpan), max(timeSpan)], rotation=30, ha='right')
-    ax = plt.gca()
-    ax.set_xticklabels(['t_0', 't_f'])
-    # plt.ylim((-ymax, ymax))
-    plt.suptitle('Estimated state deviation from true Spice data')
-    plt.tight_layout()
-    plt.subplots_adjust(top=.9)
-    plt.savefig(dirIt + '/Truth-EstimatedState.png', dpi=300, format='png')
-
-
-
     plt.figure(77)
 
     PosErrorNorm = np.zeros(len(estimatedStates[:,0]))
@@ -605,7 +419,7 @@ def plotFunction(dataDictionary):
     plt.title('Velocity Error')
     # plt.ylim((-ymax, ymax))
 
-    plt.suptitle('Estimated state Norm from true Spice data')
+    plt.suptitle('Estimated state Error Norm from Truth data')
     plt.tight_layout()
     plt.subplots_adjust(top=.9)
     plt.savefig(dirIt + '/Truth-EstimatedStateNorms.png', dpi=300, format='png')
@@ -613,7 +427,7 @@ def plotFunction(dataDictionary):
     plt.figure(6)
     plt.scatter(referenceState[:, 1], referenceState[:, 2], color='r')
     plt.scatter(trueEphemeris['spacecraft'].T[:, 1], trueEphemeris['spacecraft'].T[:, 2], color='b')
-    plt.suptitle('Reference Trajectory (r) vs Spice Trajectory (b)')
+    plt.suptitle('Reference Trajectory (r) vs Truth Trajectory (b)')
     plt.savefig(dirIt + '/Trajectories.png', dpi=300, format='png')
 
     jet = plt.get_cmap('jet')
@@ -691,7 +505,7 @@ def plotFunction(dataDictionary):
     ax = plt.gca()
     ax.set_xticklabels(beacon_list)
 
-    plt.suptitle('Observation Errors: $Y_{obs} - Y_{true}$')
+    plt.suptitle('Observation Errors: Measured vs Truth')
     plt.tight_layout()
     plt.subplots_adjust(top=.9)
     plt.savefig(dirIt + '/Observation Errors.png', dpi=300, format='png')
@@ -738,10 +552,10 @@ def plotFunction(dataDictionary):
     ax = plt.gca()
     ax.set_xticklabels(['t_0', 't_f'])
     # plt.ylim((-ymax, ymax))
-    plt.suptitle('Estimated State minus Spice Ephemeris')
+    plt.suptitle('Estimated State Error WRT Truth')
     plt.tight_layout()
     plt.subplots_adjust(top=.9)
-    plt.savefig(dirIt + '/State Deviation Est - Spice.png', dpi=300, format='png')
+    plt.savefig(dirIt + '/Estimated State Error.png', dpi=300, format='png')
 
     plt.close('all')
     return
