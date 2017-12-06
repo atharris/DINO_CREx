@@ -35,14 +35,19 @@ def log_DynCelestialOutputs(TheDynSim, samplingTime):
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.moonGravBody.bodyInMsgName, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.gyroModel.OutputDataMsg, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.starTracker.outputStateMessage, samplingTime)
-    for ind in range(0,len(TheDynSim.DynClass.beaconList)):
-        TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.beaconList[ind].scStateOutMsgName, samplingTime)
+#    for ind in range(0,len(TheDynSim.DynClass.beaconList)):
+#        TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.beaconList[ind].scStateOutMsgName, samplingTime)
 
     return
 
 def log_DynOutputs(TheBSKSim, samplingTime):
     TheBSKSim.TotalSim.logThisMessage(TheBSKSim.DynClass.scObject.scStateOutMsgName, samplingTime)
     TheBSKSim.TotalSim.logThisMessage(TheBSKSim.DynClass.simpleNavObject.outputAttName, samplingTime)
+    return
+
+def log_aekfOutputs(TheBskSim, samplingTime):
+#    print "Att filter msg name:", TheBskSim.FSWClass.attFilter.outputMsgName
+#    TheBskSim.TotalSim.logThisMessage(TheBskSim.FSWClass.attFilter.outputMsgName, samplingTime)
     return
 
 def log_FSWOutputs(TheBSKSim, samplingTime):
@@ -158,6 +163,23 @@ def pull_senseOutputs(TheBSKSim):
     # Plot Relevant Dyn Outputs
     # BSKPlt.plot_orbit(r_BN)
     BSKPlt.plot_rotationalNav(sigma_tilde_BN, omega_tilde_BN)
+
+def pull_aekfOutputs(TheBSKSim):
+    # Pull Dyn Outputs
+    sigma_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName+ '.sigma_BN', range(3))
+    omega_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName+ '.omega_BN_B', range(3))
+
+
+    # Print Dyn Outputs
+    print '\n\n'
+    print 'DYNAMICS:'
+    print 'sigma_hat_BN = ', sigma_hat_BN[-3:, 1:], '\n'
+    print 'omega_hat_BN = ', omega_hat_BN[-3:, 1:], '\n'
+    testRBN, testVBN = define_dino_earthSOI()
+
+    # Plot Relevant Dyn Outputs
+    # BSKPlt.plot_orbit(r_BN)
+    BSKPlt.plot_rotationalNav(sigma_hat_BN, omega_hat_BN)
 
 def pull_FSWOutputs(TheBSKSim):
     sigma_RN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.trackingErrorData.inputRefName + ".sigma_RN", range(3))
@@ -341,15 +363,16 @@ def attFilter_dynScenario(TheDynSim):
     """
     # Log data for post-processing and plotting
     #   Set length of simulation in nanoseconds from the simulation start.
-    simulationTime = mc.sec2nano(1000)
+    simulationTime = mc.sec2nano(100)
     #   Set the number of data points to be logged, and therefore the sampling frequency
     numDataPoints = 10000
     samplingTime = simulationTime / (numDataPoints - 1)
     log_DynOutputs(TheDynSim, samplingTime)
     log_DynCelestialOutputs(TheDynSim, samplingTime)
+    log_aekfOutputs(TheDynSim, samplingTime)
 
     # Initialize Simulation
-    TheDynSim.InitializeSimulation()
+    TheDynSim.InitializeSimulationAndDiscover()
 
     # Set up the orbit using classical orbit elements
     #oe = define_default_orbit()
@@ -376,5 +399,6 @@ def attFilter_dynScenario(TheDynSim):
     # Pull data for post-processing and plotting
     pull_DynOutputs(TheDynSim)
     pull_senseOutputs(TheDynSim)
+    pull_aekfOutputs(TheDynSim)
     #pull_DynCelestialOutputs(TheDynSim)
     plt.show()
