@@ -116,6 +116,8 @@ def pull_DynCelestialOutputs(TheDynSim):
     }
     BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_sc)
 
+    return r_sc, r_sun, r_earth, r_moon, r_mars, r_beacons
+
 
 
 def pull_DynOutputs(TheBSKSim):
@@ -143,6 +145,10 @@ def pull_DynOutputs(TheBSKSim):
     #BSKPlt.plot_orbit(r_BN)
     BSKPlt.plot_rotationalNav(sigma_BN, omega_BN_B)
 
+    return r_BN, v_BN, sigma_BN, omega_BN_B
+
+
+
 def pull_senseOutputs(TheBSKSim):
     # Pull Dyn Outputs
     beta_tilde_BN = TheBSKSim.pullMessageLogData(TheBSKSim.DynClass.starTracker.outputStateMessage + '.qInrtl2Case', range(4))
@@ -166,6 +172,7 @@ def pull_senseOutputs(TheBSKSim):
     # Plot Relevant Dyn Outputs
     # BSKPlt.plot_orbit(r_BN)
     BSKPlt.plot_rotationalNav(sigma_tilde_BN, omega_tilde_BN)
+    return sigma_tilde_BN, omega_tilde_BN
 
 def pull_aekfOutputs(TheBSKSim):
     # Pull Dyn Outputs
@@ -183,6 +190,8 @@ def pull_aekfOutputs(TheBSKSim):
     # Plot Relevant Dyn Outputs
     # BSKPlt.plot_orbit(r_BN)
     BSKPlt.plot_rotationalNav(sigma_hat_BN, omega_hat_BN)
+
+    return sigma_hat_BN, omega_hat_BN
 
 def pull_FSWOutputs(TheBSKSim):
     sigma_RN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.trackingErrorData.inputRefName + ".sigma_RN", range(3))
@@ -350,9 +359,9 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     TheDynSim.ExecuteSimulation()
 
     # Pull data for post-processing and plotting
-    pull_DynOutputs(TheDynSim)
-    pull_senseOutputs(TheDynSim)
-    pull_DynCelestialOutputs(TheDynSim)
+    r_BN, v_BN, sigma_BN, omega_BN_B = pull_DynOutputs(TheDynSim)
+    sigma_tilde_BN, omega_tilde_BN = pull_senseOutputs(TheDynSim)
+    r_sc, r_sun, r_earth, r_moon, r_mars, r_beacons = pull_DynCelestialOutputs(TheDynSim)
 
     ##  Post-Process sim data using camera, image processing, batch filter DINO modules
 
