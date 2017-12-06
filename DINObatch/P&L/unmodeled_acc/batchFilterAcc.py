@@ -265,9 +265,7 @@ def run_batch( input ) :
       infoMatrix   += np.dot( H.T, np.dot( W, H ) )
       # covArray[ii,:,:]   = aInv( infoMatrix )
       # add the H^T Y result to the observation information matrix
-      yii = np.zeros([len( observationDeviations[ii,:]),1])
-      yii[:,0] = observationDeviations[ii,:]
-      normalMatrix += np.dot( H.T, np.dot( W, yii))
+      normalMatrix += np.dot( H.T, np.dot( W, observationDeviations[ii,:].T))
 
   ##################################################################################
   #

@@ -164,11 +164,8 @@ import pdb
 #      H    = np.dot( mappingMatrix[0+2*ii:2+2*ii,:], phi_t_t0 )
 #      # add the new H^T H result to the information matrix
 #      infoMatrix   += np.dot( H.T, np.dot( W, H ) )
-#      # covArray[ii,:,:]   = aInv( infoMatrix )
 #      # add the H^T Y result to the observation information matrix
-#      yii = np.zeros([len( observationDeviations[ii,:]),1])
-#      yii[:,0] = observationDeviations[ii,:]
-#      normalMatrix += np.dot( H.T, np.dot( W, yii))
+#      normalMatrix += np.dot( H.T, np.dot( W, observationDeviations[ii,:].T))
 # ~~~~~~~~~~~~~~~~~
 #
 # To start, the straightforward calculation of the observation deviations (`observationDeviations`) is computed. We then have a loop over the range of the number of observations (`nObservations`), as the data from each observation must be utilized. The next step is to find the relevant STM (`phi_t_t0`), which can map deviations from the initial time (t0) to the measurement time (t). This is multiplied with the mapping matrix Eq. 4.3.15 and matrix multiplied with the chosen weights (`W`) to be added to the `infoMatrix`. The `normalMatrix` is also added to on each iteration with a similar calculation involving the mapped `H` array and the relevant `observationDeviations`.
@@ -349,11 +346,8 @@ def run_batch( input ) :
       H    = np.dot( mappingMatrix[0+2*ii:2+2*ii,:], phi_t_t0 )
       # add the new H^T H result to the information matrix
       infoMatrix   += np.dot( H.T, np.dot( W, H ) )
-      # covArray[ii,:,:]   = aInv( infoMatrix )
       # add the H^T Y result to the observation information matrix
-      yii = np.zeros([len( observationDeviations[ii,:]),1])
-      yii[:,0] = observationDeviations[ii,:]
-      normalMatrix += np.dot( H.T, np.dot( W, yii))
+      normalMatrix += np.dot( H.T, np.dot( W, observationDeviations[ii,:].T))
 
   ##################################################################################
   #
