@@ -41,7 +41,7 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         super(AttitudeFilter, self).__init__(modelName, modelActive, modelPriority)
 
         ## Input gyro, star tracker message names
-        self.inputStMsgName = "some_bullshit"
+        self.inputStMsgName = []
         self.inputIMUMsgName = "won_t_work"
 
         ## Output body torque message name
@@ -83,6 +83,7 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
     ## The selfInit method is used to initialze all of the output messages of a class.
     # It is important that ALL outputs are initialized here so that other models can
     # subscribe to these messages in their crossInit method.
+
     def selfInit(self):
         print "selfing:"
         print self.outputMsgName

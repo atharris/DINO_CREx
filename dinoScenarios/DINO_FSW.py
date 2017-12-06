@@ -78,7 +78,7 @@ class FSWClass():
         self.attFilter.inputIMUMsgName =  "gyro_output_data"
         self.attFilter.inputStMsgName = "st_output_data"
         self.attFilter.outputMsgName = "aekf_output_data"
-        self.attFilter.dt = self.defaultTaskTimeStep
+        self.attFilter.dt = mc.NANO2SEC*self.defaultTaskTimeStep
         return
 
     def InitAllFSWObjects(self, SimBase):
