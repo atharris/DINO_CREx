@@ -402,3 +402,49 @@ def attFilter_dynScenario(TheDynSim):
     pull_aekfOutputs(TheDynSim)
     #pull_DynCelestialOutputs(TheDynSim)
     plt.show()
+
+def opnavCamera_dynScenario(TheDynSim):
+    """
+    Executes a default scenario for stand-alone camera simulation
+    :params: TheDynSim: instantiation of class DINO_DynSim
+    :return: None
+    """
+    # Log data for post-processing and plotting
+    #   Set length of simulation in nanoseconds from the simulation start.
+    simulationTime = mc.sec2nano(1000)
+    #   Set the number of data points to be logged, and therefore the sampling frequency
+    numDataPoints = 10000
+    samplingTime = simulationTime / (numDataPoints - 1)
+    log_DynOutputs(TheDynSim, samplingTime)
+    log_DynCelestialOutputs(TheDynSim, samplingTime)
+
+    # Initialize Simulation
+    TheDynSim.InitializeSimulation()
+
+    # Set up the orbit using classical orbit elements
+    #oe = define_default_orbit()
+    mu = TheDynSim.DynClass.mu
+    rN, vN = define_dino_postTMI()
+    om.rv2elem(mu, rN, vN)
+
+    # Initialize Spacecraft States within the state manager (after initialization)
+    posRef = TheDynSim.DynClass.scObject.dynManager.getStateObject("hubPosition")
+    velRef = TheDynSim.DynClass.scObject.dynManager.getStateObject("hubVelocity")
+    sigmaRef = TheDynSim.DynClass.scObject.dynManager.getStateObject("hubSigma")
+    omegaRef = TheDynSim.DynClass.scObject.dynManager.getStateObject("hubOmega")
+
+    #   Set the spacecraft initial position, velocity, attitude parameters
+    posRef.setState(sp.np2EigenVectorXd(rN))  # r_BN_N [m]
+    velRef.setState(sp.np2EigenVectorXd(vN))  # r_BN_N [m]
+    sigmaRef.setState([[0.1], [0.2], [-0.3]])  # sigma_BN_B
+    omegaRef.setState([[0.001], [-0.01], [0.03]])  # omega_BN_B [rad/s]
+
+    # Configure a simulation stop time time and execute the simulation run
+    TheDynSim.ConfigureStopTime(simulationTime)
+    TheDynSim.ExecuteSimulation()
+
+    # Pull data for post-processing and plotting
+    pull_DynOutputs(TheDynSim)
+    pull_senseOutputs(TheDynSim)
+    #pull_DynCelestialOutputs(TheDynSim)
+    plt.show()

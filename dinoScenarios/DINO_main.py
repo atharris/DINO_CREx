@@ -22,6 +22,8 @@ class DINO_DynSim(SimulationBaseClass.SimBaseClass):
         # Create simulation process names
         self.DynamicsProcessName = "DynamicsProcess"
         self.FSWProcessName = "FSWProcess"
+        self.DynPyProcessName = "DynPyProcess"
+
         self.FSWPyProcessName = "FSWPyProcess"
         # Create processes
         self.dynProc = self.CreateNewProcess(self.DynamicsProcessName)
@@ -41,6 +43,10 @@ class DINO_DynSim(SimulationBaseClass.SimBaseClass):
         self.fswPyProc.addInterfaceRef(self.dyn2pyFswInterface)
         self.fswPyProc.addInterfaceRef(self.fsw2pyFswInterface)
 
+        self.dyn2dynPyInterface = sim_model.SysInterface()
+        self.dyn2dynPyInterface.addNewInterface(
+            self.DynPyProcessName, self.DynamicsProcessName)
+        self.dynPyProc.addInterfaceRef(self.dyn2dynPyInterface)
         # Crate sim subclasses
         self.DynClass = DINO_DKE.DynamicsClass(self)
         self.FSWClass = DINO_FSW.FSWClass(self)
