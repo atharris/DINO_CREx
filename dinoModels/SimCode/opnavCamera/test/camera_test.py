@@ -40,20 +40,6 @@ import lightSimFunctions
 #a lot of the details of the spacecraft don't matter because
 #they aren't used in the camera model. The really important one is 
 #the state vector.
-sc = bod.sc(
-	"SC", #name of this body
-	"Earth", #central body
-	2451545.0, #Epoch of coe presented here, in JD
-	122164 , #a in km
-	0, # e
-	0, #inclination in deg
-	0, #omega in deg
-	0, #OMEGA in deg
-	0, #Mean Anomaly at epoch in deg
-	np.array([]), #state vector in HCI frame. [x,y,z,v_x,v_y,v_z] 
-	np.nan, #true anomaly measured at same time as state vector
-	np.nan
-	)
 
 qe = {}
 qe['lambda'] = np.arange(420,721,2.)
@@ -71,7 +57,6 @@ tc['throughput'] = 0.6*tc['throughput']/max(tc['throughput'])
 
 bod.earth.state = np.array([au,0,0,0,0,0])
 bod.luna.state = bod.earth.state + 250000*np.array([0,1,0,0,0,0])
-sc.state = bod.earth.state - 250000*np.array([1,0,0,0,0,0])
 scState = bod.earth.state - 250000*np.array([1,0,0,0,0,0])
 scDCM = np.identity(3)
 
