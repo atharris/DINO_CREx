@@ -24,8 +24,6 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
 
     # Pull out threshold parameters
     signal_threshold = ROI_parameters['signal_threshold']
-    noise_threshold = ROI_parameters['noise_threshold']
-    ROI_size = ROI_parameters['ROI_size']
     ROI_border_width = ROI_parameters['ROI_border_width']
     max_search_pixels = ROI_parameters['max_search_dist']
     pixel_map_height, pixel_map_width = pixel_map.shape
@@ -149,12 +147,6 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
             # print (ROI_min_row, ROI_max_row), (ROI_min_col, ROI_max_col)
 
             corner_ROI.append([ROI_min_row, ROI_min_col])
-
-        do_plots = False
-        if do_plots == True:
-            #plt.figure(299)
-            plt.imshow(image_ROI[i], extent=[0, ROI_size, 0, ROI_size], interpolation='none', cmap='viridis')
-            plt.show()
 
     return (corner_ROI, image_ROI)
 

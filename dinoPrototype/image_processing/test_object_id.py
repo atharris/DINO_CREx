@@ -68,14 +68,14 @@ if do_CDR_stars:
     cameraParam['pixel size'] = cam_pixel_size
 
 # generate pixel line estimates for stars in camera field of view
-pixel_star, line_star, star_catalog = locfunc.initial_stars_estimate(
+pixelLineEstimate, star_catalog = locfunc.initial_stars_estimate(
     attde_sc, cameraParam, fname_catalog)
 
 # num_obj = 5
-num_obj = len(pixel_star)
+num_obj = len(pixelLineEstimate)
 
 # add random noise to pixel and line coordinates
-doNoise = True
+doNoise = False
 if doNoise:
     sd = 1E-5
     noise = np.random.normal(0, sd, num_obj)
@@ -89,22 +89,29 @@ if doNoise:
     print '\nNoise added (Gaussian with simga=', sd, ')'
     print noise
 
-print 'Number of Initial Estimates: ', len(pixel_star)
-print 'Pixel, Line, and Catalog ID'
-for ind in range(num_obj):
-    print 'Star #', ind, '\t:', \
-        "%6s" % round(pixel_star[ind], 2), '\t', \
-        "%6s" % round(line_star[ind], 2), '\t\t', \
-        "%6s" % star_catalog[ind]
+print 'Number of Initial Estimates: ', len(pixelLineEstimate)
 
 dthetaMax = 15.
 voteMin = round(num_obj/2)
 
 # Object ID
-objectID = idfunc.objectID_stars((pixel_star[0:num_obj], line_star[0:num_obj]),
-                                                    attde_sc, imageProcessingParam,
-                                                    cameraParam)
+objectID = idfunc.objectID_stars(pixelLineEstimate,
+                                  attde_sc,
+                                  imageProcessingParam,
+                                  cameraParam)
 
+
+print 'Star #', ind, '\t:', \
+    "%6s" % 'Pixel ', '\t', \
+    "%6s" % 'Line  ', '\t\t', \
+    "%6s" % 'Ref ID', '\t\t', \
+    "%6s" % 'Obj ID', '\t\t'
+
+for ind in range(num_obj):
+    print 'Star #', ind, '\t:', \
+        "%6s" % round(pixelLineEstimate[ind], 2), '\t', \
+        "%6s" % round(pixelLineEstimate[ind], 2), '\t\t', \
+        "%6s" % star_catalog[ind]
 
 print '\nObject ID Results:'
 for indStar in range(num_obj):

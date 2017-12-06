@@ -18,9 +18,9 @@ def pixelline_to_radec(pl_in, attde_sc, cam_param):
     # P/L --> body unit vector --> inertial unit vector --> inertial RA and Dec
 
 
-    cam_focal_length = cam_param['focal_length']
+    cam_focal_length = cam_param['focal length']
     cam_res = cam_param['resolution']
-    cam_pixel_size = cam_param['pixel_size']
+    cam_pixel_size = cam_param['pixel size']
 
     # convert pixel/line coordinates to a unit vector in camera body coordinates
     ehat_cam = pixelline_to_ehat(pl_in, cam_param)
@@ -42,9 +42,9 @@ def pixelline_to_radec(pl_in, attde_sc, cam_param):
 
 def pixelline_to_ehat(pl_in, cam_param):
 
-    cam_focal_length = cam_param['focal_length']
+    cam_focal_length = cam_param['focal length']
     cam_res = cam_param['resolution']
-    cam_pixel_size = cam_param['pixel_size']
+    cam_pixel_size = cam_param['pixel size']
 
     pixel = pl_in[0]
     line = pl_in[1]
@@ -101,14 +101,14 @@ def observed_measurements(pl_in, dthetaMax, attde_sc, cam_param):
     dtheta = []
     pairIndex = []
 
-    for ind in range(len(pl_in[0])):
+    for ind in range(len(pl_in)):
 
         ind2 = ind + 1
 
-        while ind2 < len(pl_in[0]):
+        while ind2 < len(pl_in):
 
             current_dtheta = pixelline_to_angular_separation(
-                (pl_in[0][ind], pl_in[1][ind]), (pl_in[0][ind2], pl_in[1][ind2]), cam_param)
+                pl_in[ind], pl_in[ind2], cam_param)
 
             if current_dtheta <= dthetaMax:
                 dtheta.append(current_dtheta)
@@ -153,7 +153,7 @@ def generate_uniqueID_and_counts(rawIDs):
 ##################################################
 ##################################################
 
-def objectID_stars(pl_in, attde_sc, imageProcessingParam, cameraParameters):
+def objectIDStars(pl_in, attde_sc, imageProcessingParam, cameraParameters):
     """
     Identifies objects in an image using a reference catalog.
     @param  pl_in               Tuple of 1xN arrays of right ascension and declination in HCI coordinates [deg]
@@ -183,11 +183,7 @@ def objectID_stars(pl_in, attde_sc, imageProcessingParam, cameraParameters):
     fname_catalog =imageProcessingParam['filenameObjectIDCatalog']
     ERROR_DTHETA = imageProcessingParam['dthetaError']
 
-    cam_param = {'focal_length': cam_focal_length,
-                 'resolution': cam_res,
-                 'pixel_size': cam_pixel_size}
-
-    nStars = len(pl_in[0])
+    nStars = len(pl_in)
 
     # container for each star to append running vote counts
     # value of -1 indicates empty (no matches)
@@ -199,7 +195,7 @@ def objectID_stars(pl_in, attde_sc, imageProcessingParam, cameraParameters):
     starID = []
 
     # calculate intra-stellar angular distance between each pair in star coordinate list
-    dtheta, pairIndex = observed_measurements(pl_in, dthetaMax, attde_sc, cam_param)
+    dtheta, pairIndex = observed_measurements(pl_in, dthetaMax, attde_sc, cameraParameters)
 
     # open object ID reference catalog
     ref_catalog = sql.connect(fname_catalog)
@@ -242,9 +238,7 @@ def objectID_stars(pl_in, attde_sc, imageProcessingParam, cameraParameters):
                 else:
                     runningVoteCount[star2].extend(matchedIDs)
 
-        print '\nCatalog Search Elapsed Time: ', tEnd-tStart
         print 'Number of Catalog Searches: ', len(dtheta)
-        print 'Average time per search: ', (tEnd-tStart)/len(dtheta)
 
     # transform running list of IDs into a net vote count for each possible ID
     print '\nSumming Votes'

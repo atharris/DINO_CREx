@@ -13,6 +13,24 @@ import dynamicFunctions as dyn
 
 ##################################################
 ##################################################
+
+# Test Scenario for Resolved Bodies
+
+# beacon IDs
+beaconIDs = ('Earth', 'Moon')
+radius_beacons = (6378.1, 1737.)
+numBeacons = len(beaconIDs)
+
+fileIn = np.load('test_cases/testcase1.npz')
+ex_image = fileIn['imageMap']
+ex_image = ex_image.reshape(512, 512)
+
+plt.imshow(ex_image)
+
+
+
+##################################################
+##################################################
 # Inputs to Image Processing Module
 
 # beacon list IDs and radius (defined at module initialization)

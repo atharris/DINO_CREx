@@ -9,6 +9,9 @@ import sqlite3 as sql
 import dynamicFunctions as dyn
 import matplotlib.pyplot as plt
 
+import sys, os, inspect
+sys.path.append('../../../../external')
+
 
 ##################################################
 ##################################################
@@ -156,6 +159,7 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
     """
     Returns all stars in field of view in a reference star catalog based on right ascension and declination bounds.
     @param radec_corners: list of tuple values for each right ascension and declination corner point (ra, dec) [deg]
+                            (upper left, upper right, lower left, lower right)
     @param fname_catalog: reference catalog filename in '.db' SQL database format with the following fields
                             'id' unique ID
                             'BTmag' visual magnitude
@@ -179,7 +183,20 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
 
     # check if field of view covers inertial poles (will determine if max declination needs to extend to cover poles)
     # (process assumes max angular field of view in either direction is 180 degrees)
-    if ra_max - ra_min  > 180:
+
+    # check if the delta between the corner RA values exceed 135 degrees
+    # (assume field of view cannot exceed 180 degrees)
+    deltaRA1 = abs(radec_corners[0][0] - radec_corners[3][0])
+    deltaRA2 = abs(radec_corners[1][0] - radec_corners[2][0])
+    deltaRA = ra_max-ra_min
+    if deltaRA1 > 180:
+        deltaRA1 = 360 - deltaRA
+
+    if deltaRA2 > 180:
+        deltaRA2 = 360 - deltaRA2
+
+    # if deltaRA > 90:
+    if deltaRA1 > 135 or deltaRA2 > 135:
 
         # check which pole the field of view covers
         # +k covered

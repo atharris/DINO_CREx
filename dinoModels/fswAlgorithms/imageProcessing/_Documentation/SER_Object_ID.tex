@@ -13,7 +13,6 @@
 \usepackage{pdflscape}
 \usepackage{wasysym}
 \begin{document}
-
 \makeCover
 
 
@@ -24,15 +23,16 @@
 \pagestyle{empty}
 {\renewcommand{\arraystretch}{2}
 \noindent
+
 \begin{longtable}{|p{0.5in}|p{4.5in}|p{1.14in}|}
 \hline
 {\bfseries Rev}: & {\bfseries Change Description} & {\bfseries By} \\
 \hline
 1.0 & Initial Release &  Joseph Park\\ %edit this
 \hline
-
 \end{longtable}
 }
+\addtocounter{table}{-1}
 
 \newpage
 \setcounter{page}{1}
@@ -42,135 +42,148 @@
 ~\\ \hrule ~\\
 
 \newpage
-\section{Algorithm Overview}
-\subsection{Methodology} The object ID algorithm implemented by the image processing module is based on "A Geometric Voting Algorithm for Star Trackers". The key criteria utilized are binary angles between each pair of observed objects. There are several steps to the process outlined below:
-\begin{itemize}
+\section{Algorithm Description}
+\subsection{Methodology} The object ID algorithm implemented by the image processing module is based on "A Geometric Voting Algorithm for Star Trackers". The key criteria utilized are binary angles between each pair of observed objects. There are several steps to the process outlined below. \\
+\noindent This algorithm was chosen partially due to large number of objects it can incorporate in the object ID process. This was desirable due to the fact beacons will be frequency targeted in the images used, requiring an algorithm that is robust to unidentifiable objects in the camera field of view. \\ 
+\begin{enumerate}
   \item object ID specific reference table generation
   \item binary angle calculation for each observed object pair
   \item reference table search for matches
   \item voting system for positive IDs
-  \item unknown object resolution\\
+  \item unknown object resolution
+  \\
+\end{enumerate}
+\subsection{Reference Catalog} The object ID algorithm depends on pre-built reference catalogs located in the "external" directory of the main DINO\_CREx folder. A python script is provided for ease of reference table generation. The "referenceCatalogScripts.py" requires an existing "tycho.db" SQL database with the following data entries:
+\begin{itemize}
+	\item "id", unique index value (integer)
+	\item "RA", right ascension (deg)
+	\item "DE", declination (deg)
+	\item "BTMag" magnitude value
+	\\	
+\end{itemize}	
+Note that the right ascension and declination are for a heliocentric inertial coordinate frame. The frame needs to match the same coordinate frame utilized by Basilisk (+x as the first point of Aries and +z as normal to the ecliptic plane). \\ \\
+\noindent As the key criteria in this Object ID algorithm are binary angles between each pair of objects, a reference table needs to be generated. The original ``tycho.db'' star catalog utilized by the image generation module has more entries than required for the object ID algorithm. In order to limit the size of the reference table and the computational power requirements of the object ID, only a subset of the original catalog was utilized. The two key parameters in reducing the catalog size is to limit the visual magnitude of its entries as well as the maximum angular separation between objects in the object ID reference table. \\
+\\The process for converting the right ascension and declination from the original reference catalog to an angular distance between pairs of objects is outlined in the equations below. \\
+\begin{subequations}
+	\begin{align}
+		\hat{e} = \begin{pmatrix}
+					cos(dec)*cos(ra) \\
+					cos(dec)*sin(ra) \\
+					sin(dec) \\
+				\end{pmatrix} \\
+		\theta = acos(\hat{e_1} \cdot \hat{e_2})
+	\end{align}
+\end{subequations}
+\\
+In the object ID reference database file, ``objectID\_catalog.db'', the entries consist of the following: \\
+\begin{itemize}
+	\item "id1", unique index value of object 1 (integer)
+	\item "id2", unique index value of object 2 (integer)
+	\item "dtheta", binary angular distance between the objects (deg) \\
 \end{itemize}
+Note that the two ID fields are interchangeable. However for a given pair of ID values, only a single entry exists in the catalog. The catalogs provided with the final delivery were created with the following settings: $m_{v-max} = 6.25$ and $\Delta\theta = 12^{\circ}$. These parameters resulted in reference catalog and object ID database file sizes of 782.3 kB and 6.4 MB respectively. \\
+\\
+In order to ensure that the reference catalog would contain enough entries for 	all orientations of a spacecraft, a check was conducted for regular intervals of rotations about the celestial sphere. The results of that analysis is shown below. For each center lattitude and longitude for the camera's field of view, the number of reference catalog objects in view as well as the number of object ID reference table entries (angular distances between stars) are shown below in Table \ref{tab:inputLSimTable}. \\
 
-\subsection{Reference Catalog} Describe the data used from the reference catalog and the calculations required to make the object ID specific reference table. \\ 
-\begin{figure}[H]
-  \begin{center}
-  \includegraphics[width=\linewidth/3]{bct_nsc1.png}
-  \caption{Catalog Size vs. Number of Objects Tradeoff.}
-  \label{fig:boat1}
-  \end{center}
-\end{figure}
-\begin{figure}[H]
-  \begin{center}
-  \includegraphics[width=\linewidth/3]{bct_nsc1.png}
-  \caption{Maximum Delta Theta vs. Object ID Ref. Table Size.}
-  \label{fig:boat1}
-  \end{center}
-\end{figure}
+\begin{table}[H]
+	\centering
+	\caption{Referene Catalog Entries for a $10^{\circ}$x$10^{\circ}$ Field of View}
+	\begin{tabular}{|l|l|l|l|}
+		\hline
+		\rowcolor{CU_Gold}
+		\textcolor{white}{Center Lattitude} & 
+		\textcolor{white}{Center Longitude} & 
+		\textcolor{white}{Number of Objects} & 
+		\textcolor{white}{Number of Object ID Ref Values}  \\ \hline
+		$0^{\circ}$ & $0^{\circ}$ & XXXX & XXXX \\ \hline
+		$45^{\circ}$ & $0^{\circ}$ & XXXX & XXXX \\ \hline
+		$90^{\circ}$ & $0^{\circ}$ & XXXX & XXXX \\ \hline
+		$135^{\circ}$ & $0^{\circ}$ & XXXX & XXXX \\ \hline
+		$180^{\circ}$ & $0^{\circ}$ & XXXX & XXXX \\ \hline
+		$225^{\circ}$ & $0^{\circ}$ & XXXX & XXXX \\ \hline
+		$270^{\circ}$ & $0^{\circ}$ & XXXX & XXXX \\ \hline
+		$360^{\circ}$ & $0^{\circ}$ & XXXX & XXXX \\ \hline
+	\end{tabular}
+	\label{tab:inputLSimTable} \\
+\end{table} 
+\subsection{Observed Object Pair Measurement Calculation}
+With reference values available, the next step is to calculate the observed-pair binary angle measurements. This is done with the object center location values on the pixel map as previously calculated by the centroiding and center-finding functions of the image processing module. Note that the coordinate frame definition is consistent with the below figure. Also note that DINO-CREx does use a pin-hole model of cameras but assumes the inversion is already accounted for in the pixel map provided by the image generation module. The details can be seen in the cited reference from the Voyager mission\cite{voyageruranus}.   
 
-Show tradeoff in number of entries in original reference catalog (limited by magnitude) vs. number of observable objects in a given field of view (set 10x10 deg FoV with varying attitudes) to demonstrate sufficient number of reference objects. \\
-Show results vs. raw catalog size (both original reference catalog and object ID specific catalog. \\
-
-\subsection{Voting Criteria} Describe the error requirements for searches in the reference catalog as well as positive ID requirements. \\
 \begin{figure}[H]
   \begin{center}
-  \includegraphics[width=\linewidth/3]{bct_nsc1.png}
-  \caption{Error Bound vs. Number of Object ID Matches.}
-  \label{fig:boat1}
-  \end{center}
-\end{figure}
-\begin{figure}[H]
-  \begin{center}
-  \includegraphics[width=\linewidth/3]{bct_nsc1.png}
-  \caption{Positive Match Ratio vs. Positive Matches.}
-  \label{fig:boat1}
-  \end{center}
-\end{figure}
-\begin{figure}[H]
-  \begin{center}
-  \includegraphics[width=\linewidth/3]{bct_nsc1.png}
-  \caption{Positive Match Ratio vs. False Positive Matches.}
-  \label{fig:boat1}
-  \end{center}
+  \includegraphics[width=\linewidth/2]{Figures/pl_frame.png}
+  \caption{Pixel Line Coordinate Frame Definition from Voyager\cite{voyageruranus}.}
+  \label{fig:pl_frame}
+  \end{center} 
 \end{figure}
 
-\subsection{Accuracy vs. Performance Tradeoff} Show tradeoff between star magnitudes included and maximum dtheta criteria.
-\begin{figure}[H]
+\noindent With unit vectors available for each observed object, the angular distance between each pair of objects can be calculated following the same process as described previously. Knowing the parameters of the reference catalogs, only those values under the maximum $\Delta\theta$ parameter are considered from here on out.\\
+
+\subsection{Voting Criteria} With two sets of binary distances, the voting system is the next process in the object ID algorithm. Using the object ID reference table, every observed angular distance is searched within the set of reference ID values. With all possible matches within a pre-defined error bound identified, the net number of votes are summed for each candidate reference ID. A positive match of 50\% out of the highest theoretical possible matches is considered a succesful identification. If the most likeliest candidate does not meet this threshold, then the object is considered unknown. \\
+\\
+A notional example is shown below in figure \ref{fig:voting} with the voting results in table \ref{tab:voting}. Looking at the results of voting, the ID of observed object ``A'', would be 155. This is considered a positive match as out of five possible matches in the reference table, four were positively matched, thereby exceeding the minimum match ratio requirement. \\
+ \begin{figure}[H]
   \begin{center}
-  \includegraphics[width=\linewidth/3]{bct_nsc1.png}
-  \caption{Error Bound vs. Number of Object ID Matches.}
-  \label{fig:boat1}
-  \end{center}
+  \includegraphics[width=\linewidth/3]{Figures/voting.png}
+  \caption{Voting Eample.}
+  \label{fig:voting}
+  \end{center} 
 \end{figure}
 
+\begin{table}[H]
+	\centering
+	\caption{Voting Algorithm Example}
+	\begin{tabular}{|l|l|l|l|l|}
+		\hline
+		\rowcolor{CU_Gold}
+		\textcolor{white}{Observed Objects} & 
+		\textcolor{white}{Measured Distance} & 
+		\textcolor{white}{Reference Distance(s)} & 
+		\textcolor{white}{Reference IDs} &
+		\textcolor{white}{ID Votes}  \\ \hline
+		A and B & $2.0^{\circ}$ & $1.9^{\circ}$ +- $.2^{\circ}$ 
+		& 253 and 155 & 235, 155 \\ \hline
+		A and C & $5.2^{\circ}$ & $5.15^{\circ}$ +- $.2^{\circ}$ 
+		& 155 and 399 & 253, 155 (x2), 399 \\ \hline		
+		A and D & $11.1^{\circ}$ & $10.93^{\circ}$ +- $.2^{\circ}$ 
+		& 155 and 241 & 253 (x2), 155 (x3), 399 \\ 
+		& & $11.24^{\circ}$ +- $.2^{\circ}$ 
+		& 065 and 253 & 241, 065 \\ \hline
+		A and E & $13.0^{\circ}$ & $13.1^{\circ}$ +- $.2^{\circ}$ 
+		& 155 and 477 & 253 (x2), 155 (x4), 399 \\
+		& & & & 241, 065, 477 \\ \hline	
+	\end{tabular}
+	\label{tab:voting} \\
+\end{table} 
+
+\noindent For images with point source beacons, if the ``unkonwn'' object is within the proximity of the beacon initial estimate, then it is considered a positive match for the beacon. For ``resolved'' beacons, there is no similar process as there should be less ambiguity over identifying resolved bodies due to an overall less number of objects due to the brightness and size of the beacon.\\
+\\
+Future work could further refine this process by adding additional validations steps as described in \cite{votingalgorithm}.
 
 \newpage
 \section{Tests}
 
-\subsection{Test 1: Observed Objects Binary Angle Calculations}
-\textbf{Description}: This test verifies the calculation of the intra-stellar angles computed between each two objects in the given camera field of view.\\
-\textbf{Methods}: pixelline\_to\_ehat(), pixelline\_to\_radec()\\
+\subsection{Test 1: Object ID Algorithm with Perfect Pixel Line Center Locations}
+\textbf{Description}: This test verifies the object ID algorithm when the ``measured'' pixel-line coordinates for each object in the camera field of view matches perfectly the reference catalog positions. \\
+\textbf{Methods}: objectIDStars(), pixelLineToEhat(), pixelLineToAngularSeparation(), generateUniqueIDAndCounts(), catalogIDsToRaDec() in objectIDFunctions.py\\
+\textbf{Results}: \\
+The perfect reference catalog IDs used as the object ID observed values are shown as ``Ref ID'' while the calculated IDs from the object ID algorithm are shown as ``Obj ID''. This test case passes as they both match perfectly.
+\begin{figure}[H]
+  \begin{center}
+  \includegraphics[width=\linewidth/2]{Figures/objID_test1.png}
+  \caption{Test Case 1.}
+  \label{fig:test1}
+  \end{center} 
+\end{figure}
 
-\subsection{Test 2: Reference Objects Binary Angle Calculations}
-\textbf{Description}: This test verifies the calculation of the intra-stellar angles computed between each two objects in the reference catalog.\\
-\textbf{Methods}: pixelline\_to\_ehat(), pixelline\_to\_radec()\\
+\begin{thebibliography}{9}
+\bibitem{votingalgorithm} 
+Michael Kolomenkin, Sharon Polak, and Michael Lindenbaum. ``A Geometric Voting Algorithm for Star Trackers.'' 
+\textit{IEEE Transactions on Aerospace and Electronic Systems}, vol. 44, no. 2, 2008.
 
-\subsection{Test 4: Voting Algorithm Matches}
-\textbf{Description}: \\
-\textbf{Methods}: pixelline\_to\_ehat(), pixelline\_to\_radec()\\
+\bibitem{voyageruranus} 
+S.P. Synott, A.J. Donegan, J.E. Riedel, and J.A. Stuve. ``Interplanetary Optical Navigation: Voyager Uranus.'' Jet Propulsion Laboratory California Institute of Technology.
+\end{thebibliography}
 
-\subsection{Test 5: Target Beacon Identification}
-\textbf{Description}: \\
-\textbf{Methods}: pixelline\_to\_ehat(), pixelline\_to\_radec()\\
-
-\newpage
-
-\subsection{Test 3: image.psf()}
-\textbf{Status}: Incomplete. 10.31.17\\
-\textbf{Responsible Team Member}: Matt Muszynski \\
-\textbf{Description}: Because we expect the gaussian PDF applied to stars and body facets to be normalized, this test checks that the sum of the PSF caluclated by image.psf() is indeded one.\\
-\textbf{Method}: \\
-
-\subsection{Test 4.11: image.psf()}
-\textbf{Status}: Incomplete. 10.31.17\\
-\textbf{Responsible Team Member}: Matt Muszynski \\
-\textbf{Description}: The PSF calculated at runtime should be centered at (0,0) in pixel/line space. This test ensures that it is.\\
-\textbf{Method}: \\
-
-\subsection{Test 4.12: image.psf()}
-\textbf{Status}: Incomplete. 10.31.17\\
-\textbf{Responsible Team Member}: Matt Muszynski \\
-\textbf{Description}: This test fits a 2D gaussian to the PSF created my image.psf() at run time to enure the correct covariance is achieved.\\
-\textbf{Method}: \\
-
-\subsection{Test 4.13: image.rasterize()}
-\textbf{Status}: Incomplete. 10.31.17\\
-\textbf{Responsible Team Member}: Beryl Kuo \\
-\textbf{Description}: \\
-\textbf{Method}: \\
-
-\subsection{Test 4.14: image.add\_read\_noise()}
-\textbf{Status}: Incomplete. 10.31.17\\
-\textbf{Responsible Team Member}: Ishaan Patel \\
-\textbf{Description}: This test adds read noise to a blank image and ensures that it is in fact gaussian as desired.\\
-\textbf{Method}: \\
-
-\subsection{Test 4.15: image.add\_poisson\_noise()}
-\textbf{Status}: Incomplete. 10.31.17\\
-\textbf{Responsible Team Member}: Ishaan Patel \\
-\textbf{Description}: This test adds poisson noise to a false detector array and checks the output to ensure it is truly a poisson distribution.\\
-\textbf{Method}: \\
-
-\subsection{Test 4.16: image.pix\_line()}
-\textbf{Status}: Incomplete. 10.31.17\\
-\textbf{Responsible Team Member}: Matt Muszynski \\
-\textbf{Description}: This method takes (TBD) stars from a scene, calculates their angular separation using their pixel and line coordinates and the phsical characteristics of the camera that took the image. This is then compared to the true angular separation between the two stars using the dot product of the unit vector pointing at each.\\
-\textbf{Method}: \\
-
-\subsection{Test 4.17: em.planck()}
-\textbf{Status}: Test Passes. 10.31.17\\
-\textbf{Responsible Team Member}: Matt Muszynski \\
-\textbf{Description}: This test checks that the value of the integral of em.planck() over all wavelength space to the output of em.stefan\_boltzmann() matches to within 0.1\% \\
-\textbf{Method}: This method performs a numerical integration of the planck functon over a wavelength range of 1nm to 10000nm in 1nm bins. Values outside of this range are ignored as they are very small. This involves evaluating em.planck() at all wavelengths and multiplying by 1nm (essentially a Riemann sum). This then gives a value in units of $W/m^2/sr$. The $sr$ portion of this value can be removed by multiplying by a factor of pi (the solid angle subtended by the source as measured at the source). Theoretically this value should match the output of the stefan-boltzmann function exactly. In order to allow for the error inherent in the numerical integration, we only assert that the values match to within 0.1\%.\\
 
 \end{document}

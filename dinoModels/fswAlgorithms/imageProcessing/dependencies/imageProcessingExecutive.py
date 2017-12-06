@@ -3,244 +3,310 @@ import matplotlib.pyplot as plt
 import numpy as np
 # from scipy import misc
 
-import image_processing_functions as imfunc
-import search_location_functions as locfunc
-import object_id_functions as idfunc
-import dynamics as dyn
-
-
-##################################################
-##################################################
-# Inputs to Image Processing Module
-
-# beacon list IDs and radius (defined at module initialization)
-beaconIDs = ('Earth', 'Moon')
-radius_beacons = (6378.1, 1737.)
-numBeacons = len(beaconIDs)
-
-# read in inputs for image processing module
-# file_in = np.load('CDR_save_files/90_deg_orig.npz')
-file_in = np.load('CDR_save_files/stars_only_cdr.npz')
-
-# image map input from image generation module
-ex_image = file_in['detector_array']
-ex_image = (ex_image / max(ex_image)) * 2**12
-ex_image = ex_image.reshape(512, 512)
-
-timestampPic = 1.E9
-
-# camera parameters from DRM definition
-cam_res = (512, 512)
-cam_pixel_size = (39E-6, 39E-6)  # horizontal, vertical [m]
-cam_focal_length = .05  # [m]
-cam_sensor_size = (cam_res[0] * cam_pixel_size[0], cam_res[1] * cam_pixel_size[1])  # [m]
-cam_fov = (2 * math.degrees(math.atan2(cam_sensor_size[0] / 2., cam_focal_length)),
-           2 * math.degrees(math.atan2(cam_sensor_size[1] / 2., cam_focal_length)))
-
-# most recent beacon position from nav module
-# N_r_beacons = (file_in['earth_pos'], file_in['moon_pos'])
-# use below to put beacons out of field of view (if only interested in image processing stars)
-N_r_beacons = (np.array([-1E3, -1E3, 0]), np.array([-1E3, -1E3, -1E3]))
-
-# spacecraft state from nav module
-N_r_cam = file_in['sc_pos']
-BN_dcm_cam = file_in['sc_dcm']
-
-print '\nImage Processing Module Inputs:'
-print 'Spacecraft Position: ', N_r_cam
-print 'Spacecraft Attitude:'
-print BN_dcm_cam
-print 'Beacon IDs, Radius, and Positions: '
-for ind in range(numBeacons):
-    print beaconIDs[ind], radius_beacons[ind], N_r_beacons[ind]
-
-print '\nCamera Parameters'
-print 'Camera Resolution: ', cam_res
-print 'Camera Pixel Size [m]: ', cam_pixel_size
-print 'Camera Focal Length [m]: ', cam_focal_length
-print 'Camera Sensor Size [m]: ', cam_sensor_size
-print 'Camera Field of View [deg]: ', round(cam_fov[0],4), round(cam_fov[1],4)
-
-
-##################################################
-##################################################
-# Parameter definition for image processing module
-
-cameraParam = {}
-cameraParam['resolution'] = cam_res
-cameraParam['focal length'] = cam_focal_length
-cameraParam['sensor size'] = cam_sensor_size
-cameraParam['field of view'] = cam_fov
-cameraParam['pixel size'] = cam_pixel_size
-
-ROI_parameters = {}
-ROI_parameters['signal_threshold'] = 1.5
-ROI_parameters['noise_threshold'] = 1E-6
-ROI_parameters['ROI_size'] = 100
-ROI_parameters['ROI_border_width'] = 1
-ROI_parameters['max_search_dist'] = 50
-
-imageProcessingParam ={}
-imageProcessingParam['voteCountMinRatio'] = .5      # minimum ratio of positive matches out of possible matches
-imageProcessingParam['dthetaMax'] = 15.     #[deg] dependent on object ID reference catalog
-imageProcessingParam['filenameSearchCatalog'] = 'star_catalog/tycho_BTmag_cutoff.db'
-imageProcessingParam['filenameObjectIDCatalog'] = 'star_catalog/objectID_catalog.db'
-imageProcessingParam['dthetaError'] = 5E-6
-
-pixelSizeMin = 15.      # number of pixels required for a beacon to be considered a resolved body
-pixelDimenMin = min(cam_pixel_size)
-singlePixelAngSize = math.degrees(math.atan(pixelDimenMin/cam_focal_length))
-angularSizeMin = singlePixelAngSize * pixelSizeMin
-
-print 'Beacon Angular Size Requirements: ', angularSizeMin
-
-
-##################################################
-##################################################
-# Check Current status of target beacons
-# 0 for out of field of view, 1 for point source, 2 for resolved body
-
-beaconStatus = imfunc.checkBeaconStatus(N_r_beacons, N_r_cam, BN_dcm_cam, cameraParam['field of view'],
-                                        radius_beacons, angularSizeMin)
-
-print '\nBeacon Status: ', beaconStatus
-
-# Separate visible beacons from non-visible
-N_r_beaconsVisible = []
-N_r_beaconsPtSource = []
-N_r_beaconsResolved = []
-beaconIDsVisible = []
-beaconIDsPtSource = []
-beaconIDsResolved = []
-
-for ind in range(numBeacons):
-
-    if beaconStatus[ind] != 0:
-        N_r_beaconsVisible.append(N_r_beacons[ind])
-        beaconIDsVisible.append(beaconIDs[ind])
-
-    if beaconStatus[ind] == 1:
-        N_r_beaconsPtSource.append(N_r_beacons[ind])
-        beaconIDsPtSource.append(beaconIDs[ind])
-
-    if beaconStatus[ind] == 2:
-        N_r_beaconsResolved.append(N_r_beacons[ind])
-        beaconIDsResolved.append(beaconIDs[ind])
-
-numBeaconsVisible = len(N_r_beaconsVisible)
-numBeaconsPtSource = len(N_r_beaconsPtSource)
-numBeaconsResolved = len(N_r_beaconsResolved)
-
-print '\nVisible Beacons: ', beaconIDsVisible
-print 'Pt Source Beacons: ', beaconIDsPtSource
-print 'Resolved Beacons: ', beaconIDsResolved
-
-
-##################################################
-##################################################
-# Generate Pixel Line Estimates for Stars and Beacons
-
-pixel_line_ptSource_i, tempID = locfunc.initial_stars_estimate(
-    BN_dcm_cam, cameraParam, imageProcessingParam['filenameSearchCatalog'])
-
-if numBeaconsResolved > 0:
-    pixel_line_resolved_i = locfunc.initial_beacons_estimate(
-        N_r_beaconsResolved, N_r_cam, BN_dcm_cam, cameraParam)
-
-if numBeaconsPtSource > 0:
-    pixel_line_beacon_ptSource_i = locfunc.initial_beacons_estimate(
-        N_r_beaconsPtSource, N_r_cam, BN_dcm_cam, cameraParam)
-    pixel_line_ptSource_i = np.vstack((pixel_line_ptSource_i, pixel_line_beacon_ptSource_i))
-
-
-print '\n# of Initial Estimates of Pt Sources: ', len(pixel_line_ptSource_i)
-# for currentPL in pixel_line_ptSource_i:
-#     print currentPL
-
-if numBeaconsResolved > 0:
-    print '\nInitial Estimate of Resolved Bodies'
-
-    for currentPL in pixel_line_resolved_i:
-        print currentPL
-
-##################################################
-##################################################
-# Determine Center and Centroid Locations
-
-if numBeaconsResolved > 0:
-    pixel_line_center, DN = imfunc.find_center_resolved_body(ex_image, pixel_line_resolved_i, ROI_parameters)
-else:
-    pixel_line_center, DN = imfunc.find_centroid_point_source(ex_image, pixel_line_ptSource_i, ROI_parameters)
-
-numObjects = len(pixel_line_center)
-
-print '\nIdentified Pixel and Line Center Locations: '
-for ind in range(numObjects):
-    print pixel_line_center[ind]
-
-
-##################################################
-##################################################
-# Run Object ID Algorithm
-#
-# if numBeaconsResolved == 0:
-#     objectID = idfunc.objectID_stars(pixel_line_center, BN_dcm_cam, imageProcessingParam, cameraParam)
-#
-#
-#     print '\nObject ID Results:'
-#     for indStar in range(numBeacons):
-#         print objectID[indStar]
-#
-# N_radec = idfunc.catalogIDsToRaDec(objectID, imageProcessingParam['filenameSearchCatalog'])
-# #
-# print '\nInertial right ascension and declination for identified objects (reference catalog lookup):'
-# for indStar in range(numBeacons): print objectID[indStar], '\t', N_radec[indStar]
-#
-# # List containers for unit vectors (1x3) numpy arrays
-# B_ehat = []
-# N_ehat = []
-#
-# print '\nBody and Inertial Unit Vectors'
-# for indStar in range(numBeacons):
-#
-#     B_ehatTemp =idfunc.pixelline_to_ehat((pixel_star[indStar], line_star[indStar]), camParam)
-#     B_ehat.append(B_ehatTemp)
-#
-#     N_ehatTemp = dyn.radec_to_unitvector(N_radec[indStar])
-#     N_ehat.append(N_ehatTemp)
-#
-#     # verify results with actual s/c attitude
-#     B_ehatCheck = np.matmul(BN_dcm_cam, N_ehatTemp)
-#
-#     print B_ehatTemp, '\t', N_ehatTemp, '\t', B_ehatCheck - B_ehatTemp
-#
-#
-# # DCM = dyn.quest(B_ehat, N_ehat, (2,1,1,1))
-# dcmQUEST = dyn.quest(B_ehat, N_ehat)
-# mrpQUEST = dyn.dcm2mrp(dcmQUEST)
-#
-# print '\nQUEST Attitude Solution: '
-# print dcmQUEST
-#
-# print '\nS/C Attitude Truth: '
-# print BN_dcm_cam
-#
-# print '\nAttitude Error:'
-# print dcmQUEST-BN_dcm_cam
-#
-# print '\nMRP Solution: ', mrpQUEST
+import imageProcessingFunctions as imfunc
+import searchLocationFunctions as locfunc
+import objectIDFunctions as idfunc
+import dynamicFunctions as dyn
 
 
 
+def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
+                    r_N_beacons, beaconIDs, beaconRadius, makePlts = False):
+    """
+    Identifies objects in an image using a reference catalog.
+    @param  imageMap            1xN numpy array of image where N is image horizontal resolution x image vertical
+                                resolution.
+    @param  cameraParameters:    python dict with the following entries
+                                ['resolution'] tuple of horizontal x vertical camera sensor resolution
+                                ['focal length'] camera sensor effective focal length [m]
+                                ['pixel size'] tuple of horizontal x vertical camera sensor pixel size [m]
+                                ['field of view'] tuple of horizontal x vertical field of view [deg]
+    @param  r_N_cam
+    @param  sigma_BN_est        Initial estimate of s/c attitude in modified rodriguez parameters
+    @param  beaconIDs
+    @param  beaconRadius
+    @return objectID            List of reference catalog ID values for identified objects (NaN if none found)
+    @return pixelLine           Tuple of pixel, line coordinates
+    @return sigma_BN            S/C attitude in modified rodriguez parameters
+    """
+
+    ##################################################
+    ##################################################
+    # Parameter Definition
+
+    pixelSizeMin = 15.  # number of pixels required for a beacon to be considered a resolved body
+    pixelDimenMin = min(cameraParameters['pixel size'])
+    singlePixelAngSize = math.degrees(math.atan(pixelDimenMin / cameraParameters['focal length']))
+    angularSizeMin = singlePixelAngSize * pixelSizeMin
+
+    minRes = min(cameraParameters['resolution'])
+    ROI_parameters = {}
+    ROI_parameters['signal_threshold'] = 4096/1000.
+    ROI_parameters['ROI_border_width'] = 1
+    ROI_parameters['max_search_dist'] = minRes/100.
+
+    imageProcessingParam ={}
+    imageProcessingParam['voteCountMinRatio'] = .01      # minimum ratio of positive matches out of possible matches
+    imageProcessingParam['dthetaMax'] = 15.     #[deg] dependent on object ID reference catalog
+    imageProcessingParam['filenameSearchCatalog'] = '../../../../external/tycho_BTmag_cutoff.db'
+    imageProcessingParam['filenameObjectIDCatalog'] = '../../../../external/objectID_catalog.db'
+    imageProcessingParam['dthetaError'] = 1E-3
+
+    maxInitialEstimates = 20
 
 
+    ##################################################
+    ##################################################
+    # Process Inputs
+
+    # normalize to a 12 bit image and reshape 1D pixel map to 2D pixel map
+    imageMap = (imageMap/np.amax(imageMap)) * 4096
+    # imageMap = imageMap.reshape(cameraParameters['resolution'][0], cameraParameters['resolution'][1])
+
+    # convert modified rodriguez parameter to a direction cosine matrix
+    BN_dcm_cam = dyn.mrp2dcm(sigma_BN_est)
 
 
+    ##################################################
+    ##################################################
+    # Check Current status of target beacons
+    # 0 for out of field of view, 1 for point source, 2 for resolved body
+
+    BN_dcm_cam = dyn.mrp2dcm(sigma_BN_est)
+
+    numBeacons = len(beaconIDs)
+    beaconStatus = imfunc.checkBeaconStatus(r_N_beacons, r_N_cam, BN_dcm_cam, cameraParameters['field of view'],
+                                            beaconRadius, angularSizeMin)
+
+    # Separate visible beacons from non-visible
+    N_r_beaconsVisible = []
+    N_r_beaconsPtSource = []
+    N_r_beaconsResolved = []
+    beaconIDsVisible = []
+    beaconIDsPtSource = []
+    beaconIDsResolved = []
+
+    for ind in range(numBeacons):
+
+        if beaconStatus[ind] != 0:
+            N_r_beaconsVisible.append(r_N_beacons[ind])
+            beaconIDsVisible.append(beaconIDs[ind])
+
+        if beaconStatus[ind] == 1:
+            N_r_beaconsPtSource.append(r_N_beacons[ind])
+            beaconIDsPtSource.append(beaconIDs[ind])
+
+        if beaconStatus[ind] == 2:
+            N_r_beaconsResolved.append(r_N_beacons[ind])
+            beaconIDsResolved.append(beaconIDs[ind])
+
+    numBeaconsVisible = len(N_r_beaconsVisible)
+    numBeaconsPtSource = len(N_r_beaconsPtSource)
+    numBeaconsResolved = len(N_r_beaconsResolved)
+
+    print '\nBeacon Status'
+    print 'Visible Beacons: ', beaconIDsVisible
+    print 'Point Source Beacons: ', beaconIDsPtSource
+    print 'Resolved Body Beacons: ', beaconIDsResolved
 
 
+    ##################################################
+    ##################################################
+    # Conduct initial search location for beacons and stars in field of view
+    print '\nInitial Search Location ...'
+
+    # search for stars in field of view
+    pixel_line_stars_i, catalogIDs = locfunc.initial_stars_estimate(
+        BN_dcm_cam, cameraParameters, imageProcessingParam['filenameSearchCatalog'])
+
+    pixel_line_ptSource_i = pixel_line_stars_i
+
+    if len(pixel_line_ptSource_i) > 20:
+        pixel_line_ptSource_i = pixel_line_ptSource_i[0:maxInitialEstimates]
 
 
+    if numBeaconsPtSource > 0:
+
+        pixel_line_beacon_ptSource_i = locfunc.initial_beacons_estimate(
+            N_r_beaconsPtSource, r_N_cam, BN_dcm_cam, cameraParameters)
+
+        pixel_line_ptSource_i = np.vstack((pixel_line_ptSource_i,
+                                           pixel_line_beacon_ptSource_i))
+
+    pixelLineInitialEstimates = pixel_line_ptSource_i
 
 
+    if numBeaconsResolved > 0:
+
+        pixel_line_resolved_i = locfunc.initial_beacons_estimate(
+            N_r_beaconsResolved, r_N_cam, BN_dcm_cam, cameraParameters)
+
+        pixelLineInitialEstimates = np.vstack((pixel_line_resolved_i,
+                                               pixelLineInitialEstimates))
 
 
+    print '\n# of Initial Estimates of Pt Sources: ', len(pixel_line_ptSource_i)
+    # for currentPL in pixel_line_ptSource_i:
+    #     print currentPL
+
+    if numBeaconsResolved > 0:
+        print '\nInitial Estimate of Resolved Bodies'
+
+        for currentPL in pixel_line_resolved_i:
+            print currentPL
+
+
+    ##################################################
+    ##################################################
+    # Determine Center and Centroid Locations
+    print '\nCentroiding Center-finding ...'
+
+    pixelLineCenter, DN = imfunc.findCentroidPointSource(
+        imageMap, pixel_line_ptSource_i, ROI_parameters)
+
+    if numBeaconsResolved > 0:
+
+        pixelLineCenterResolved, DN = imfunc.findCenterResolvedBody(
+            imageMap, pixel_line_resolved_i, ROI_parameters)
+
+        pixelLineCenter = np.vstack(pixelLineCenterResolved, pixelLineCenter)
+
+    pixelLineCenterFound = []
+    for currentPL in pixelLineCenter:
+        if currentPL is not None:
+            pixelLineCenterFound.append(currentPL)
+
+    numObjectsFound = len(pixelLineCenterFound)
+
+    print '\n# of Identified Pixel and Line Center Locations: ', numObjectsFound
+    for ind in range(numObjectsFound):
+        print pixelLineCenterFound[ind]
+
+
+    ##################################################
+    ##################################################
+    # Conduct Object ID
+    print '\nObject ID ...'
+
+    beaconIDsFound = []
+    pixelLineBeaconFound = []
+
+    if numBeaconsResolved > 0:
+        for ind in range(numBeacons):
+            if beaconStatus[ind] == 2:
+                beaconIDsFound.append(beaconIDs)
+                pixelLineBeaconFound.append(pixelLineCenterResolved[ind])
+
+    if numBeaconsVisible == 0:
+        objectIDs = idfunc.objectIDStars(pixelLineCenterFound, BN_dcm_cam, imageProcessingParam, cameraParameters)
+
+        print '\nStar #', '\t\t', \
+            "%6s" % 'Pixel ', '\t\t', \
+            "%6s" % 'Line  ', '\t\t', \
+            "%6s" % 'Ref ID', '\t\t', \
+            "%6s" % 'Obj ID', '\t\t'
+        for ind in range(numObjectsFound):
+            print 'Star #', ind, '\t:', \
+                "%6s" % round(pixelLineCenter[ind][0], 2), '\t', \
+                "%6s" % round(pixelLineCenter[ind][1], 2), '\t\t', \
+                "%6s" % catalogIDs[ind], '\t\t', \
+                "%6s" % objectIDs[ind]
+
+
+    ##################################################
+    ##################################################
+    # Attitude Determination
+
+    print '\nAttitude Determination ...'
+
+    if numBeaconsResolved == 0:
+
+        radec = idfunc.catalogIDsToRaDec(objectIDs, imageProcessingParam['filenameSearchCatalog'])
+
+        # List containers for unit vectors (1x3) numpy arrays
+        B_ehat = []
+        N_ehat = []
+        weight = []
+
+        for indStar in range(numObjectsFound):
+
+            B_ehatTemp =idfunc.pixelline_to_ehat(
+                pixelLineCenterFound[indStar],
+                cameraParameters)
+
+            B_ehat.append(B_ehatTemp)
+
+            N_ehatTemp = dyn.radec_to_unitvector(radec[indStar])
+            N_ehat.append(N_ehatTemp)
+
+            # verify results with actual s/c attitude
+            B_ehatCheck = np.matmul(BN_dcm_cam, N_ehatTemp)
+
+            weight.append(1)
+
+            # print B_ehatCheck - B_ehatTemp
+
+        dcmQUEST = dyn.quest(B_ehat, N_ehat)
+        mrpQUEST = dyn.dcm2mrp(dcmQUEST)
+
+        print '\nQUEST Attitude Solution: '
+        print dcmQUEST
+
+        print '\nS/C Attitude Truth: '
+        print BN_dcm_cam
+
+        print '\nMRP Solution: ', mrpQUEST
+
+
+    ##################################################
+    ##################################################
+    # Optional Plot Generation
+
+    if makePlts:
+
+        # original image
+        fig1 = plt.figure(1)
+        plt.imshow(imageMap, interpolation = 'none', cmap='viridis')
+        plt.title('Input Image')
+        plt.savefig('input_image.png')
+
+        # initial estimates
+        fig2 = plt.figure(2)
+        plt.imshow(imageMap, interpolation = 'none', cmap='viridis')
+        for ind in range(len(pixelLineInitialEstimates)):
+            plt.scatter(pixelLineInitialEstimates[ind][0], pixelLineInitialEstimates[ind][1],
+                        color='r', marker='+', s=10)
+        plt.title('Initial Estimates')
+        plt.savefig('initial_estimates.png')
+
+        # measured center locations
+        fig3 = plt.figure(3)
+        plt.imshow(imageMap, interpolation='none', cmap='viridis')
+        for ind in range(numObjectsFound):
+            # plt.scatter(pixelLineInitialEstimates[ind][0], pixelLineInitialEstimates[ind][1],
+            #             color='r', marker='+', s=10)
+            plt.scatter(pixelLineCenter[ind][0], pixelLineCenter[ind][1],
+                        color='y', marker='+', s=10)
+        plt.title('Measured Center Locations')
+        plt.savefig('measured_centers.png')
+        # plt.show()
+
+
+    ##################################################
+    ##################################################
+    # Set Outputs
+
+    idOut = objectIDs
+    pixelLineBeaconOut = pixelLineCenterFound
+
+    if numBeaconsVisible == 0:
+        idOut = None
+        pixelLineBeaconOut = None
+
+    if numBeaconsVisible > 0:
+        idOut = beaconIDsFound
+        pixelLineBeaconOut = pixelLineBeaconFound
+
+    sigmaOut = mrpQUEST
+
+    return idOut, pixelLineBeaconOut, sigmaOut
