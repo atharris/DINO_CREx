@@ -513,6 +513,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     imgBeaconPos = []
 
     detectorArrays = []
+    imgTimes = []
     imgPos = []
     imgMRP = []
     imgBeaconPos = []
