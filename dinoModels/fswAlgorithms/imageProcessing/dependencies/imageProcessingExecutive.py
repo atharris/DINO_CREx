@@ -46,11 +46,11 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     ROI_parameters['max_search_dist'] = minRes/100.
 
     imageProcessingParam ={}
-    imageProcessingParam['voteCountMinRatio'] = .01      # minimum ratio of positive matches out of possible matches
-    imageProcessingParam['dthetaMax'] = 15.     #[deg] dependent on object ID reference catalog
-    imageProcessingParam['filenameSearchCatalog'] = '../../../../external/tycho_BTmag_cutoff.db'
+    imageProcessingParam['voteCountMinRatio'] = .2     # minimum ratio of positive matches out of possible matches
+    imageProcessingParam['dthetaMax'] = 12.     #[deg] dependent on object ID reference catalog
+    imageProcessingParam['filenameSearchCatalog'] = '../../../../external/tycho_mag_cutoff.db'
     imageProcessingParam['filenameObjectIDCatalog'] = '../../../../external/objectID_catalog.db'
-    imageProcessingParam['dthetaError'] = 1E-3
+    imageProcessingParam['dthetaError'] = 1E-4
 
     maxInitialEstimates = 20
 
@@ -198,7 +198,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
                 pixelLineBeaconFound.append(pixelLineCenterResolved[ind])
 
     if numBeaconsVisible == 0:
-        objectIDs = idfunc.objectIDStars(pixelLineCenterFound, BN_dcm_cam, imageProcessingParam, cameraParameters)
+        objectIDs = idfunc.objectIDStars(pixelLineCenterFound, imageProcessingParam, cameraParameters)
 
         print '\nStar #', '\t\t', \
             "%6s" % 'Pixel ', '\t\t', \
@@ -212,6 +212,16 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
                 "%6s" % catalogIDs[ind], '\t\t', \
                 "%6s" % objectIDs[ind]
 
+        # remove unidentified object IDs from results
+        objectIDsMatched = []
+        pixelLineCenterFoundMatched = []
+
+        for ind in range(numObjectsFound):
+            if objectIDs[ind] is not None:
+                objectIDsMatched.append(objectIDs[ind])
+                pixelLineCenterFoundMatched.append(pixelLineCenterFound[ind])
+
+        numObjectsFoundMatched = len(objectIDsMatched)
 
     ##################################################
     ##################################################
@@ -219,19 +229,20 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
 
     print '\nAttitude Determination ...'
 
-    if numBeaconsResolved == 0:
+    if numBeaconsResolved == 0 and numObjectsFoundMatched >= 2:
 
-        radec = idfunc.catalogIDsToRaDec(objectIDs, imageProcessingParam['filenameSearchCatalog'])
+        radec = idfunc.catalogIDsToRaDec(objectIDsMatched,
+                                         imageProcessingParam['filenameSearchCatalog'])
 
         # List containers for unit vectors (1x3) numpy arrays
         B_ehat = []
         N_ehat = []
         weight = []
 
-        for indStar in range(numObjectsFound):
+        for indStar in range(numObjectsFoundMatched):
 
             B_ehatTemp =idfunc.pixelline_to_ehat(
-                pixelLineCenterFound[indStar],
+                pixelLineCenterFoundMatched[indStar],
                 cameraParameters)
 
             B_ehat.append(B_ehatTemp)
@@ -256,6 +267,9 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
         print BN_dcm_cam
 
         print '\nMRP Solution: ', mrpQUEST
+
+    else:
+        mrpQUEST = None
 
 
     ##################################################

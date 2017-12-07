@@ -9,7 +9,7 @@ import dynamicFunctions as dyn
 
 # Dependencies: tycho.db
 #               table name: tycho_data (329499 entries, 325 mb)
-#               fields: id, BTmag, VTmag, HIP, RA, DE, name, Bayer,
+#               fields: id, VTmag, VTmag, HIP, RA, DE, name, Bayer,
 #               computed_temperature, published_temperature, reduction_term
 # Generated Files:
 
@@ -21,9 +21,9 @@ import dynamicFunctions as dyn
 makeSearchCatalog = True
 makeObjectIDCatalog = True
 checkNumEntries = False
-checkNumEntries2 = True
+checkNumEntries2 = False
 
-# BTmag cutoff for generated reference catalogs
+# VTmag cutoff for generated reference catalogs
 M_CUTOFF = 6.25
 
 # Decimal places in dtheta entries in objectID catalog
@@ -48,29 +48,31 @@ if makeSearchCatalog:
         dec_min = -361
         dec_max = 361
 
-        s.execute("SELECT * FROM tycho_data WHERE BTmag IS NOT NULL "
+        s.execute("SELECT * FROM tycho_data WHERE VTmag IS NOT NULL "
                   " AND DE BETWEEN (?) AND (?)"
-                  " AND BTmag <= (?)",
+                  " AND VTmag <= (?)",
                   (dec_min, dec_max, M_CUTOFF))
         rows = s.fetchall()
 
         id = []
         RA = []
         DEC = []
-        BTmag = []
+        VTmag = []
         new_rows = []
         for row in rows:
             id.append(row[0])
             RA.append(row[4])
             DEC.append(row[5])
-            BTmag.append(row[1])
-            new_rows.append((row[0], row[4], row[5], row[1]))
+            VTmag.append(row[2])
+            new_rows.append((row[0], row[4], row[5], row[2]))
 
+    # print len(VTmag)
+    # print '\n',VTmag
 
     #######################################################
     # Create new table with subset of original catalog
 
-    objectID_star_catalog = sqlite3.connect('tycho_BTmag_cutoff.db')
+    objectID_star_catalog = sqlite3.connect('tycho_mag_cutoff.db')
 
     with objectID_star_catalog:
 
@@ -95,13 +97,16 @@ if makeSearchCatalog:
 
         # create column for VTMag
         ob.execute("ALTER TABLE {tn} ADD COLUMN '{cn}' {ct}"
-                   .format(tn=table_name, cn='BTMag', ct='FLOAT'))
+                   .format(tn=table_name, cn='VTmag', ct='FLOAT'))
 
         for ind_row in range(len(new_rows)):
-            ob.execute("INSERT INTO tycho_data(id, RA, DEC, BTmag) VALUES(?,?,?,?)",
+            ob.execute("INSERT INTO tycho_data(id, RA, DEC, VTmag) VALUES(?,?,?,?)",
                        (new_rows[ind_row]))
 
     objectID_star_catalog.close()
+
+    # for currentRow in new_rows:
+    #     print currentRow
 
 #######################################
 # object ID reference table generation
@@ -109,7 +114,7 @@ if makeSearchCatalog:
 if makeObjectIDCatalog:
 
     # pull star catalog entries from reference table
-    star_catalog = sqlite3.connect('tycho_BTmag_cutoff.db')
+    star_catalog = sqlite3.connect('tycho_mag_cutoff.db')
     with star_catalog:
 
         s = star_catalog.cursor()
@@ -243,13 +248,13 @@ if checkNumEntries:
     with ref_catalog:
 
         cursor = ref_catalog.cursor()
-        cursor.execute("SELECT * FROM tycho_data WHERE BTmag IS NOT NULL "
-                  " AND BTmag <= (?)", (M_CUTOFF,))
+        cursor.execute("SELECT * FROM tycho_data WHERE VTmag IS NOT NULL "
+                  " AND VTmag <= (?)", (M_CUTOFF,))
         rows = cursor.fetchall()
 
         nStars = len(rows)
         averagePerSqDeg = nStars / 41253.
 
-        print 'Number of Catalog Entries for BTmag <= ', M_CUTOFF, ': ', nStars
+        print 'Number of Catalog Entries for VTmag <= ', M_CUTOFF, ': ', nStars
         print 'Average # of Stars Per 100 sq deg: ', averagePerSqDeg*100
 

@@ -218,8 +218,8 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
     # remove star catalog entries outside of rectangular field of view
     s.execute("SELECT * FROM tycho_data WHERE RA BETWEEN (?) AND (?)"
               " AND DEC BETWEEN (?) AND (?)"
-              " AND BTmag IS NOT NULL "
-              " ORDER BY BTmag ASC",
+              " AND VTmag IS NOT NULL "
+              " ORDER BY VTmag ASC",
               (ra_min, ra_max, dec_min, dec_max))
     rows = s.fetchall()
     n_stars = len(rows)
