@@ -119,7 +119,7 @@ def pull_DynCelestialOutputs(TheDynSim, plots=True):
     }
     if plots==True:
         BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_sc)
-
+    print "Please make this work."
     return r_sun, r_earth, r_moon, r_mars, r_beacons
 
 
