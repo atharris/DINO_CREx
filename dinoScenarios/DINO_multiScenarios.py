@@ -375,15 +375,15 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     ###############################################################################
 
     # load tranmission curve for Canon 20D
-    _20D = np.load('../dinoModels/SimCode/opnavCamera/tc/20D.npz')
-    tc = {}
-    tc['lambda'] = _20D['x']
-    tc['throughput'] = _20D['y']
+    tc = np.load('../dinoModels/SimCode/opnavCamera/tc/20D.npz')
+    # tc = {}
+    # tc['lambda'] = _20D['x']
+    # tc['throughput'] = _20D['y']
 
     # load QE curve for Hubble Space Telecope Advanced Camera for Surveys SITe CCD
     ACS = np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz')
     qe = {}
-    qe['lambda'] = ACS['x']
+    qe['lam'] = ACS['x']
     qe['throughput'] = ACS['y']
 
     ###############################################################################
@@ -391,25 +391,32 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     #       Initialize camera
     #
     ###############################################################################
-    import bodies as bod
-    from constants import au
 
-    bod.earth.state = -1
-    bod.luna.state = -1
-    bod.mars.state = -1
+    earth = camera.beacon()
+    earth.r_eq = 6378.137
+    earth.id = 'Earth'
+    earth.albedo = 0.434
 
-    # bod.earth.albedo = -1
-    # bod.luna.albedo = -1
-    # bod.mars.albedo = -1
+    mars = camera.beacon()
+    mars.r_eq = 3396.2
+    mars.id = 'Mars'
+    mars.albedo = 0.17
 
+    moon = camera.beacon()
+    moon.r_eq = 1738.1
+    moon.id = 'Earth'
+    moon.albedo = 0.12
+
+    beacons = [earth, moon, mars]
+
+    #need loop to define asteroids, too
+
+
+    #can kill these once I change the way camera is initialized
+    takeImage = 0
     scState = -1
     scDCM = -1
 
-    bodies = [bod.earth, bod.luna, bod.mars]
-    takeImage = 0
-
-    # create camera with no stars in it for tests that don't need them
-    # They will run significantly faster without them.
     cam = camera.camera(
         0.01,  # detector_height
         0.01,  # detector_width
@@ -431,7 +438,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         0.01,  # simulation timestep
         scState,  # position state of s/c
         scDCM,  # intertal 2 body DCM for s/c
-        bodies,  # bodies to track in images
+        beacons,  # bodies to track in images
         takeImage,  # takeImage message
         db='../dinoModels/SimCode/opnavCamera/db/tycho.db'  # stellar database
     )
@@ -444,70 +451,24 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     takeImage[300] = 1
     takeImage[400] = 1
 
-    imgMap = []
-    imgTime = []
-    beaconPos = []
-    beaconID = [
-        bod.mars.name,
-        bod.luna.name,
-        bod.earth.name
-        ]
-    beaconRadius = [
-        bod.mars.r_eq,
-        bod.luna.r_eq,
-        bod.earth.r_eq
-        ]
-
-    cameraParam = {
-        'resolution': (cam.resolutionHeight,cam.resolutionWidth),
-        'focalLength': cam.focalLength,
-        'sensorSize': (cam.detectorHeight,cam.detectorWidth),
-        'FOV': (cam.angularHeight,cam.angularWidth),
-        'pixelSize': (cam.detectorHeight/cam.resolutionHeight,
-            cam.detectorWidth/cam.resolutionWidth)
-    }
-
     lastTakeImage = 0
     for i in range(0,len(r_sc)):
         cam.scState = r_sc[i][1:4]
-        bod.earth.state = r_earth[i][1:4]
-        bod.luna.state = r_moon[i][1:4]
-        bod.mars.state = r_mars[i][1:4]
+        earth.state = r_earth[i][1:4]
+        moon.state = r_moon[i][1:4]
+        mars.state = r_mars[i][1:4]
+        #also need a loop here for 
+        #updating beacon position once they're added
         cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
         cam.takeImage = takeImage[i]
+        cam.imgTime = r_sc[i][0]
         cam.updateState()
 
-        if lastTakeImage: 
-            imgTime.append(r_sc[i][0])
-            beaconPos.append(
-                np.array(
-                    [
-                        bod.earth.state,
-                        bod.luna.state,
-                        bod.mars.state
-                    ]
-                )
-                )
-            imgMap.append(
-                cam.images[0].detectorArray.reshape(
-                    cam.resolutionWidth,
-                    cam.resolutionHeight
-                    )
-                )
-            cam.images = {}
-        lastTakeImage = cam.takeImage
-        #r_beacons
-
-    # beaconRadius = 
-
-    # imageMap
-
-
-    for i in range(0,len(imgMap)):
-        plt.figure()
-        plt.imshow(imgMap[i])
-
+    import pdb 
     pdb.set_trace()
+    for i in range(0,len(cam.images)):
+        plt.figure()
+        plt.imshow(cam.images[i].detectorArray)
     
     plt.show()
 
