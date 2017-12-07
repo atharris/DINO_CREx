@@ -571,3 +571,13 @@ def opnavCamera_dynScenario(TheDynSim):
     pull_senseOutputs(TheDynSim)
     #pull_DynCelestialOutputs(TheDynSim)
     plt.show()
+
+def defineParams(inputs):
+    ##  Camera Setup
+
+    ##  Image Processing Setup
+
+    ##  Batch Extras Setup
+
+
+    return cameraObj, cameraParams, batchExtras
