@@ -16,16 +16,13 @@ import sim_model
 
 
 class DINO_DynSim(SimulationBaseClass.SimBaseClass):
-    def __init__(self, fswUpdateRate, dynUpdateRate):
+    def __init__(self):
         # Create a sim module as an empty container
         SimulationBaseClass.SimBaseClass.__init__(self)
         # Create simulation process names
         self.DynamicsProcessName = "DynamicsProcess"
         self.FSWProcessName = "FSWProcess"
         self.DynPyProcessName = "DynPyProcess"
-
-        self.fswUpdateRate = fswUpdateRate
-        self.dynUpdateRate = dynUpdateRate
 
         self.FSWPyProcessName = "FSWPyProcess"
         # Create processes
@@ -53,8 +50,8 @@ class DINO_DynSim(SimulationBaseClass.SimBaseClass):
 
  #       self.dynPyProc.addInterfaceRef(self.dyn2dynPyInterface)
         # Crate sim subclasses
-        self.DynClass = DINO_DKE.DynamicsClass(self, updateRate=dynUpdateRate)
-        self.FSWClass = DINO_FSW.FSWClass(self, updateRate=fswUpdateRate)
+        self.DynClass = DINO_DKE.DynamicsClass(self)
+        self.FSWClass = DINO_FSW.FSWClass(self)
 
 if __name__ == "__main__":
-    scene.basicOrbit_dynScenario(DINO_DynSim(0.1, 0.1))
+    scene.multiOrbitBeacons_dynScenario(DINO_DynSim())

@@ -36,11 +36,11 @@ import opnavCamera
 #   Define the base class for simulation dynamics
 class DynamicsClass():
     #   Constructor method; sets basic parameters for the simulation
-    def __init__(self, SimBase, updateRate=0.01):
+    def __init__(self, SimBase):
         # Define process name, task name and task time-step
         self.processName = SimBase.DynamicsProcessName
         self.taskName = "DynamicsTask"
-        self.taskTimeStep = mc.sec2nano(updateRate)
+        self.taskTimeStep = mc.sec2nano(0.01)
 
         # Create tasks
         SimBase.dynProc.addTask(SimBase.CreateNewTask(self.taskName, self.taskTimeStep))
@@ -73,9 +73,6 @@ class DynamicsClass():
         SimBase.AddModelToTask(self.taskName, self.starTracker,None, 8)
         SimBase.AddModelToTask(self.taskName, self.gyroModel,None,7)
         #SimBase.dynPyProc.addModelToTask("opnavCameraTask",self.opnavCamera)
-
-        self.numBeacons = 0
-
         beaconInd = 21
 #        for beacon in self.beaconList:
 #            SimBase.AddModelToTask(self.taskName, beacon, None, beaconInd)

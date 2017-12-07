@@ -20,10 +20,10 @@ except ImportError:
 import AttitudeFilter as aekf
 
 class FSWClass():
-    def __init__(self, SimBase, updateRate=0.1):
+    def __init__(self, SimBase):
         # Define process name, task name and task time-step
         self.processName = SimBase.FSWProcessName
-        self.defaultTaskTimeStep = mc.sec2nano(updateRate)
+        self.defaultTaskTimeStep = mc.sec2nano(0.1)
 
         # Create Tasks
         #SimBase.fswProc.addTask(SimBase.CreateNewTask("vehicleConverterTask", self.defaultTaskTimeStep), 12)
