@@ -563,8 +563,11 @@ class camera:
 					self.images[openImageKey].beaconAlbedo.append(
 						each.albedo)
 				try: 
-					verbose == 1
+					self.msg['verbose'] == 1
 				except:
+					self.msg['verbose'] = 0
+
+				if not(self.msg['verbose']):
 					delattr(self.images[openImageKey],'RA')
 					delattr(self.images[openImageKey],'DE')
 					delattr(self.images[openImageKey],'DCM')
