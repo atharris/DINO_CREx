@@ -16,7 +16,7 @@ import numpy as np
 import pdb
 
 import sys, os, inspect
-
+import matplotlib.pyplot as plt
 filename = inspect.getframeinfo(inspect.currentframe()).filename
 path = os.path.dirname(os.path.abspath(filename))
 
@@ -50,13 +50,16 @@ thetaD2 = np.sqrt(mu/(rGeo**3))
 # Initial States of the Spacecraft
 RadSat = np.array([rLeo, 0, 0])
 VelSat = np.array([0, rLeo*thetaD1, 0])
-sigsat = np.array([0.1, 0, 0.2])
+sigsat = sBN
 
 # Intial States of the Beacon
-RadObj = np.array([rGeo, 0, 0])
-VelObj = np.array([0, rGeo*thetaD2, 0])
-sigobj = np.array([0, 0.1, 0.2])
+RadObj1 = np.array([rGeo, 0, 0])
+VelObj1 = np.array([0, rGeo*thetaD2, 0])
+sigobj1 = np.array([0, 0.1, 0.2])
 
+RadObj2 = np.array([0, rGeo, rGeo])
+VelObj2 = np.array([0, rGeo*thetaD2, 0])
+sigobj2 = np.array([0.5, 0.5, 0.5])
 
 def norm(input):
   norm = np.sqrt(sum(np.square(input)))
@@ -64,31 +67,46 @@ def norm(input):
 
 
 # Defining inputs coming in from the Spice data of the beacons and the spacecraft
-input1 = np.array([[RadSat, VelSat], [sigobj, sigsat]])
-input2 = np.array([[RadObj, VelObj]])
+input1 = np.array([sigobj1, sigobj2])
+input2 = np.array([[RadObj1, VelObj1], [RadObj2, VelObj2]])
 
 # Gains for the Control Law
-K = 10.
-P = 10.
+K = 2.
+P = 2.
+tol = 1E-12
+option = 3
 
-rsat = input1[0, 0]
-vsat = input1[0, 1]
+rsat = RadSat
+vsat = VelSat
 
+# Time for the spacecraft to sweep to desired attitude (seconds)
+t = 130
+# Initializing Arrays
+control_torque = np.zeros([len(input2), t, 3])
+sbrskp = np.zeros([len(input2), t, 3])
+SigmaBN = np.zeros([len(input2), t, 3])
+OmegaBN = np.zeros([len(input2), t, 3])
+Observe = np.zeros([len(input2), t])
+# Increment Time step (seconds)
+dt = 1
+
+tt=[]
+sigsat = sBN
+wbn = wBN
+x = np.concatenate((sigsat, wbn))
 for jj in range(len(input2)):
 
     robj = input2[jj, 0]
     vobj = input2[jj, 1]
-
     # Reference Attitude and Angular speed of beacon
 
-    sobj = input1[1, 0]
-    ssat = input1[1, 1]
+    sobj = input1[jj]
 
     # Body-Inertial Frame Rotation Matrix
-    bn = MRP2C(sBN)
+    bn = MRP2C(sigsat)
 
     # Hill-Inertial Frame Rotation Matrix
-    hn1 = MRP2C(ssat)
+    hn1 = MRP2C(sigsat)
     hn2 = MRP2C(sobj)
 
     # Inertial Position and Velocity of the Satellite
@@ -98,10 +116,9 @@ for jj in range(len(input2)):
     # Inertial Position and Velocity of the Object
     robjin = hn2.transpose().dot(robj)
     vobjin = hn2.transpose().dot(vobj)
-
     # Inertial Position and Velocity from Satellite to Object
-    rtargetin = robjin - rsatin
-    vtargetin = vobjin - vsatin
+    rtargetin = robj - rsat
+    vtargetin = vobj - vsat
 
     # Target unit vectors
     r1 = rtargetin/norm(rtargetin)
@@ -129,45 +146,18 @@ for jj in range(len(input2)):
     if norm(sbr) > 1:
         sbr = -sbr/(norm(sbr)**2)
 
-    x = np.concatenate((sBN, wBN))
 
-    # Time for the spacecraft to sweep to desired attitude (seconds)
-    t = 130
-
-    # Increment Time step (seconds)
-    dt = 1
 
     time = range(0, t)
-    wbn = wBN
 
-    # Initializing Arrays
-    control_torque = np.zeros([t, 3])
+
+
 
     for ii in xrange(t):
 
-        # New Hill-Inertial MRPs
-        shnnew1 = ssat
-        shnnew2 = sobj
-
-        # New Hill-Inertial Rotation Matrices
-        hnnew1 = MRP2C(shnnew1)
-        hnnew2 = MRP2C(shnnew2)
-
-        # Updated position and velocity for Spacecraft
-        rsinnew = hnnew1.transpose().dot(rsat)
-        vsinnew = hnnew1.transpose().dot(vsat)
-
-        # Updated position and velocity for Object
-        roinnew = hnnew2.transpose().dot(robj)
-        voinnew = hnnew2.transpose().dot(vobj)
-
-        # Updated position and velocity for Spacecraft - Target
-        rtinnew = roinnew - rsinnew
-        vtinnew = voinnew - vsinnew
-
         # Updating the target unit vectors
-        r1 = rtinnew / norm(rtinnew)
-        r3 = np.cross(rtinnew, vtinnew) / norm(np.cross(rtinnew, vtinnew))
+        r1 = rtargetin / norm(rtargetin)
+        r3 = np.cross(rtargetin, vtargetin) / norm(np.cross(rtargetin, vtargetin))
         r2 = np.cross(r3, r1)
 
         # Update for Inertial - Target Rotation Matrix
@@ -180,7 +170,7 @@ for jj in range(len(input2)):
         # MRP for Inertial - Target rate of change
         sdeltarn = (srnnew - srn)/dt
 
-        BMatrix = BmatMRP(srn)
+        BMatrix = BmatMRP(srnnew)
 
         # Angular Rate of Inertial - Target
         wrn = (4/(1+np.dot(srn, srn))**2)*np.dot(BMatrix.transpose(), sdeltarn)
@@ -202,8 +192,8 @@ for jj in range(len(input2)):
 
         # Update all previous values for next iteration
 
-        sbn = x[0:3]
-        bn = MRP2C(sbn)
+        sigsat = x[0:3]
+        bn = MRP2C(sigsat)
         rn = rnnew
         srn = C2MRP(rn)
         nr = nrnew
@@ -217,18 +207,71 @@ for jj in range(len(input2)):
         if s > 1:
             sbr = - sbr/(s**2)
 
+        if norm(sbr) < tol:
+            observation = 1
+        else:
+            observation = 0
+
+        if jj == 0:
+            indextt = ii
+        else:
+            indextt = jj*t + jj*ii
+
+
         # "Output" Values for the Executive Branch
-        control_torque[ii, ...] = (-K*sbr - P*sbr)
-
-    print(control_torque)
-
-
-
-
-
+        Observe[jj, ii] = observation
+        OmegaBN[jj, ii, ...] = wbn
+        SigmaBN[jj, ii, ...] = sigsat
+        control_torque[jj, ii, ...] = (-K*sbr - P*sbr)
+        sbrskp[jj, ii, ...] = sbr
+        tt.append(indextt)
 
 
+control_torque.tolist()
+OmegaBN.tolist()
+SigmaBN.tolist()
+sbrskp.tolist()
+Observe.tolist()
 
+option = 2
+
+if option == 1:
+    plt.plot(tt[0:t], control_torque[0, :, 0], tt[0:t], control_torque[0, :, 1], tt[0:t],
+             control_torque[0, :, 2],
+             tt[t:2*t], control_torque[1, :, 0], tt[t:2*t], control_torque[1, :, 1], tt[t:2*t],
+             control_torque[1, :, 2])
+    plt.legend(['$L_{1}$', '$L_{2}$', '$L_3$'])
+    plt.ylabel('Control Torque (N $\dot{}$ m)')
+    plt.title('For Gains: K =' + str(K) + ' , P = ' + str(P))
+elif option == 2:
+    plt.plot(tt[0:t], sbrskp[0, :, 0], tt[0:t], sbrskp[0, :, 1], tt[0:t], sbrskp[0, :, 2],
+             tt[t:2*t], sbrskp[1, :, 0], tt[t:2*t], sbrskp[1, :, 1], tt[t:2*t], sbrskp[1, :, 2])
+    plt.legend(['$\sigma_{1}$', '$\sigma_{2}$', '$\sigma_3$'])
+    plt.ylabel('$\sigma_{BR}$')
+    plt.title('For Gains: K =' + str(K) + ' , P = ' + str(P))
+elif option == 3:
+    plt.plot(tt[0:t], Observe[0, :], tt[t:2*t], Observe[1, :])
+    plt.legend(['$Beacon_{1}$', '$Beacon_{2}$'])
+    plt.ylabel('Observation')
+    plt.title('For Gains: K =' + str(K) + ' , P = ' + str(P) + ' and Tol = ' + str(tol))
+elif option == 4:
+    plt.plot(tt[0:t], SigmaBN[0, :, 0], tt[0:t], SigmaBN[0, :, 1], tt[0:t], SigmaBN[0, :, 2],
+             tt[t:2*t], SigmaBN[1, :, 0], tt[t:2*t], SigmaBN[1, :, 1], tt[t:2*t], SigmaBN[1, :, 2])
+    plt.legend(['$\sigma_{1}$', '$\sigma_{2}$', '$\sigma_3$'])
+    plt.ylabel('$\sigma_{BN}$')
+    plt.title('For Gains: K =' + str(K) + ' , P = ' + str(P))
+elif option == 5:
+    plt.plot(tt[0:t], OmegaBN[0, :, 0], tt[0:t], OmegaBN[0, :, 1], tt[0:t], OmegaBN[0, :, 2],
+             tt[t:2*t], OmegaBN[1, :, 0], tt[t:2*t], OmegaBN[1, :, 1], tt[t:2*t], OmegaBN[1, :, 2])
+    plt.legend(['$\sigma_{1}$', '$\sigma_{2}$', '$\sigma_3$'])
+    plt.ylabel('$\sigma_{BN}$')
+    plt.title('For Gains: K =' + str(K) + ' , P = ' + str(P))
+
+
+plt.grid(True)
+plt.xlabel('Time (seconds)')
+
+plt.show()
 
 
 
