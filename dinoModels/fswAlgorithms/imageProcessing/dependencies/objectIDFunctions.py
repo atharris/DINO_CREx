@@ -87,13 +87,12 @@ def pixelline_to_angular_separation(pl1, pl2, cam_param):
 ##################################################
 ##################################################
 
-def observed_measurements(pl_in, dthetaMax, attde_sc, cam_param):
+def observed_measurements(pl_in, dthetaMax, cam_param):
     """
     Generates necessary measurements for Object ID algorithm from pixel/line coordinates of visible objects in image.
 
     @param pl_in The pixel/line coordinate of the object in the image //tuple of 1-D numpy arrays
     @param dthetaMax
-    @param attde_sc
     @param cam_param
     @return dtheta
     """
@@ -153,7 +152,7 @@ def generate_uniqueID_and_counts(rawIDs):
 ##################################################
 ##################################################
 
-def objectIDStars(pl_in, attde_sc, imageProcessingParam, cameraParameters):
+def objectIDStars(pl_in, imageProcessingParam, cameraParameters):
     """
     Identifies objects in an image using a reference catalog.
     @param  pl_in               Tuple of 1xN arrays of right ascension and declination in HCI coordinates [deg]
@@ -170,13 +169,9 @@ def objectIDStars(pl_in, attde_sc, imageProcessingParam, cameraParameters):
                                 ['resolution'] tuple of horizontal x vertical camera sensor resolution
                                 ['focal length'] camera sensor effective focal length [m]
                                 ['pixel size'] tuple of horizontal x vertical camera sensor pixel size [m]
-    @return objectID            List of reference catalog ID values for identified objects (NaN if none found)
-    @return observationWeight   List of observation weight based on vote count (NaN if none found)
+    @return objectID            List of reference catalog ID values for identified objects (None if none found)
+    @return observationWeight   List of observation weight based on vote count (None if none found)
     """
-
-    cam_res = cameraParameters['resolution']
-    cam_focal_length = cameraParameters['focal length']
-    cam_pixel_size = cameraParameters['pixel size']
 
     voteMinRatio = imageProcessingParam['voteCountMinRatio']
     dthetaMax = imageProcessingParam['dthetaMax']
@@ -195,7 +190,19 @@ def objectIDStars(pl_in, attde_sc, imageProcessingParam, cameraParameters):
     starID = []
 
     # calculate intra-stellar angular distance between each pair in star coordinate list
-    dtheta, pairIndex = observed_measurements(pl_in, dthetaMax, attde_sc, cameraParameters)
+    dtheta, pairIndex = observed_measurements(pl_in, dthetaMax, cameraParameters)
+    numSearches = len(dtheta)
+
+    # determine number of object ID catalog searches for each object
+    searchesPerObject = np.zeros(nStars)
+    for indStar in range(nStars):
+        for indSearch in range(numSearches):
+            if indStar == pairIndex[indSearch][0] or indStar == pairIndex[indSearch][1]:
+                searchesPerObject[indStar] = searchesPerObject[indStar]+1
+
+    print '\nNumber of Object ID Catalog Searches'
+    for ind in range(nStars):
+        print searchesPerObject[ind]
 
     # open object ID reference catalog
     ref_catalog = sql.connect(fname_catalog)
@@ -206,7 +213,7 @@ def objectIDStars(pl_in, attde_sc, imageProcessingParam, cameraParameters):
         # loop through each angular pair and find matching entries
         # loops through all (0,N) values then (1,N) values , etc...
         print '\nFinding Matching dtheta entries in catalog'
-        print 'Total Number of catalog searches: ', len(dtheta)
+        print 'Total Number of catalog searches: ', numSearches
 
         for ind in range(len(dtheta)):
 
@@ -244,10 +251,10 @@ def objectIDStars(pl_in, attde_sc, imageProcessingParam, cameraParameters):
     print '\nSumming Votes'
 
     # DEBUGGING
-    print
-    for ind in range(nStars):
-        print 'Star ID ', ind, ': ', runningVoteCount[ind]
-    print
+    # print
+    # for ind in range(nStars):
+    #     print 'Star ID ', ind, ': ', runningVoteCount[ind]
+    # print
 
     # container for net vote results
     # netIDs[0] = [4,3,6,8] ... measured id0 star has votes for reference ID's 4,3,6,8
@@ -265,17 +272,18 @@ def objectIDStars(pl_in, attde_sc, imageProcessingParam, cameraParameters):
             uniqueIDs, counts = generate_uniqueID_and_counts(runningVoteCount[indStar])
 
             # Determine minimum number of votes required to be considered a match
-            voteMinCount = voteMinRatio * (sum(counts)/2)
+            # voteMinCount = voteMinRatio * (sum(counts)/2.)
+            voteMinCount = voteMinRatio * searchesPerObject[indStar]
 
             print 'Initial ID ',indStar,', Vote Result Max Counts of ', max(counts), ' for ID: ', \
-                uniqueIDs[np.argmax(counts)], ' (positive ID requires ', voteMinCount, '/', sum(counts)/2, ' searches'
+                uniqueIDs[np.argmax(counts)], ' (positive ID requires ', voteMinCount, '/', searchesPerObject[indStar], ' searches'
 
             # first column are reference IDs, second column are vote counts
             netVotes = np.empty((0, 2))
             for indVote in range(len(uniqueIDs)):
                 np.vstack((netVotes, np.array([uniqueIDs[indVote], counts[indVote]])))
 
-            # PLACEHOLDER - STORE ONLY IDS OF THOSE THAT EXCEED MIN VOTE COUNT
+            # Store positive ID matches or None if not found
             if max(counts) >= voteMinCount and len(runningVoteCount[indStar]) > 2:
 
                 # voteResults.append(netVotes)
@@ -283,8 +291,7 @@ def objectIDStars(pl_in, attde_sc, imageProcessingParam, cameraParameters):
                 # netVoteCount.append(max(counts))
 
             else:
-                netIDs.append('nan')
-
+                netIDs.append(None)
 
     # process votes to determine likeliest candidate
 
@@ -296,11 +303,6 @@ def objectIDStars(pl_in, attde_sc, imageProcessingParam, cameraParameters):
     # store max vote count
     # for indStar in range(nStars):
     #     if maxVote[indStar] < voteMin:
-
-
-
-        # identify objects below minimum vote count
-        # if
 
     objectID = netIDs
 

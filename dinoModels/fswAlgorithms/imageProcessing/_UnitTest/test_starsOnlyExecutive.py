@@ -49,17 +49,17 @@ cameraParam['sensor size'] = file_in['sensorSize']
 cameraParam['field of view'] = file_in['FoV']
 cameraParam['pixel size'] = file_in['pixelSize']
 
-
-# print 'S/C Position: ', r_N_cam
-# print 'Beacon Positions: ', r_N_beacons
-#
-# print 'Camera Field of View: ', cameraParam['field of view']
+# sensor x height width 0.01
+# focal length 0.05
+# resolution 512 512
+# pixel size .01/512
 
 
 ##################################################
 ##################################################
 # Run image processing executive function
 
+# only include detected beacons and PL coordinates
 idsOutput, pixelLineOutput, sigma_BN_output = ip.imageProcessing(
     ex_image, cameraParam, r_N_cam, sigma_BN_cam,
     r_N_beacons, beaconIDs, beaconRadius, True)
