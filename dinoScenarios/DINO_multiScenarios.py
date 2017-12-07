@@ -652,6 +652,48 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     plt.show()
 
 
+    # Run the Image Processing Module
+
+    imgTimesFound = []
+    beaconIDsFound = []
+    beaconPLFound = []
+    imgMRPFound = []                # will have 'None' entries when not able to detect enough objects
+    imgMRPFoundPassThrough = []     # identical attitude as input into the image processing module
+
+    for indList in range(len(imgTimes)):
+        currentBeaconIDs, currentPL, currentMRP = ip.imageProcessing(detectorArrays[indList],
+                                                                    cameraParametersIP,
+                                                                    imgPos[indList],
+                                                                    imgMRP[indList],
+                                                                    imgBeaconPos[indList],
+                                                                    beaconIDs,
+                                                                    beaconRadius)
+        if currentBeaconIDs is not None:
+            for indBeacon in range(len(currentBeaconIDs)):
+                imgTimesFound.append(imgTimes[indList])
+                beaconIDsFound.append(currentBeaconIDs[indBeacon])
+                beaconPLFound.append(currentPL[indBeacon])
+
+                # pass through attitude estimate for navigation module
+                imgMRPFoundPassThrough.append(imgMRP[indList])
+
+                # attitude output of image processing logged for informational purposes only
+                # (nav module to use sim attitude filter output)
+                imgMRPFound.append(currentMRP)
+
+
+    # Generate inputs for navigation module
+    numNavInputs = len(imgTimesFound)
+    imgTimesNav = np.reshape(imgTimes, (numNavInputs, 1))
+    beaconIDsNav = np.reshape(beaconIDsFound, (numNavInputs, 1))
+    beaconPLNav = np.reshape(beaconPLFound, (numNavInputs, 2))
+    imgMRPNav = np.reshape(imgMRPFoundPassThrough, (numNavInputs, 3))
+
+
+    # Run the Navigation Module
+
+
+
 def attFilter_dynScenario(TheDynSim):
     """
      Executes a default scenario for stand-alone dynamic simulations
