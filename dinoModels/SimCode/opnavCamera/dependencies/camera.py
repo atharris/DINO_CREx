@@ -553,15 +553,17 @@ class camera:
 				        	(self.detectorHeight/self.resolutionHeight,
 				            self.detectorWidth/self.resolutionWidth)
 				    }
+
+				self.images[openImageKey].imgBeaconPos = []
 				for each in self.bodies:
-					self.images[openImageKey].beaconPos.append(
+					self.images[openImageKey].imgBeaconPos.append(
 						each.state)
-					self.images[openImageKey].beaconID.append(
-						each.id)
-					self.images[openImageKey].beaconRad.append(
-						each.r_eq)
-					self.images[openImageKey].beaconAlbedo.append(
-						each.albedo)
+
+				self.images[openImageKey].imgPos = self.scState
+				self.images[openImageKey].imgDCM = \
+					self.body2cameraDCM.dot(self.scDCM)
+				self.images[openImageKey].imgTime = self.imgTime
+
 				try: 
 					self.msg['verbose'] == 1
 				except:
