@@ -376,15 +376,9 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     # load tranmission curve for Canon 20D
     tc = np.load('../dinoModels/SimCode/opnavCamera/tc/20D.npz')
-    # tc = {}
-    # tc['lambda'] = _20D['x']
-    # tc['throughput'] = _20D['y']
 
     # load QE curve for Hubble Space Telecope Advanced Camera for Surveys SITe CCD
-    ACS = np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz')
-    qe = {}
-    qe['lam'] = ACS['x']
-    qe['throughput'] = ACS['y']
+    qe = np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz')
 
     ###############################################################################
     #
