@@ -124,11 +124,11 @@ def pull_DynCelestialOutputs(TheDynSim, plots=True):
         # 'r_beacon_7': [r_beacons[7], 'g'],
         # 'r_beacon_8': [r_beacons[8], 'g']
     }
-    if plots==True:
-        BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_BN)
-        BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_sc)
-    print "Please make this work."
     return r_sun, r_earth, r_moon, r_mars, r_beacons
+    print "Please make this work."
+        BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_sc)
+        BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_BN)
+    if plots==True:
 
     return r_sc, r_sun, r_earth, r_moon, r_mars, r_beacons
 
@@ -457,6 +457,12 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         cam.updateState()
     imgTimes = []
     detectorArrays = []
+    imgPos = []
+    imgMRP = []
+    imgBeaconPos = []
+
+    detectorArrays = []
+    imgTimes = []
     imgPos = []
     imgMRP = []
     imgBeaconPos = []
