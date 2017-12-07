@@ -2,6 +2,7 @@ import sys, os, inspect
 import matplotlib.pyplot as plt
 from numpy import linalg as la
 import numpy as np
+import math
 
 # filename = inspect.getframeinfo(inspect.currentframe()).filename
 # path = os.path.dirname(os.path.abspath(filename))
@@ -492,6 +493,49 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     pdb.set_trace()   
     plt.show()
 
+
+    # Run the Image Processing Module
+
+    imgTimesFound = []
+    beaconIDsFound = []
+    beaconPLFound = []
+    imgMRPFound = []                # will have 'None' entries when not able to detect enough objects
+    imgMRPFoundPassThrough = []     # identical attitude as input into the image processing module
+
+    for indList in range(len(imgTimes)):
+        currentBeaconIDs, currentPL, currentMRP = ip.imageProcessing(detectorArrays[indList],
+                                                                    cameraParametersIP,
+                                                                    imgPos[indList],
+                                                                    imgMRP[indList],
+                                                                    imgBeaconPos[indList],
+                                                                    beaconIDs,
+                                                                    beaconRadius)
+        if currentBeaconIDs is not None:
+            for indBeacon in range(len(currentBeaconIDs)):
+                imgTimesFound.append(imgTimes[indList])
+                beaconIDsFound.append(currentBeaconIDs[indBeacon])
+                beaconPLFound.append(currentPL[indBeacon])
+
+                # pass through attitude estimate for navigation module
+                imgMRPFoundPassThrough.append(imgMRP[indList])
+
+                # attitude output of image processing logged for informational purposes only
+                # (nav module to use sim attitude filter output)
+                imgMRPFound.append(currentMRP)
+
+
+    # Generate inputs for navigation module
+    numNavInputs = len(imgTimesFound)
+    imgTimesNav = np.reshape(imgTimes, (numNavInputs, 1))
+    beaconIDsNav = np.reshape(beaconIDsFound, (numNavInputs, 1))
+    beaconPLNav = np.reshape(beaconPLFound, (numNavInputs, 2))
+    imgMRPNav = np.reshape(imgMRPFoundPassThrough, (numNavInputs, 3))
+
+
+    # Run the Navigation Module
+
+
+
 def attFilter_dynScenario(TheDynSim):
     """
     Executes a default scenario for stand-alone dynamic simulations
@@ -585,3 +629,38 @@ def opnavCamera_dynScenario(TheDynSim):
     pull_senseOutputs(TheDynSim)
     #pull_DynCelestialOutputs(TheDynSim)
     plt.show()
+
+def defineParameters(camResolution, camFocalLength, camSensorSize, beaconIDs, beaconRadius):
+    """
+    Generates formatted inputs for camera, image processing, and navigation modules
+    :params: camResolution      : (horizontal x vertical) camera resolution
+    :params: camFocalLength     : camera focal length [m]
+    :params: camSensorSize      : (horizontal x vertical) camera sensor size [m]
+    :params: beaconIDs          : N length list of beacon IDs
+    :return: camInputs          : list of inputs for camera module
+    :return: ipInputs           : list of inputs for image processing
+    :return: navInputs          : lsit of inputs for navigation module
+    """
+
+    # Camera Module Parameter Creation
+
+    camInputs = []
+
+    # Image Processing Module Parameter Creation
+    ipCamParam = {}
+    ipCamParam['resolution'] = camResolution
+    ipCamParam['focal length'] = camFocalLength
+    ipCamParam['sensor size'] = camSensorSize
+    ipCamParam['pixel size'] = (camSensorSize[0]/camResolution[0], camSensorSize[1]/camResolution[1])
+    ipCamParam['field of view'] = (2*math.degrees(math.atan2(camSensorSize[0]/2., camFocalLength)),
+                                 2*math.degrees(math.atan2(camSensorSize[1]/2., camFocalLength)))
+
+    ipInputs = [ipCamParam, beaconIDs, beaconRadius]
+
+
+
+    # Nav Module Parameter Creation
+
+    navInputs = []
+
+    return camInputs, ipInputs, navInputs
