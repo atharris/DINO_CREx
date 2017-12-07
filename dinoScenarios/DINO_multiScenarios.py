@@ -526,7 +526,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     # Generate inputs for navigation module
     numNavInputs = len(imgTimesFound)
-    imgTimesNav = np.reshape(imgTimes, (numNavInputs, 1))
+    imgTimesNav = np.reshape(imgTimesFound, (numNavInputs, 1))
     beaconIDsNav = np.reshape(beaconIDsFound, (numNavInputs, 1))
     beaconPLNav = np.reshape(beaconPLFound, (numNavInputs, 2))
     imgMRPNav = np.reshape(imgMRPFoundPassThrough, (numNavInputs, 3))
