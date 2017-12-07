@@ -55,21 +55,21 @@
 #		maxMag: Minimum magnitude star visible to this camera (not physically
 #			realistic, but useful for debugging).
 #		qe: Quantum Effeciency Curve as a dict of two numpy arrays. 
-#			One must be called 'lambda', and the other must be called 
-#			must be called 'throughput'. qe['lambda'] must be an array of 
+#			One must be called 'lam', and the other must be called 
+#			must be called 'throughput'. qe['lam'] must be an array of 
 #			wavelength bins, and qe['throughput'] must be an array of 
-#			percentages detected at the given 'lambda'. qe['lambda'] must
+#			percentages detected at the given 'lam'. qe['lam'] must
 #			be in nm, and qe['throughput'] should be a number between 0 and
-#			1. qe['lambda'] and tc['lambda'] do not necessarily need to
+#			1. qe['lam'] and tc['lam'] do not necessarily need to
 #			match as interpolateLambda will interpolate qe['throughput']
 #			so that they do.
 #		tc: Transmission Curve as a dict of two numpy arrays. 
-#			One must be called 'lambda', and the other must be called 
-#			must be called 'throughput'. tc['lambda'] must be an array of 
+#			One must be called 'lam', and the other must be called 
+#			must be called 'throughput'. tc['lam'] must be an array of 
 #			wavelength bins, and tc['throughput'] must be an array of 
-#			percentages transmitted at the given 'lambda'. tc['lambda'] must
+#			percentages transmitted at the given 'lam'. tc['lam'] must
 #			be in nm, and tc['throughput'] should be a number between 0 and
-#			1. qe['lambda'] and tc['lambda'] do not necessarily need to
+#			1. qe['lam'] and tc['lam'] do not necessarily need to
 #			match as interpolateLambda will interpolate tc['throughput']
 #			so that they do.
 #		lambdaBinSize: the width of bins in wavelength space to be
@@ -253,6 +253,7 @@ class camera:
 		self.scState = scState
 		self.scDCM = scDCM
 		self.takeImage = takeImage
+		self.imgTime = []
 
 	###########################################################################
 	#	loadAllStars() is used to load stellar data from a database (nominally
@@ -432,7 +433,7 @@ class camera:
 
 	def findLambdaSet(self, qe, tc, lambdaBinSize):
 		from numpy import concatenate, arange
-		allLambdas = concatenate([qe['lambda'],tc['lambda']])
+		allLambdas = concatenate([qe['lam'],tc['lam']])
 		minLambda = min(allLambdas)
 		maxLambda = max(allLambdas)
 		lambdaSet = arange(minLambda,maxLambda + lambdaBinSize,lambdaBinSize)
@@ -531,9 +532,42 @@ class camera:
 			else:
 				self.images[openImageKey].imageOpen = 0
 				self.images[openImageKey].updateState()
-				try: 
-					verbose == 1
+				try:
+					self.images[openImageKey].imgTime = self.imgTime
 				except:
+					self.images[openImageKey].imgTime = -1
+				self.images[openImageKey].beaconPos = []
+				self.images[openImageKey].beaconID = []
+				self.images[openImageKey].beaconRad = []
+				self.images[openImageKey].beaconAlbedo = []
+				self.images[openImageKey].cameraParam = {
+				        'resolution': 
+				        	(self.resolutionHeight,self.resolutionWidth),
+				        'focalLength': 
+				        	self.focalLength,
+				        'sensorSize': 
+				        	(self.detectorHeight,self.detectorWidth),
+				        'FOV': 
+				        	(self.angularHeight,self.angularWidth),
+				        'pixelSize': 
+				        	(self.detectorHeight/self.resolutionHeight,
+				            self.detectorWidth/self.resolutionWidth)
+				    }
+				for each in self.bodies:
+					self.images[openImageKey].beaconPos.append(
+						each.state)
+					self.images[openImageKey].beaconID.append(
+						each.id)
+					self.images[openImageKey].beaconRad.append(
+						each.r_eq)
+					self.images[openImageKey].beaconAlbedo.append(
+						each.albedo)
+				try: 
+					self.msg['verbose'] == 1
+				except:
+					self.msg['verbose'] = 0
+
+				if not(self.msg['verbose']):
 					delattr(self.images[openImageKey],'RA')
 					delattr(self.images[openImageKey],'DE')
 					delattr(self.images[openImageKey],'DCM')
@@ -911,7 +945,10 @@ class image:
 				# 	self.camera.msg['read']:
 				# 	self.detectorArray = detectorArray*hotDark
 
-
+			self.detectorArray = self.detectorArray.reshape(
+				self.camera.resolutionWidth,
+				self.camera.resolutionHeight
+				)
 
 	###########################################################################
 	#
@@ -1031,7 +1068,7 @@ class image:
 						False,
 						body.albedo,
 						body.r_eq,
-						body.name
+						body.id
 						)
 					if facets == -1: continue #if true, then lightSim FOV check failed
 					#position from center of body to facet
@@ -1192,10 +1229,16 @@ class image:
 		#this needs to be multiplied by a transformation matrix in order
 		#to account for planetary attitude, but I haven't thought through
 		#that just yet.
+		try:
+			r_eq = body.r_eq
+			r_pole = body.r_pole
+		except:
+			r_eq = body.r_eq
+			r_pole = body.r_eq
 		A = array([
-			[body.r_eq**-2,0,0],
-			[0,body.r_eq**-2,0],
-			[0,0,body.r_pole**-2]
+			[r_eq**-2,0,0],
+			[0,r_eq**-2,0],
+			[0,0,r_pole**-2]
 			])
 
 		v = stack([n1,n2,n3])
@@ -1691,8 +1734,23 @@ class scene:
 		self.line = line
 		self.starIDs = starIDs
 
+###############################################################################
+#	beacon is a class to carry information about opnav beacons.
+#	All data is set by the user, ane instances of the class are really
+#	just carried around to help organize data.
+#
+#	User Variables:
+#		None. All variables in the image object are added dynamically
+#
+#	Computed Variables:
+# 		None.
+###############################################################################
 
-
-
+class beacon:
+	def __init__(self):
+		self.state = -1
+		self.r_eq = -1
+		self.id = -1
+		self.albedo = -1
 
 

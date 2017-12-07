@@ -10,6 +10,7 @@ bskPath = '../..' + '/' + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 sys.path.append('../dinoModels/SimCode/opnavCamera/')
+sys.path.append('../dinoModels/SimCode/opnavCamera/dependencies')
 
 
 import BSK_plotting as BSKPlt
@@ -26,7 +27,7 @@ except ImportError:
     import Basilisk.utilities.RigidBodyKinematics as rbk
     from Basilisk.fswAlgorithms import *
 
-import opnavCamera
+import camera
 
 # ------------------------------------- DATA LOGGING ------------------------------------------------------ #
 
@@ -374,37 +375,45 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     ###############################################################################
 
     # load tranmission curve for Canon 20D
-    _20D = np.load('../dinoModels/SimCode/opnavCamera/tc/20D.npz')
-    tc = {}
-    tc['lambda'] = _20D['x']
-    tc['throughput'] = _20D['y']
+    tc = np.load('../dinoModels/SimCode/opnavCamera/tc/20D.npz')
 
     # load QE curve for Hubble Space Telecope Advanced Camera for Surveys SITe CCD
-    ACS = np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz')
-    qe = {}
-    qe['lambda'] = ACS['x']
-    qe['throughput'] = ACS['y']
+    qe = np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz')
 
     ###############################################################################
     #
     #       Initialize camera
     #
     ###############################################################################
-    import bodies as bod
-    from constants import au
-    bod.earth.state = np.array([au, 0, 0, 0, 0, 0])
-    bod.luna.state = bod.earth.state + 250000 * np.array([0, 1, 0, 0, 0, 0])
-    scState = bod.earth.state - 250000 * np.array([1, 0, 0, 0, 0, 0])
-    scDCM = np.identity(3)
 
-    bodies = [bod.earth, bod.luna]
+    earth = camera.beacon()
+    earth.r_eq = 6378.137
+    earth.id = 'Earth'
+    earth.albedo = 0.434
+
+    mars = camera.beacon()
+    mars.r_eq = 3396.2
+    mars.id = 'Mars'
+    mars.albedo = 0.17
+
+    moon = camera.beacon()
+    moon.r_eq = 1738.1
+    moon.id = 'Earth'
+    moon.albedo = 0.12
+
+    beacons = [earth, moon, mars]
+
+    #need loop to define asteroids, too
+
+
+    #can kill these once I change the way camera is initialized
     takeImage = 0
+    scState = -1
+    scDCM = -1
 
-    # create camera with no stars in it for tests that don't need them
-    # They will run significantly faster without them.
-    cam = opnavCamera.camera(
-        0.019968,  # detector_height
-        0.019968,  # detector_width
+    cam = camera.camera(
+        0.01,  # detector_height
+        0.01,  # detector_width
         0.05,  # focal_length
         512,  # resolution_height
         512,  # resolution_width
@@ -423,11 +432,38 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         0.01,  # simulation timestep
         scState,  # position state of s/c
         scDCM,  # intertal 2 body DCM for s/c
-        bodies,  # bodies to track in images
+        beacons,  # bodies to track in images
         takeImage,  # takeImage message
         db='../dinoModels/SimCode/opnavCamera/db/tycho.db'  # stellar database
     )
 
+    #this is spoofing the output of the nav exec
+    #telling the camera when to take an image.
+    takeImage = np.zeros(len(r_sc))
+    takeImage[100] = 1
+    takeImage[200] = 1
+    takeImage[300] = 1
+    takeImage[400] = 1
+
+    lastTakeImage = 0
+    for i in range(0,len(r_sc)):
+        cam.scState = r_sc[i][1:4]
+        earth.state = r_earth[i][1:4]
+        moon.state = r_moon[i][1:4]
+        mars.state = r_mars[i][1:4]
+        #also need a loop here for 
+        #updating beacon position once they're added
+        cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
+        cam.takeImage = takeImage[i]
+        cam.imgTime = r_sc[i][0]
+        cam.updateState()
+
+    import pdb 
+    pdb.set_trace()
+    for i in range(0,len(cam.images)):
+        plt.figure()
+        plt.imshow(cam.images[i].detectorArray)
+    
     plt.show()
 
 def attFilter_dynScenario(TheDynSim):

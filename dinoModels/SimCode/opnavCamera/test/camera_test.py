@@ -42,28 +42,33 @@ import lightSimFunctions
 #the state vector.
 
 qe = {}
-qe['lambda'] = np.arange(420,721,2.)
+qe['lam'] = np.arange(420,721,2.)
 #the throughput definition here is a cheat to make something
 #somewhat realistic it is suffient for the test that need to be done here.
-qe['throughput'] = (100000-(qe['lambda']-570)**2) - \
-	min(100000-(qe['lambda']-570)**2)
+qe['throughput'] = (100000-(qe['lam']-570)**2) - \
+	min(100000-(qe['lam']-570)**2)
 qe['throughput'] = 0.8*qe['throughput']/max(qe['throughput'])
 
 tc = {}
-tc['lambda'] = np.arange(390,721,1.7)
-tc['throughput'] = (1000*4-(tc['lambda']-545)**4) - \
-	min(1000*4-(tc['lambda']-545)**4)
+tc['lam'] = np.arange(390,721,1.7)
+tc['throughput'] = (1000*4-(tc['lam']-545)**4) - \
+	min(1000*4-(tc['lam']-545)**4)
 tc['throughput'] = 0.6*tc['throughput']/max(tc['throughput'])
 
+
+earth = camera.beacon()
 bod.earth.state = np.array([au,0,0,0,0,0])
+bod.earth.id = 'Earth'
 bod.luna.state = bod.earth.state + 250000*np.array([0,1,0,0,0,0])
+bod.luna.id = 'Moon'
 scState = bod.earth.state - 250000*np.array([1,0,0,0,0,0])
 scDCM = np.identity(3)
 
 bodies = [bod.earth,bod.luna]
 msg = {
 	'addStars': 0,'rmOcc': 0, 'addBod': 0, 'psf': 1, 
-	'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 'dt': 0.01}
+	'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 
+	'dt': 0.01, 'verbose': 1}
 takeImage = 0
 
 #create camera with no stars in it for tests that don't need them
@@ -213,13 +218,14 @@ def test_4_7_cameraUpdateState():
 	assert(len(noStarCam.images[0].scenes) == 3)
 	assert(len(noStarCam.images[1].scenes) == 2)
 
+pdb.set_trace()
 def test_4_8_findStarsInFOV():
 	msg = { 'bodies': [
 		bod.earth,
 		bod.luna
 		], 
 		'addStars': 1,'rmOcc': 0, 'addBod': 0, 'psf': 1, 
-		'raster': 1, 'photon': 0, 'dark': 0, 'read': 0}
+		'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 'verbose': 1}
 
 	OriCam = camera.camera(
 		1.5,				#detectorHeight

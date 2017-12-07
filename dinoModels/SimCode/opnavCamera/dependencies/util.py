@@ -206,7 +206,7 @@ def r3 (theta):
 
 def interpolateLambdaDependent(ex,lambda_set):
 	from numpy import array
-	lam = ex['lambda']
+	lam = ex['lam']
 	data = ex['throughput']
 
 	int_ex = []
@@ -245,6 +245,6 @@ def interpolateLambdaDependent(ex,lambda_set):
 		lambda_set_ex.insert(len(lambda_set_ex),lambda_set[i])
 		int_ex.insert(len(int_ex),data_ex)
 	return {
-	'lambda': array(lambda_set_ex),
+	'lam': array(lambda_set_ex),
 	'throughput': array(int_ex)
 }
