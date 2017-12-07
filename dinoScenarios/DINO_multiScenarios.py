@@ -130,6 +130,7 @@ def pull_DynCelestialOutputs(TheDynSim, plots=True):
     print "Please make this work."
     return r_sun, r_earth, r_moon, r_mars, r_beacons
 
+    return r_sc, r_sun, r_earth, r_moon, r_mars, r_beacons
 
 def pull_DynOutputs(TheBSKSim, plots=True):
     # Pull Dyn Outputs
@@ -516,6 +517,12 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         cam.updateState()
     imgTimes = []
     detectorArrays = []
+    imgPos = []
+    imgMRP = []
+    imgBeaconPos = []
+
+    detectorArrays = []
+    imgTimes = []
     imgPos = []
     imgMRP = []
     imgBeaconPos = []
