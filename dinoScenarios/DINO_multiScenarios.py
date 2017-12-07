@@ -115,9 +115,9 @@ def pull_DynCelestialOutputs(TheDynSim):
         # 'r_beacon_7': [r_beacons[7], 'g'],
         # 'r_beacon_8': [r_beacons[8], 'g']
     }
-    BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_sc)
-
-    return r_sc, r_sun, r_earth, r_moon, r_mars, r_beacons
+    if plots==True:
+        BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_sc)
+    return r_sun, r_earth, r_moon, r_mars, r_beacons
 
 
 
