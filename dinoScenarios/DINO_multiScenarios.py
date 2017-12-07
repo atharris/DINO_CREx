@@ -128,6 +128,7 @@ def pull_DynCelestialOutputs(TheDynSim, plots=True):
     print "Please make this work."
     return r_sun, r_earth, r_moon, r_mars, r_beacons
 
+    return r_sc, r_sun, r_earth, r_moon, r_mars, r_beacons
 
 
 def pull_DynOutputs(TheBSKSim, plots=True):
@@ -476,10 +477,23 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         cam.imgTime = r_BN[i][0]
         cam.updateState()
 
+    detectorArrays = []
+    imgTimes = []
+    imgPos = []
+    imgMRP = []
+    imgBeaconPos = []
+
     for i in range(0,len(cam.images)):
+        detectorArrays.append(cam.images[i].detectorArray)
+        imgTimes.append(cam.images[i].imgTime)
+        imgPos.append(cam.images[i].imgPos)
+        imgMRP.append(rbk.C2MRP(cam.images[i].imgDCM))
+        imgBeaconPos.append(cam.images[i].imgBeaconPos)
+
         plt.figure()
         plt.imshow(cam.images[i].detectorArray)
-    
+    import pdb 
+    pdb.set_trace()   
     plt.show()
 
 def attFilter_dynScenario(TheDynSim):
@@ -575,13 +589,3 @@ def opnavCamera_dynScenario(TheDynSim):
     pull_senseOutputs(TheDynSim)
     #pull_DynCelestialOutputs(TheDynSim)
     plt.show()
-
-def defineParams(inputs):
-    ##  Camera Setup
-
-    ##  Image Processing Setup
-
-    ##  Batch Extras Setup
-
-
-    return cameraObj, cameraParams, batchExtras
