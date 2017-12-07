@@ -29,7 +29,7 @@ sys.path.append(rigidPath)
 
 def AttExec(K_Gain, P_Gain, Position_of_Satellite, Velocity_of_Satellite, Attitude_of_Target, Attitude_of_Satellite,
            Position_of_Target, Velocity_of_Target, Angular_Rate_of_Spacecraft,
-            Time_to_Sweep_and_Observe):
+            Time_to_Sweep_and_Observe, Tolerance):
 
     def norm(input):
         norm = np.sqrt(sum(np.square(input)))
@@ -39,23 +39,38 @@ def AttExec(K_Gain, P_Gain, Position_of_Satellite, Velocity_of_Satellite, Attitu
     P = P_Gain
     sBN = Attitude_of_Satellite
     wBN = Angular_Rate_of_Spacecraft
+    wbn = wBN
 
     rsat = Position_of_Satellite
     vsat = Velocity_of_Satellite
     control_torque = np.zeros([len(Position_of_Target), Time_to_Sweep_and_Observe, 3])
+    Observe = np.zeros([len(Position_of_Target), Time_to_Sweep_and_Observe])
+    sigsat = sBN
+
+    x = np.concatenate((sigsat, wbn))
+
+    # Time for the spacecraft to sweep to desired attitude (seconds)
+    t = Time_to_Sweep_and_Observe
+
+    # Increment Time step (seconds)
+    dt = 1
+
+    time = range(0, t)
+
+
     for jj in range(len(Position_of_Target)):
 
-        robj = Position_of_Target[jj]
-        vobj = Velocity_of_Target[jj]
+        robj = Position_of_Target[jj, 0]
+        vobj = Velocity_of_Target[jj, 1]
 
-        sobj = Attitude_of_Target
-        ssat = sBN
+        sobj = Attitude_of_Target[jj]
+
 
         # Body-Inertial Frame Rotation Matrix
-        bn = MRP2C(sBN)
+        bn = MRP2C(sigsat)
 
         # Hill-Inertial Frame Rotation Matrix
-        hn1 = MRP2C(ssat)
+        hn1 = MRP2C(sigsat)
         hn2 = MRP2C(sobj)
 
         # Inertial Position and Velocity of the Satellite
@@ -96,24 +111,12 @@ def AttExec(K_Gain, P_Gain, Position_of_Satellite, Velocity_of_Satellite, Attitu
         if norm(sbr) > 1:
             sbr = -sbr/(norm(sbr)**2)
 
-        x = np.concatenate((sBN, wBN))
-
-        # Time for the spacecraft to sweep to desired attitude (seconds)
-        t = Time_to_Sweep_and_Observe
-
-        # Increment Time step (seconds)
-        dt = 1
-
-        time = range(0, t)
-        wbn = wBN
-
-        # Initializing Arrays
 
 
         for ii in xrange(t):
 
             # New Hill-Inertial MRPs
-            shnnew1 = ssat
+            shnnew1 = sigsat
             shnnew2 = sobj
 
             # New Hill-Inertial Rotation Matrices
@@ -169,8 +172,8 @@ def AttExec(K_Gain, P_Gain, Position_of_Satellite, Velocity_of_Satellite, Attitu
 
             # Update all previous values for next iteration
 
-            sbn = x[0:3]
-            bn = MRP2C(sbn)
+            sigsat = x[0:3]
+            bn = MRP2C(sigsat)
             rn = rnnew
             srn = C2MRP(rn)
             nr = nrnew
@@ -184,10 +187,19 @@ def AttExec(K_Gain, P_Gain, Position_of_Satellite, Velocity_of_Satellite, Attitu
             if s > 1:
                 sbr = - sbr/(s**2)
 
+            if s < Tolerance:
+                observation = 1
+            else:
+                observation = 0
+
+
             # "Output" Values for the Executive Branch
             control_torque[jj, ii, ...] = (-K*sbr - P*sbr)
+            Observe[jj, ii] = observation
 
-        return control_torque
+    control_torque.tolist()
+    Observe.tolist()
+    return control_torque, Observe
 
 
 
