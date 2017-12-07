@@ -524,6 +524,14 @@ def find_left_pixel(initial_pixel_loc, pixel_map, threshold):
             current_x = next_x
             current_y = current_y + 1
 
+        # Otherwise, if there is a pixel two up and to the left, it is greater than the threshold, and it has enough
+        # neighbors on, set up for that to be the next pixel to check.  current_x - 1 must be in the map because loop
+        # would have ended if it was at the top.
+        elif (current_y + 2 < max_y) and (pixel_map[current_y + 2, next_x] > threshold) \
+                 and neighbors_are_on((next_x, current_y + 2), pixel_map, threshold):
+            current_x = next_x
+            current_y = current_y + 2
+
         # Otherwise, if there is a pixel down and to the left, it is greater than the threshold, and it has enough
         # neighbors on, set up for that to be the next pixel to check.  current_x - 1 must be in the map because loop
         # would have ended if it was at the top.
@@ -531,6 +539,14 @@ def find_left_pixel(initial_pixel_loc, pixel_map, threshold):
                 and neighbors_are_on((next_x, current_y - 1), pixel_map, threshold):
             current_x = next_x
             current_y = current_y - 1
+
+        # Otherwise, if there is a pixel down and to the left, it is greater than the threshold, and it has enough
+        # neighbors on, set up for that to be the next pixel to check.  current_x - 1 must be in the map because loop
+        # would have ended if it was at the top.
+        elif (current_y - 2 >= 0) and (pixel_map[current_y - 2, next_x] > threshold) \
+                and neighbors_are_on((next_x, current_y - 2), pixel_map, threshold):
+            current_x = next_x
+            current_y = current_y - 2
 
         # Otherwise, we don't have any other pixels that meet the threshold.  We have found the lefttmost pixel.
         else:
@@ -638,8 +654,9 @@ def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18
 # Output:   loc_centroid        (x, y) pixel/line coordinate of centroid locations
 #           DN                  total signal count of ROI
 
-def find_centroid_point_source(pixel_map, pixel_line_beacon_i, ROI_parameters, num_beacons):
+def find_centroid_point_source(pixel_map, pixel_line_beacon_i, ROI_parameters):
 
+    num_beacons = len(pixel_line_beacon_i)
     loc_centroid = np.empty([num_beacons], dtype=tuple)
     DN = np.empty([num_beacons], dtype=int)
 

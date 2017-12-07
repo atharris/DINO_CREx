@@ -60,7 +60,7 @@ if do_CDR_beacon:
     ROI_parameters['ROI_border_width'] = 2
     ROI_parameters['max_search_dist'] = 50
 
-    ROI_estimates = ((256, 256),)# (270, 238))# (390, 256))#, (240, 245))
+    ROI_estimates = ((256, 184),)# (270, 238))# (390, 256))#, (240, 245))
 
     file_in = np.load('CDR_save_files/0_deg_orig.npz')
     pos_beacon = np.vstack((file_in['earth_pos'], file_in['moon_pos']))
@@ -71,11 +71,6 @@ if do_CDR_beacon:
     ex_image = file_in['detector_array']
     ex_image = (ex_image / max(ex_image)) * 256
     ex_image = ex_image.reshape(512, 512)
-
-    for i in range (379, 399):
-        for j in range (245, 267):
-            if (ex_image[j][i] >= .01):
-                ex_image[j-15][i-116] = ex_image[j][i] + ex_image[j-15][i-116]
 
     # plt.imshow(ex_image)
     # plt.show()
@@ -97,8 +92,8 @@ if do_CDR_stars:
     ROI_parameters['max_search_dist'] = 50
 
 
-    #ROI_estimates = [(282, 122), (330, 112), (23, 29)]
-    ROI_estimates = [(1, 1), (510, 509)]
+    ROI_estimates = [(282, 122), (330, 112), (23, 29)]
+    #ROI_estimates = [(1, 1), (510, 509)]
 
     file_in = np.load('CDR_save_files/stars_only.npz')
 
@@ -109,6 +104,19 @@ if do_CDR_stars:
     ex_image = file_in['detector_array']
     ex_image = (ex_image/np.amax(ex_image)) * 255
     ex_image = ex_image.reshape(512,512)
+
+    ex_image[122][282] = 0
+    ex_image[121][282] = 0
+    ex_image[122][281] = 0
+    ex_image[124][281] = 0
+    ex_image[122][279] = 0
+
+    #ex_image[121][320] = 2.7
+    #ex_image[121][321] = 2.6
+    #ex_image[120][320] = 2.8
+    #ex_image[123][322] = 2.7
+    #ex_image[122][322] = 2.6
+    #ex_image[123][323] = 2.8
 
     for i in range(280, 285):
         for j in range(121, 126):
