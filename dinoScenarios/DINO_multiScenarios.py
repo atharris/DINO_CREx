@@ -122,11 +122,17 @@ def pull_DynCelestialOutputs(TheDynSim, plots=True):
         # 'r_beacon_7': [r_beacons[7], 'g'],
         # 'r_beacon_8': [r_beacons[8], 'g']
     }
+<<<<<<< develop
     if plots==True:
         BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_BN)
         BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_sc)
     print "Please make this work."
     return r_sun, r_earth, r_moon, r_mars, r_beacons
+=======
+    BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_sc)
+
+    return r_sc, r_sun, r_earth, r_moon, r_mars, r_beacons
+>>>>>>> now Joe should have everything he needs to integrate IP. Still does not reflect changes to create camera's portion of defineParam
 
 
 
@@ -476,11 +482,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         cam.imgTime = r_BN[i][0]
         cam.updateState()
 
-    for i in range(0,len(cam.images)):
-        plt.figure()
-        plt.imshow(cam.images[i].detectorArray)
-    
-    plt.show()
 
 def attFilter_dynScenario(TheDynSim):
     """
@@ -575,13 +576,3 @@ def opnavCamera_dynScenario(TheDynSim):
     pull_senseOutputs(TheDynSim)
     #pull_DynCelestialOutputs(TheDynSim)
     plt.show()
-
-def defineParams(inputs):
-    ##  Camera Setup
-
-    ##  Image Processing Setup
-
-    ##  Batch Extras Setup
-
-
-    return cameraObj, cameraParams, batchExtras
