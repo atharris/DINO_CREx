@@ -450,6 +450,11 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     # Run the Image Processing Module
 
+    # required parameters from defineParameters function
+    camParamIP = ipParam[0]
+    beaconIDs = ipParam[1]
+    beaconRadius = ipParam[2]
+
     imgTimesFound = []
     beaconIDsFound = []
     beaconPLFound = []
@@ -458,12 +463,12 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     for indList in range(len(imgTimes)):
         currentBeaconIDs, currentPL, currentMRP = ip.imageProcessing(detectorArrays[indList],
-                                                                    cameraParametersIP,
-                                                                    imgPos[indList],
-                                                                    imgMRP[indList],
-                                                                    imgBeaconPos[indList],
-                                                                    beaconIDs,
-                                                                    beaconRadius)
+                                                                     camParamIP,
+                                                                     imgPos[indList],
+                                                                     imgMRP[indList],
+                                                                     imgBeaconPos[indList],
+                                                                     beaconIDs,
+                                                                     beaconRadius)
         if currentBeaconIDs is not None:
             for indBeacon in range(len(currentBeaconIDs)):
                 imgTimesFound.append(imgTimes[indList])
