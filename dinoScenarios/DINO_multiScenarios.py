@@ -52,8 +52,7 @@ def log_DynOutputs(TheBSKSim, samplingTime):
 def log_aekfOutputs(TheBskSim, samplingTime):
     print "Att filter msg name:", TheBskSim.FSWClass.attFilter.outputMsgName
     TheBskSim.TotalSim.logThisMessage(TheBskSim.FSWClass.attFilter.outputMsgName, samplingTime)
-    # TheBskSim.AddVariableForLogging(TheBskSim.FSWClass.attFilter.modelName + '.estCov', samplingTime, 0, 35)
-    # TheBskSim.AddVariableForLogging(TheBskSim.FSWClass.attFilter.modelName + '.postFitRes', samplingTime, 0, 0)
+    TheBskSim.TotalSim.logThisMessage(TheBskSim.FSWClass.attFilter.outputFilterMsgName, samplingTime)
     return
 
 def log_FSWOutputs(TheBSKSim, samplingTime):
@@ -188,8 +187,8 @@ def pull_aekfOutputs(TheBSKSim):
     omega_BN_B = TheBSKSim.pullMessageLogData(TheBSKSim.DynClass.simpleNavObject.outputAttName + ".omega_BN_B", range(3))[0:-1:5,:]
 
     # Pull filter msg data
-    # covarLog = TheBSKSim.GetLogVariableData('attitudeFilter.estCov')
-    # postFitLog = TheBSKSim.GetLogVariableData('attitudeFilter.postFitRes')
+    covarLog = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName+ '.covar', range(36))
+    PostFitLog = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName+ '.postFitRes', range(1))
 
     # Print Dyn Outputs
     print '\n\n'
