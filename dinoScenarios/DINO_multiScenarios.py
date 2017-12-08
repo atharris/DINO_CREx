@@ -433,6 +433,25 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     beacons = [earth,mars,moon]
     #need loop to define asteroids, too
+    
+    cam, ipParam, navParam = defineParameters(
+            (512,512),   #camera resolution, width then height
+            0.05,        #focal length in m
+            (0.01,0.01), #detector dimensions in m, with then height
+            beacons,     #list of beacons
+            #transmission curve dict
+            np.load('../dinoModels/SimCode/opnavCamera/tc/20D.npz'),
+            #quantum efficiency curve dict
+            np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz'),
+            1,           #bin size for wavelength functions (in nm)
+            0.01**2,     #effective area (m^2)
+            100,         #dark current electrons/s/pixel
+            100,         #read noise STD (in electrons per pixel)
+            100,         #bin size
+            2**32,       #saturation depth
+            1,           #Standard deviation for PSF (in Pizels)
+            0.01         #simulation timestep
+        )
 
     cam, ipParam, navParam = defineParameters(
             (512,512),   #camera resolution, width then height
@@ -682,7 +701,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
                 imgMRPFound.append(currentMRP)
 
 
-    # Generate inputs for navigation module
+    # Generate inputs for navigation modulec
     numNavInputs = len(imgTimesFound)
     imgTimesNav = np.reshape(imgTimesFound, (numNavInputs, 1))
     beaconIDsNav = np.reshape(beaconIDsFound, (numNavInputs, 1))
