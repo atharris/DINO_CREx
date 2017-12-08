@@ -702,6 +702,53 @@ def defineParameters(
 
     # Nav Module Parameter Creation
 
-    navInputs = []
+    navParams = {}
+
+    # SPICE Parameters
+
+    # basic .bsp filename (generic, such as de430, etc)
+    navParams['basic_bsp']   = 'de430.bsp'
+    # .bsp filename for mission
+    navParams['mission_bsp'] = 'DINO_kernel.bsp'
+    # .tls filename 
+    navParams['tls']         = 'naif0011.tls'
+    # abcorr for spkzer
+    navParams['abcorr'] = 'NONE'
+    # reference frame
+    navParams['ref_frame'] = 'J2000'
+
+    # Force Parameters
+    
+    #   Gravity
+    # body vector for primary and secondary gravitational bodies
+    navParams['bodies']    = ['SUN', '3', '399']
+    # specify primary and secondary indices
+    navParams['primary']   = 0
+    navParams['secondary'] = [1, 2]
+    # respective GP vector
+    navParams['mu']        = [1.32712428 * 10 ** 11, 3.986004415 * 10 ** 5, 4.305 * 10 ** 4]
+    #   SRP
+    # A/M ratio multiplied by solar pressure constant at 1 AU with adjustments
+    # Turboprop document Eq (64)
+    navParams['SRP']       = 0.3**2/14. * 149597870.**2 * 1358. / 299792458. / 1000. 
+    # coefficient of reflectivity
+    navParams['cR']        = 1.
+
+    # Camera/P&L Parameters
+
+    # Focal Length (mm)
+    navParams['FoL']             = 100.
+    # default inertial to camera transformation matrices
+    navParams['DCM_BI']          = np.eye(3)
+    navParams['DCM_TVB']         = np.eye(3)
+    # Camera resolution (pixels)
+    navParams['resolution']      = [1024., 1024.]
+    # width and height of pixels in camera
+    navParams['pixel_width']     = 5.
+    navParams['pixel_height']    = 5.
+    # direction coefficient of pixel and line axes
+    navParams['pixel_direction'] = 1.
+    navParams['line_direction']  = 1.
+
 
     return camInputs, ipInputs, navInputs
