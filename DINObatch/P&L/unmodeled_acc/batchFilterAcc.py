@@ -167,8 +167,8 @@ def runRef( input ) :
 def run_batch( input ) :
 
   IC           = input[0]
-  phi          = input[1]
-  timeSpan       = input[2]
+  phi0         = input[1]
+  timeSpan     = input[2]
   filterObservations   = input[3]
   P_bar        = input[4]
   observationUncertainty = input[5]
@@ -206,8 +206,6 @@ def run_batch( input ) :
     infoMatrix = aInv( P_bar )
     normalMatrix = np.dot( aInv( P_bar ), 
                     np.expand_dims(x_bar,axis=1) )
-
-  phi0       = np.identity( stateDimension )
 
   # input to the propagator takes the referenceState and STM at t0, as well as the list of times
   propagatorInput = ( IC0, phi0, timeSpan, extras ) 
