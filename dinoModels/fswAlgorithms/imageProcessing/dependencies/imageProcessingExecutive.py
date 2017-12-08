@@ -30,6 +30,9 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     @return sigma_BN            S/C attitude in modified rodriguez parameters
     """
 
+
+    debugMode = True
+
     ##################################################
     ##################################################
     # Parameter Definition
@@ -40,8 +43,9 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     angularSizeMin = singlePixelAngSize * pixelSizeMin
 
     minRes = min(cameraParameters['resolution'])
+    imageMax = np.amax(imageMap)
     ROI_parameters = {}
-    ROI_parameters['signal_threshold'] = 4096/1000.
+    ROI_parameters['signal_threshold'] = imageMax/500.
     ROI_parameters['ROI_border_width'] = 1
     ROI_parameters['max_search_dist'] = minRes/100.
 
@@ -50,7 +54,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     imageProcessingParam['dthetaMax'] = 12.     #[deg] dependent on object ID reference catalog
     imageProcessingParam['filenameSearchCatalog'] = '../../../../external/tycho_mag_cutoff.db'
     imageProcessingParam['filenameObjectIDCatalog'] = '../../../../external/objectID_catalog.db'
-    imageProcessingParam['dthetaError'] = 1E-4
+    imageProcessingParam['dthetaError'] = 1E-5
 
     maxInitialEstimates = 20
 
@@ -104,16 +108,18 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     numBeaconsPtSource = len(N_r_beaconsPtSource)
     numBeaconsResolved = len(N_r_beaconsResolved)
 
-    print '\nBeacon Status'
-    print 'Visible Beacons: ', beaconIDsVisible
-    print 'Point Source Beacons: ', beaconIDsPtSource
-    print 'Resolved Body Beacons: ', beaconIDsResolved
+
+    if debugMode:
+        print '\nBeacon Status'
+        print 'Visible Beacons: ', beaconIDsVisible
+        print 'Point Source Beacons: ', beaconIDsPtSource
+        print 'Resolved Body Beacons: ', beaconIDsResolved
 
 
     ##################################################
     ##################################################
     # Conduct initial search location for beacons and stars in field of view
-    print '\nInitial Search Location ...'
+    # print '\nInitial Search Location ...'
 
     # search for stars in field of view
     pixel_line_stars_i, catalogIDs = locfunc.initial_stars_estimate(
@@ -129,7 +135,6 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
 
         pixel_line_beacon_ptSource_i = locfunc.initial_beacons_estimate(
             N_r_beaconsPtSource, r_N_cam, BN_dcm_cam, cameraParameters)
-
         pixel_line_ptSource_i = np.vstack((pixel_line_ptSource_i,
                                            pixel_line_beacon_ptSource_i))
 
@@ -140,20 +145,19 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
 
         pixel_line_resolved_i = locfunc.initial_beacons_estimate(
             N_r_beaconsResolved, r_N_cam, BN_dcm_cam, cameraParameters)
-
         pixelLineInitialEstimates = np.vstack((pixel_line_resolved_i,
                                                pixelLineInitialEstimates))
 
 
-    print '\n# of Initial Estimates of Pt Sources: ', len(pixel_line_ptSource_i)
-    # for currentPL in pixel_line_ptSource_i:
-    #     print currentPL
-
-    if numBeaconsResolved > 0:
-        print '\nInitial Estimate of Resolved Bodies'
-
-        for currentPL in pixel_line_resolved_i:
+    if debugMode:
+        print '\n# of Initial Estimates of Pt Sources: ', len(pixel_line_ptSource_i)
+        for currentPL in pixel_line_ptSource_i:
             print currentPL
+
+        if numBeaconsResolved > 0:
+            print '\nInitial Estimate of Resolved Bodies'
+            for currentPL in pixel_line_resolved_i:
+                print currentPL
 
 
     ##################################################
@@ -178,9 +182,10 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
 
     numObjectsFound = len(pixelLineCenterFound)
 
-    print '\n# of Identified Pixel and Line Center Locations: ', numObjectsFound
-    for ind in range(numObjectsFound):
-        print pixelLineCenterFound[ind]
+    if debugMode:
+        print '\n# of Identified Pixel and Line Center Locations: ', numObjectsFound
+        for ind in range(numObjectsFound):
+            print pixelLineCenterFound[ind]
 
 
     ##################################################
@@ -200,17 +205,18 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     if numBeaconsVisible == 0:
         objectIDs = idfunc.objectIDStars(pixelLineCenterFound, imageProcessingParam, cameraParameters)
 
-        print '\nStar #', '\t\t', \
-            "%6s" % 'Pixel ', '\t\t', \
-            "%6s" % 'Line  ', '\t\t', \
-            "%6s" % 'Ref ID', '\t\t', \
-            "%6s" % 'Obj ID', '\t\t'
-        for ind in range(numObjectsFound):
-            print 'Star #', ind, '\t:', \
-                "%6s" % round(pixelLineCenter[ind][0], 2), '\t', \
-                "%6s" % round(pixelLineCenter[ind][1], 2), '\t\t', \
-                "%6s" % catalogIDs[ind], '\t\t', \
-                "%6s" % objectIDs[ind]
+        if debugMode:
+            print '\nStar #', '\t\t', \
+                "%6s" % 'Pixel ', '\t\t', \
+                "%6s" % 'Line  ', '\t\t', \
+                "%6s" % 'Ref ID', '\t\t', \
+                "%6s" % 'Obj ID', '\t\t'
+            for ind in range(numObjectsFound):
+                print 'Star #', ind, '\t:', \
+                    "%6s" % round(pixelLineCenter[ind][0], 2), '\t', \
+                    "%6s" % round(pixelLineCenter[ind][1], 2), '\t\t', \
+                    "%6s" % catalogIDs[ind], '\t\t', \
+                    "%6s" % objectIDs[ind]
 
         # remove unidentified object IDs from results
         objectIDsMatched = []
@@ -260,13 +266,14 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
         dcmQUEST = dyn.quest(B_ehat, N_ehat)
         mrpQUEST = dyn.dcm2mrp(dcmQUEST)
 
-        print '\nQUEST Attitude Solution: '
-        print dcmQUEST
+        if debugMode:
+            print '\nQUEST Attitude Solution: '
+            print dcmQUEST
 
-        print '\nS/C Attitude Truth: '
-        print BN_dcm_cam
+            print '\nS/C Attitude Truth: '
+            print BN_dcm_cam
 
-        print '\nMRP Solution: ', mrpQUEST
+            print '\nMRP Solution: ', mrpQUEST
 
     else:
         mrpQUEST = None
@@ -288,7 +295,8 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
         fig2 = plt.figure(2)
         plt.imshow(imageMap, interpolation = 'none', cmap='viridis')
         for ind in range(len(pixelLineInitialEstimates)):
-            plt.scatter(pixelLineInitialEstimates[ind][0], pixelLineInitialEstimates[ind][1],
+            plt.scatter(pixelLineInitialEstimates[ind][0]-.5,
+                        pixelLineInitialEstimates[ind][1]-.5,
                         color='r', marker='+', s=10)
         plt.title('Initial Estimates')
         plt.savefig('initial_estimates.png')
@@ -299,11 +307,40 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
         for ind in range(numObjectsFound):
             # plt.scatter(pixelLineInitialEstimates[ind][0], pixelLineInitialEstimates[ind][1],
             #             color='r', marker='+', s=10)
-            plt.scatter(pixelLineCenter[ind][0], pixelLineCenter[ind][1],
+            plt.scatter(pixelLineCenter[ind][0]-.5,
+                        pixelLineCenter[ind][1]-.5,
                         color='y', marker='+', s=10)
         plt.title('Measured Center Locations')
         plt.savefig('measured_centers.png')
         # plt.show()
+        plt.close()
+
+        numZoomPlots = 4
+        windowSize = 10
+        for ind in range(numZoomPlots):
+            fig4 = plt.figure(4)
+            x = int(round(pixelLineInitialEstimates[ind][0]))
+            y = int(round(pixelLineInitialEstimates[ind][1]))
+            print '\n', x ,y, pixelLineCenterFound[ind], pixelLineInitialEstimates[ind]
+            windowXMin = x - windowSize
+            windowXMax = x + windowSize
+            windowYMin = y - windowSize
+            windowYMax = y + windowSize
+            plt.imshow(imageMap[windowYMin: windowYMax,
+                       windowXMin:windowXMax],
+                       interpolation='none', cmap='viridis')
+            # add half pixel to initial estimates to compensate for imshow plotting
+            plt.scatter(pixelLineInitialEstimates[ind][0]-windowXMin-.5,
+                        pixelLineInitialEstimates[ind][1]-windowYMin-.5,
+                        color='g', marker='+', s=50)
+            plt.scatter(pixelLineCenterFound[ind][0]-windowXMin-.5,
+                        pixelLineCenterFound[ind][1]-windowYMin-.5,
+                        color='r', marker='+', s=50)
+            # plt.scatter(pixelLineCenterFound[ind][0]-windowXMin+.5,
+                        # pixelLineCenterFound[ind][1]-windowYMin+.5,
+                        # color='g', marker='+', s=30)
+            # plt.scatter(0,0,color='w',marker='+',s=30)
+            plt.show()
 
 
     ##################################################
