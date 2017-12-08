@@ -49,6 +49,14 @@ def plot3components(vec):
     plt.plot(time, vec[:, 2], color_y)
     plt.plot(time, vec[:, 3], color_z)
 
+def plot_PostFits(postFits, noise):
+    time = postFits[:, 0] * mc.NANO2MIN
+    plt.xlabel('Time, min')
+    plt.plot(time, postFits[:,1], color_x)
+    plt.plot(time, 3*noise*np.ones(len(postFits[:, 0])), 'r--')
+    plt.plot(time, -3*noise*np.ones(len(postFits[:, 0])), 'r--')
+
+
 def plot_sigma(sigma):
     plot3components(sigma)
     plt.legend(['$\sigma_1$', '$\sigma_2$', '$\sigma_3$'])
@@ -56,6 +64,34 @@ def plot_sigma(sigma):
 
 def plot_omega(omega):
     plot3components(omega)
+    plt.ylabel('Angular Rate, rad/s')
+    plt.legend(['$\omega_1$', '$\omega_2$', '$\omega_3$'])
+
+def plot_sigmaCovar(sigma_err, covar):
+    covarPlus = np.zeros(np.shape(sigma_err))
+    covarMin = np.zeros(np.shape(sigma_err))
+    for i in range(len(sigma_err[:,0])):
+        covarPlus[i, 0] = sigma_err[i,0]
+        covarMin[i, 0] = sigma_err[i,0]
+        covarPlus[i,1:4] = 3*np.array([np.sqrt(covar[i,0,0]),np.sqrt(covar[i,1,1]),np.sqrt(covar[i,2,2])])
+        covarMin[i,1:4] = -3 * np.array([np.sqrt(covar[i,0, 0]), np.sqrt(covar[i,1, 1]), np.sqrt(covar[i,2, 2])])
+    plot3components(sigma_err)
+    plot3components(covarPlus)
+    plot3components(covarMin)
+    plt.legend(['$\sigma_1$', '$\sigma_2$', '$\sigma_3$'])
+    plt.ylabel('MRP')
+
+def plot_omegaCovar(omega_err, covar):
+    covarPlus = np.zeros(np.shape(omega_err))
+    covarMin = np.zeros(np.shape(omega_err))
+    for i in range(len(omega_err[:,0])):
+        covarPlus[i, 0] = omega_err[i,0]
+        covarMin[i, 0] = omega_err[i,0]
+        covarPlus[i,1:4] = 3*np.array([np.sqrt(covar[i,0,0]),np.sqrt(covar[i,1,1]),np.sqrt(covar[i,2,2])])
+        covarMin[i,1:4] = -3 * np.array([np.sqrt(covar[i,0, 0]), np.sqrt(covar[i,1, 1]), np.sqrt(covar[i,2, 2])])
+    plot3components(omega_err)
+    plot3components(covarPlus)
+    plot3components(covarMin)
     plt.ylabel('Angular Rate, rad/s')
     plt.legend(['$\omega_1$', '$\omega_2$', '$\omega_3$'])
 
@@ -145,6 +181,38 @@ def plot_rotationalNav(sigma_BN, omega_BN_B):
         plt.title('Sc Rate: $^B{\omega_{BN}}$')
         plot_omega(omega_BN_B)
     return
+
+def plot_filterOut(sigma_err, omega_err, covar):
+    if arePlotsSaved:
+        plt.figure()
+        plot_sigmaCovar(sigma_err, covar[:,0:3,0:3])
+        save_plot("sigma_BN error and covariance")
+        plt.figure()
+        plot_omegaCovar(omega_err, covar[:,3:6,3:6])
+        save_plot("omega_BN_B error and covariance")
+    else:
+        plt.figure()
+        plt.subplot(211)
+        plt.title('Sc Att Estimation: $\sigma_{BN}$')
+        plot_sigmaCovar(sigma_err, covar[:,0:3,0:3])
+        plt.subplot(212)
+        plt.title('Sc Rate Estimation: $^B{\omega_{BN}}$')
+        plot_omegaCovar(omega_err, covar[:,3:6,3:6])
+    return
+
+def plot_filterPostFits(postFits, noise):
+    if arePlotsSaved:
+        plt.figure()
+        plot_PostFits(postFits, noise)
+        save_plot("Att EKF Post-Fit Residuals")
+    else:
+        plt.figure()
+        plt.figure(9)
+        plt.title('Att EKF Post-Fit Residuals')
+        plot_PostFits(postFits, noise)
+    return
+
+
 
 def plot_orbit(r_BN):
     plt.figure()

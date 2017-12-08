@@ -83,6 +83,7 @@ class FSWClass():
         self.attFilter.inputIMUMsgName =  "gyro_output_data"
         self.attFilter.inputStMsgName = "star_tracker_state"
         self.attFilter.outputMsgName = "aekf_output_data"
+        self.attFilter.outputFilterMsgName = "sunline_filter_data"
         self.attFilter.dt = mc.NANO2SEC*self.defaultTaskTimeStep
         return
 

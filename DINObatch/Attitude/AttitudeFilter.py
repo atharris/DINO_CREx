@@ -23,8 +23,8 @@ try:
     import spacecraftPlus
 except ImportError:
     from Basilisk.utilities import simulationArchTypes
-    import Basilisk.utilities.RigidBodyKinematics as rbk
     from Basilisk.fswAlgorithms import fswMessages
+    import Basilisk.utilities.RigidBodyKinematics as rbk
     from Basilisk.simulation import spacecraftPlus, imu_sensor, star_tracker, simple_nav
 
 
@@ -51,6 +51,7 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
 
         ## Output body torque message name
         self.outputMsgName = "aekf_output_data"
+        self.outputFilterMsgName = "sunline_filter_data"
 
         ## Input message ID (initialized to -1 to break messaging if unset)
         self.inputStMsgID = -1
@@ -58,6 +59,7 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
 
         ## Output message ID (initialized to -1 to break messaging if unset)
         self.outputMsgID = -1
+        self.outputFilterMsgID = -1
 
         ## Input IMU, Star Tracker structures
         self.inputIMUMsgData = imu_sensor.IMUSensorIntMsg()
@@ -65,7 +67,7 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
 
         ## Output navigation estimate structure.
         self.outputMsgData = simple_nav.NavAttIntMsg()
-        self.outputNavMsg = fswMessages.SunlineFilterFswMsg()
+        self.outputFilterMsgData = fswMessages.SunlineFilterFswMsg()
 
         ##  Define Estimate variables
         self.stateEst = np.zeros(6) #    state estimate is 3 delta MRPs, 3 bias states
@@ -75,6 +77,8 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         ##  Define noise variables
         self.stateNoise = np.identity(6)
         self.measNoise = np.identity(3)
+
+        self.postFitRes = 0.
 
         ##  Define system models
         self.H = np.zeros([3, 6])
@@ -95,6 +99,8 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         print self.outputMsgName
         print self.moduleID
         self.outputMsgID = simulationArchTypes.CreateNewMessage(self.outputMsgName, self.outputMsgData,
+                                                                 self.moduleID)
+        self.outputFilterMsgID = simulationArchTypes.CreateNewMessage(self.outputFilterMsgName, self.outputFilterMsgData,
                                                                  self.moduleID)
         print "Output AEKF ID:", self.outputMsgID
         return
@@ -185,12 +191,13 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         #   Finally, write the output message types:
         simulationArchTypes.WriteMessage(self.outputMsgID, currentTime, self.outputMsgData, self.moduleID)
 
-        self.outputNavMsg.covar = self.estCov
-        self.outputNavMsg.stateError =
-        self.outputNavMsg.numObs =
+        # Write variable for post fit residuals
+        self.postFitRes = self.stMeas - np.dot(self.H, self.stateEst)
+        self.outputFilterMsgData.postFitRes = np.array(self.postFitRes)
+        self.outputFilterMsgData.covar = self.estCov
+        simulationArchTypes.WriteMessage(self.outputFilterMsgID, currentTime, self.outputFilterMsgData, self.moduleID)
 
-        #  Write the Filter output message
-        simulationArchTypes.WriteMessage(self.outputMsgID, currentTime, self.outputNavMsg, self.moduleID)
+
 
 
 
