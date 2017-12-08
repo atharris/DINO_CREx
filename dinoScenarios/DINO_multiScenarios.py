@@ -29,6 +29,7 @@ except ImportError:
     from Basilisk.fswAlgorithms import *
 
 import camera
+import imageProcessingExecutive as ip
 
 
 # ------------------------------------- DATA LOGGING ------------------------------------------------------ #
