@@ -398,7 +398,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     beacons = [earth, moon, mars]
     #need loop to define asteroids, too
-    
+
     cam, ipParam, navParam = defineParameters(
             (512,512),   #camera resolution, width then height
             0.05,        #focal length in m
@@ -612,7 +612,7 @@ def defineParameters(
     readSTD,
     binSize,
     maxBinDepth,
-    psfSTF,
+    psfSTD,
     simTimeStep
     ):
     """
@@ -620,8 +620,18 @@ def defineParameters(
     :params: camResolution      : (horizontal x vertical) camera resolution
     :params: camFocalLength     : camera focal length [m]
     :params: camSensorSize      : (horizontal x vertical) camera sensor size [m]
-    :params: beaconIDs          : N length list of beacon IDs (in same order as beaconRadius)
-    :params: beaconRadius       : N length list of beacon Radii (in same order as beaconIDs)
+    :params: beacons            : N length list of beacon objects
+    :params: tc                 : transmission curve dictionary (see SERs 4.3/4.3b)
+    :params: qe                 : transmission curve dictionary (see SERs 4.3/4.3b)
+    :params: lambdaBinSize      : bin size for lambda functions [nm]
+    :params: effectiveArea      : effective area of camera [m^2]
+    :params: darkCurrent        : dark current [electrons/s/pixel]
+    :params: readSTD            : standard deviation of read noise [electrons/pixel]
+    :params: binSize            : bin size [DN]
+    :params: maxBinDepth        : saturation depth [DN]
+    :params: psfSTD             : point spred funtion standard deviation [pixels]
+    :params: simTimeStep        : simulation time step [s]
+
     :return: camInputs          : list of inputs for camera module
     :return: ipInputs           : list of inputs for image processing
     :return: navInputs          : lsit of inputs for navigation module
@@ -657,7 +667,7 @@ def defineParameters(
         readSTD,         #std for read noise in electrons
         binSize,         #bin size
         maxBinDepth,     #max bin depth
-        psfSTF,          #std for psf
+        psfSTD,          #std for psf
         simTimeStep,     #simulation timestep
         scState,         # position state of s/c
         scDCM,           # intertal 2 body DCM for s/c
