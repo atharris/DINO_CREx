@@ -1,0 +1,93 @@
+    # basic .bsp filename (generic, such as de430, etc)
+    extras['basic_bsp']   = 'de430.bsp'
+    # .bsp filename for mission
+    extras['mission_bsp'] = 'DINO_kernel.bsp'
+    # .tls filename 
+    extras['tls']         = 'naif0011.tls'
+
+    # body vector for primary and secondary gravitational bodies
+    extras['bodies'] = ['SUN', '3', '399']
+
+    # specify primary and secondary indices
+    extras['primary']   = 0
+    extras['secondary'] = [1, 2]
+
+    # respective GP vector
+    extras['mu'] = [1.32712428 * 10 ** 11, 3.986004415 * 10 ** 5, 4.305 * 10 ** 4]
+
+    # abcorr for spkzer
+    extras['abcorr'] = 'NONE'
+
+    # reference frame
+    extras['ref_frame'] = 'J2000'
+
+    # SRP parameter
+    # A/M ratio multiplied by solar pressure constant at 1 AU with adjustments
+    extras['SRP'] = 0.3**2/14. * 149597870.**2 * 1358. / 299792458. / 1000. # turboprop document Eq (64)
+
+    # coefficient of reflectivity
+    extras['cR']         = 1.
+
+    # Number of batch iterations
+    extras['iterations'] = 3
+
+    # Initializing the deviation
+    extras['x_hat_0']    = 0
+
+    ##################################################################################
+    #
+    # Camera/P&L Parameters
+    #
+    ##################################################################################
+
+    # Focal Length (mm)
+    extras['FoL']     = 100.
+
+    # default inertial to camera transformation matrices
+    extras['DCM_BI']  = np.eye(3)
+    extras['DCM_TVB'] = np.eye(3)
+
+    # Camera resolution (pixels)
+    extras['resolution'] = [1024., 1024.]
+
+    # width and height of pixels in camera
+    extras['pixel_width']  = 5.
+    extras['pixel_height'] = 5.
+
+    # direction coefficient of pixel and line axes
+    extras['pixel_direction'] = 1.
+    extras['line_direction']  = 1.
+
+    # Add anomaly detection parameters
+    extras['anomaly']= False
+    extras['anomaly_num'] = 0
+    extras['anomaly_threshold'] = 4
+
+    # acceleration estimation: 'ON' or 'OFF'
+    extras['acc_est'] = 'OFF'
+
+    ##################################################################################
+    #
+    # A Priori Information
+    #
+    ##################################################################################
+
+    # a priori uncertainty for the referenceStates
+    covBar = np.zeros((IC.shape[0], IC.shape[0]))
+    covBar[0, 0] = 10000**2
+    covBar[1, 1] = 10000**2
+    covBar[2, 2] = 10000**2
+    covBar[3, 3] = .1**2
+    covBar[4, 4] = .1**2
+    covBar[5, 5] = .1**2
+
+    # Inverse of the observation weighting matrix (W)
+    observationUncertainty = np.identity(2)
+    observationUncertainty[0, 0] = 0.2 ** 2
+    observationUncertainty[1, 1] = 0.2 ** 2
+
+    # the initial STM is an identity matrix
+    phi0 = np.identity(IC.shape[0])
+
+    # initiate a priori deviation
+    stateDevBar = np.zeros(IC.shape)
