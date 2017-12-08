@@ -214,7 +214,7 @@ class DynamicsClass():
         self.starTracker = star_tracker.StarTracker()
         self.starTracker.ModelTag = 'StarTracker'
         self.starTracker.inputStateMessage = self.scObject.scStateOutMsgName
-        self.starTracker.outputStateMessage = "st_output_data"
+        self.starTracker.outputStateMessage = "star_tracker_state"
 
         senNoiseStd = 0.01
         PMatrix = [0.0] * 3 * 3
@@ -231,8 +231,11 @@ class DynamicsClass():
 
         self.gyroModel.sensorPos_B = imu_sensor.DoubleVector([0.0, 0.0, 0.0])
         self.gyroModel.setBodyToPlatformDCM(0.0, 0.0, 0.0)
-        # self.gyroModel.accelLSB = 0.0
-        # self.gyroModel.gyroLSB = 0.0
+        try:
+            self.gyroModel.accelLSB = 0.0
+            self.gyroModel.gyroLSB = 0.0
+        except ValueError:
+            return
         self.gyroModel.senRotBias = [0.0] * 3
         self.gyroModel.senTransBias = [0.0] * 3
         self.gyroModel.senRotMax = 1.0e6

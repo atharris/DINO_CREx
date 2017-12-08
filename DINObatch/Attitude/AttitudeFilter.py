@@ -24,6 +24,7 @@ try:
 except ImportError:
     from Basilisk.utilities import simulationArchTypes
     import Basilisk.utilities.RigidBodyKinematics as rbk
+    from Basilisk.fswAlgorithms import fswMessages
     from Basilisk.simulation import spacecraftPlus, imu_sensor, star_tracker, simple_nav
 
 
@@ -45,7 +46,7 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         super(AttitudeFilter, self).__init__(modelName, modelActive, modelPriority)
 
         ## Input gyro, star tracker message names
-        self.inputStMsgName = []
+        self.inputStMsgName = "star_tracker_state"
         self.inputIMUMsgName = "won_t_work"
 
         ## Output body torque message name
@@ -64,10 +65,11 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
 
         ## Output navigation estimate structure.
         self.outputMsgData = simple_nav.NavAttIntMsg()
+        self.outputNavMsg = fswMessages.SunlineFilterFswMsg()
 
         ##  Define Estimate variables
-        self.stateEst = np.zeros([6,]) #    state estimate is 3 delta MRPs, 3 bias states
-        self.outEst = np.zeros([6,]) #      Output is 3 BN MRPs, 3 angular rates
+        self.stateEst = np.zeros(6) #    state estimate is 3 delta MRPs, 3 bias states
+        self.outEst = np.zeros(6) #      Output is 3 BN MRPs, 3 angular rates
         self.estCov = 100*np.identity(6) #     Estimated state covariance
 
         ##  Define noise variables
@@ -182,6 +184,13 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
 
         #   Finally, write the output message types:
         simulationArchTypes.WriteMessage(self.outputMsgID, currentTime, self.outputMsgData, self.moduleID)
+
+        self.outputNavMsg.covar = self.estCov
+        self.outputNavMsg.stateError =
+        self.outputNavMsg.numObs =
+
+        #  Write the Filter output message
+        simulationArchTypes.WriteMessage(self.outputMsgID, currentTime, self.outputNavMsg, self.moduleID)
 
 
 
