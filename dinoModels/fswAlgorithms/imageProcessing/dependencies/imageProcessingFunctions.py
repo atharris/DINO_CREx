@@ -114,8 +114,8 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
                 search_iterations = search_iterations + 1
 
             # If signal was not found within allowed search iterations, print error message.
-            if not signal_found:
-                print "\nNo signal found in image"
+            # if not signal_found:
+                # print "\nNo signal found in image"
 
         # create a pixel_map of the region of interest only if we found a signal
         if signal_found:
@@ -245,9 +245,12 @@ def find_centroid(pixel_map, corner_ROI, ROI_parameters):
         # print pixel_map_ROI
         # print loc_centroid_row, loc_centroid_col
         plt.imshow(pixel_map_ROI, interpolation='none', cmap='viridis')
-        # plt.scatter(loc_centroid_row, loc_centroid_col, marker='x', s=150, linewidth=2, c='r')
+        plt.scatter(loc_centroid_row, loc_centroid_col, marker='x', s=150, linewidth=2, c='r')
         plt.show()
         #plt.suptitle('Search Region with Centroid Marked', fontsize=12, fontweight='bold')
+
+    # shift centroid location by half pixel
+    loc_centroid = (loc_centroid[0]+.5, loc_centroid[1]+.5)
 
     return loc_centroid, DN
 
@@ -552,7 +555,7 @@ def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18
                                maxRadius=max_rad)
 
     if circles is None:
-        print "unable to find any circles"
+        # print "unable to find any circles"
         return None
 
     if show_img:
