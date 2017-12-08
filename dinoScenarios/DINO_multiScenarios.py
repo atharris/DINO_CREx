@@ -433,7 +433,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     beacons = [earth,mars,moon]
     #need loop to define asteroids, too
-
+    
     cam, ipParam, navParam = defineParameters(
             (512,512),   #camera resolution, width then height
             0.05,        #focal length in m
@@ -445,9 +445,9 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
             np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz'),
             1,           #bin size for wavelength functions (in nm)
             0.01**2,     #effective area (m^2)
-            10,         #dark current electrons/s/pixel
-            10,         #read noise STD (in electrons per pixel)
-            10,         #bin size
+            100,         #dark current electrons/s/pixel
+            100,         #read noise STD (in electrons per pixel)
+            100,         #bin size
             2**32,       #saturation depth
             1,           #Standard deviation for PSF (in Pizels)
             0.01         #simulation timestep
@@ -455,39 +455,8 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     
 
-    # can kill these once I change the way camera is initialized
-    takeImage = 0
-    scState = -1
-    scDCM = -1
-
-    cam = camera.camera(
-        0.01,  # detector_height
-        0.01,  # detector_width
-        0.05,  # focal_length
-        512,  # resolution_height
-        512,  # resolution_width
-        np.identity(3),  # body2cameraDCM
-        1000,  # maximum magnitude
-        -1000,  # minimum magnitude (for debugging)
-        qe,
-        tc,
-        1,
-        0.01 ** 2,  # effective area in m^2
-        100,  # dark current in electrons per second
-        100,  # std for read noise in electrons
-        1000,  # bin size
-        2 ** 32,  # max bin depth
-        1,
-        0.01,  # simulation timestep
-        scState,  # position state of s/c
-        scDCM,  # intertal 2 body DCM for s/c
-        beacons,  # bodies to track in images
-        takeImage,  # takeImage message
-        db='../dinoModels/SimCode/opnavCamera/db/tycho.db'  # stellar database
-    )
-
-    # this is spoofing the output of the nav exec
-    # telling the camera when to take an image.
+    #this is spoofing the output of the nav exec
+    #telling the camera when to take an image.
     takeImage = np.zeros(len(r_BN))
 
     takeImage[0] = 1
@@ -666,6 +635,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
                 # attitude output of image processing logged for informational purposes only
                 # (nav module to use sim attitude filter output)
                 imgMRPFound.append(currentMRP)
+
 
     # Generate inputs for navigation modulec
     numNavInputs = len(imgTimesFound)
