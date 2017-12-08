@@ -415,26 +415,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     ##  Post-Process sim data using camera, image processing, batch filter DINO modules
 
-
-
-    ###############################################################################
-    #
-    #       Pull in canned QE and Transmission curves from DINO C-REx files
-    #
-    ###############################################################################
-
-    # load tranmission curve for Canon 20D
-    tc = np.load('../dinoModels/SimCode/opnavCamera/tc/20D.npz')
-
-    # load QE curve for Hubble Space Telecope Advanced Camera for Surveys SITe CCD
-    qe = np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz')
-
-    ###############################################################################
-    #
-    #       Initialize camera
-    #
-    ###############################################################################
-
     earth = camera.beacon()
     earth.r_eq = 6378.137
     earth.id = 'Earth'
@@ -454,6 +434,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     # need loop to define asteroids, too
 
+    
 
     # can kill these once I change the way camera is initialized
     takeImage = 0
@@ -643,7 +624,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
                 imgMRPFound.append(currentMRP)
 
 
-    # Generate inputs for navigation module
+    # Generate inputs for navigation modulec
     numNavInputs = len(imgTimesFound)
     imgTimesNav = np.reshape(imgTimesFound, (numNavInputs, 1))
     beaconIDsNav = np.reshape(beaconIDsFound, (numNavInputs, 1))
