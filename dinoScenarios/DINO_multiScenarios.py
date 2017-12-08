@@ -433,7 +433,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     beacons = [earth,mars,moon]
     #need loop to define asteroids, too
-    
+
     cam, ipParam, navParam = defineParameters(
             (512,512),   #camera resolution, width then height
             0.05,        #focal length in m
