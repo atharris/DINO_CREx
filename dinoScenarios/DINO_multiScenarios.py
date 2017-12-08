@@ -12,6 +12,7 @@ sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 sys.path.append('../dinoModels/SimCode/opnavCamera/')
 sys.path.append('../dinoModels/SimCode/opnavCamera/dependencies')
+sys.path.append('../dinoModels/fswAlgorithms/imageProcessing/dependencies')
 
 
 import BSK_plotting as BSKPlt
@@ -29,6 +30,7 @@ except ImportError:
     from Basilisk.fswAlgorithms import *
 
 import camera
+import imageProcessingExecutive as ip
 
 # ------------------------------------- DATA LOGGING ------------------------------------------------------ #
 
