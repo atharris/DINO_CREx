@@ -155,8 +155,8 @@ class DynamicsClass():
         self.spiceObject.UTCCalInit = "11 Jul 2020 00:00:37.034"
         self.spiceObject.ModelTag = "SpiceInterfaceData"
         self.spiceObject.SPICEDataPath = bskSpicePath
-        self.spiceObject.outputBufferCount = 10000
-        self.spiceObject.planetNames = spice_interface.StringVector(self.spicePlanetNames)
+        self.spiceObject.OutputBufferCount = 10000
+        self.spiceObject.PlanetNames = spice_interface.StringVector(self.spicePlanetNames)
         print '\n' + 'SPICE DATA'
         print 'Spice cel bodies: ', self.spicePlanetNames
         # By default the SPICE object will use the solar system barycenter as the inertial origin
