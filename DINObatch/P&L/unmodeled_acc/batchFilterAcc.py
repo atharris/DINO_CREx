@@ -13,7 +13,7 @@ __version__ = '$Revision$'[11:-2]
 __date__ = '$Date$'[7:26]
 
 ################################################################################
-#                     I M primary_index O R T     L I B R A R I E secondary_indices
+#                     I M primaryBodyIndex O R T     L I B R A R I E secondaryBodyIndices
 ################################################################################
 
 import scipy.integrate as integ
@@ -31,38 +31,111 @@ from numpy.linalg import inv as aInv
 
 import pdb
 
+## \defgroup batch_acc Batch Filter - unmodeled acceleration
+##   @{
+## The module for the unmodeled acceleration estimation batch filter.
+#
+# Overview {#overview}
+# ====
+#
+# Purpose
+# -----
+# This script contains two functions that may be exported for the purposes of reference trajectory propagation and the running of a batch filter. 
+#
+# It is noted here and in latter sections of this document, this module is largely identical to that of the vanilla batch filter \ref batch_vanilla "`batchFilter.py`". The exception is the equations of motions (EOMs) that are imported. Rather than utilizing \ref EOMS_vanilla "`posVel.py`", the EOM function containing support for a constant acceleration in the x, y and z coordinates is imported as \ref EOMs_acc "`posVelAcc.py`". 
+#
+# A significant amount of material originiates from Statistical Orbit Determination (2004) a work by Tapley, Schutz, and Born. Therefore, equation numbers from the text will be included with the theory and presentation. The purpose of this documentation is to provide a succinct foundation of theory as well as a walkthrough of the overall code structure.
+#
+# Contents
+# -----
+# The following functions are contained in this module:
+#
+# - `runRef.py`
+# - `run_batch.py`
+#
+# The former (`runRef.py`) is an exportable function that parses inputs and calls an ODE solver for specified equations of motion (EOMs). The outputs are an integrated state and state transition matrix (STM). 
+#
+# The latter function (`run_batch.py`) is also an exportable function. It organizes inputs, calls the reference propagator runRef.py, runs beaconStates to create reference beacon positions, creates reference observations and associated H matrix by calling fncG and fncH, respectively, and computes deviations using a batch algorithm.
+#
+# Neither function is a stand alone script. As with other modules in the state estimation nav filter, there is a reliance on the `extras` dictionary to pass through parameters to various functions. It is noted that the `extras` dictionary should never be an output from a function.
+#
+# The Code
+# =====
+#
+# `runRef.py` 
+# -----
+# The purpose of this function is relatively straightforward: calculate a reference trajectory when given an initial condition, a set of times, and a dictionary of extras. The following is a table of inputs and associated brief descriptions:
+#
+# Name      | Description                                           | Size/Type
+# -----     | -------------------                                   | -----
+# IC0       | initial conditions of state                           | (d,N) numpy array  
+# phi0      | initial condition of STM                              | (d,d) numpy array
+# timeSpan  | an array of times to integrate to                     | (N,) numpy array
+# extras    | dictionary of various parameters                      | dictionary
+#
+# The same is repeated for outputs:
+#
+# Name      | Description         | Size/Type
+# -----     | ------------------- | -----
+# state     | propagated state    | (N,d(1+d)) numpy array
+#
+# Thusly, we have established the purpose of this function. It is noted that the output variable `state` contains the quantities of interest for the scenario (position, velocity, etc) as well as the propagates STM that has been resized to (,dXd). 
+#
+# `run_batch.py`
+# -----
+# This function consists of the meat of the batch filter algorithm. As previously described, it contains and calls a variety of calculations. To begin, we once again list inputs: 
+#
+# Name      | Description                                           | Size/Type
+# -----     | -------------------                                   | -----
+# IC        | initial conditions of state                           | (d,) numpy array  
+# phi       | initial condition of STM                              | (d,d) numpy array
+# timeSpan  | an array of times to integrate to                     | (N,) numpy array
+# filterObservations | dictionary of observation related data     | dictionary
+# P_bar     | initial covariance                                    | (d,d) numpy array
+# observationUncertainty | a priori uncertainty of measurements. diagonal array | (m,m) numpy array
+# x_bar     | a priori state deviation                              | (d,) numpy array  
+# extras    | dictionary of various parameters                      | dictionary
+#
+# The same is repeated for outputs:
+#
+# Name      | Description         | Size/Type
+# -----     | ------------------- | -----
+# referenceState | propagated reference state | (N,d(1+d)) numpy array
+# estimatedState | propagated reference state + estimated state deviations | (N,d) numpy array
+# extraData | dictionary of various outputs, e.g., deviations | dictionary
+#
+# As previously stated, the code contained within this module is identical to that of \ref batch_vanilla "`batchFilter.py`" with the exception of the imported EOM functions. Rather than utilizing \ref EOMS_vanilla "`posVel.py`", the EOM function containing support for a constant acceleration in the x, y and z coordinates is imported as \ref EOMs_acc "`posVelAcc.py`". 
+## @}
+
 ################################################################################
 #                  E X P O R T E D     F U N C T I O N S:
 ################################################################################
 
 #-------------------------------------------------------------------------------
-def norm( input ) :
-  norm = np.sqrt( sum( np.square( input ) ) )
-  return norm
 
 def runRef( input ) :
 
   IC0          = input[0]
   phi0         = input[1]
-  t_span       = input[2]
+  timeSpan       = input[2]
   extras       = input[-1]
 
   # size of estimation state
-  n_state           = IC0.shape[0]
+  stateDimension           = IC0.shape[0]
 
   # get the primary body index
-  primary_index     = extras['primary']
+  primaryBodyIndex     = extras['primary']
   # secondary body indices
-  secondary_indices = extras['secondary']
+  secondaryBodyIndices = extras['secondary']
   # number of secondary bodies
-  n_secondaries     = len( secondary_indices )
+  nSecondaries     = len( secondaryBodyIndices )
   
   # list of gravitational parameters (GP)
   mu                = extras['mu']
   # GP of the primary body
-  mu_primary        = mu[primary_index]
+  muPrimary        = mu[primaryBodyIndex]
   # GP of secondaries
-  mu_secondaries    = [ mu[ii] for ii in secondary_indices ] 
+  muSecondaries    = [ mu[ii] for ii in secondaryBodyIndices ] 
   
   # SRP index
   kSRP   = extras['SRP']
@@ -75,44 +148,45 @@ def runRef( input ) :
   # abberation correction for spkzr
   abcorr = extras['abcorr']
   # reference frame
-  ref_frame    = extras['ref_frame']
+  referenceFrame    = extras['ref_frame']
 
   # organize args
-  args   = ( primary_index, secondary_indices, n_secondaries, mu_primary, mu_secondaries, kSRP, cR, abcorr, ref_frame, bodies, n_state )
+  args   = ( primaryBodyIndex, secondaryBodyIndices, nSecondaries, muPrimary, muSecondaries, kSRP, cR, abcorr, referenceFrame, bodies, stateDimension )
   
   # reshape the STM to fit in 1D
-  phi = np.reshape(phi0, n_state**2 )
+  phi = np.reshape(phi0, stateDimension**2 )
 
   # append STM to IC
   IC     = np.append( IC0, phi )
 
   # propagate the IC and STM 
-  state  = integ.odeint( EOM, IC, t_span, args )
+  state  = integ.odeint( EOM, IC, timeSpan, args )
 
   return state 
 
 def run_batch( input ) :
 
   IC           = input[0]
-  phi          = input[1]
-  t_span       = input[2]
-  obs_filter   = input[3]
+  phi0         = input[1]
+  timeSpan     = input[2]
+  filterObservations   = input[3]
   P_bar        = input[4]
-  observation_uncertainty = input[5]
+  observationUncertainty = input[5]
   x_bar        = input[6]
+  angles       = input[7]
   extras       = input[-1]
 
   # number of estimated states
-  n_state   = IC.shape[0]
+  stateDimension   = IC.shape[0]
 
   # number of samples/observations
-  n_samples = t_span.shape[0]
+  nObservations = timeSpan.shape[0]
 
   # observed measurement data
-  Y_obs = obs_filter['measurements']
+  observations = filterObservations['measurements']
 
-  # initiate x_hat
-  x_hat = np.zeros( (n_state,) )
+  # initiate stateDevHat
+  stateDevHat = np.zeros( (stateDimension,) )
 
   IC0  = np.copy( IC )
 
@@ -125,22 +199,19 @@ def run_batch( input ) :
  
   # if there exists a priori information. if not, use default
   if np.sum(np.sum( P_bar )) == 0 :
-    info_matrix = np.zeros( (n_state,n_state) )
-    normal_matrix = np.zeros( (n_state,1) )
+    infoMatrix = np.zeros( (stateDimension,stateDimension) )
+    normalMatrix = np.zeros( (stateDimension,1) )
  
   else :
-    info_matrix = aInv( P_bar )
-    normal_matrix = np.dot( aInv( P_bar ), 
+    infoMatrix = aInv( P_bar )
+    normalMatrix = np.dot( aInv( P_bar ), 
                     np.expand_dims(x_bar,axis=1) )
 
-  phi0       = np.identity( n_state )
-
-  # input to the propagator takes the ref_state and STM at t0, as well as the list of times
-  prop_input = ( IC0, phi0, t_span, extras ) 
+  # input to the propagator takes the referenceState and STM at t0, as well as the list of times
+  propagatorInput = ( IC0, phi0, timeSpan, extras ) 
   
   # execute propagation
-  state      = runRef( prop_input )
-  ref_state  = np.copy( state )
+  referenceState  = runRef( propagatorInput )
   
     #######################################################################
     # The measurements are currently of size 2 for each time step. 
@@ -154,46 +225,45 @@ def run_batch( input ) :
   ##################################################################################
 
   # collect the list of beacons (in observational order) into an extras list
-  extras['obs_beacons'] = list(obs_filter['beaconIDs'])
+  extras['obs_beacons'] = list(filterObservations['beaconIDs'])
 
   # generate the positions of beacons using dictated function beaconPositions
-  beacon_inputs = ( obs_filter['beaconIDs'], t_span, extras )
-  beacon_states = beaconStates( beacon_inputs )
+  beaconPropInputs = ( filterObservations['beaconIDs'], timeSpan, extras )
+  beaconStateArray = beaconStates( beaconPropInputs )
 
   # create observation weight matrix (W)
-  W = aInv( observation_uncertainty )
+  W = aInv( observationUncertainty )
 
-  # inputs for Y_refs (G) calculation
-  G_ref_inputs = ( ref_state[:,0:n_state], beacon_states, extras )
+  # inputs for referenceObservations (G) calculation
+  referenceObservationInputs = ( referenceState[:,0:stateDimension], beaconStateArray, angles, extras )
 
   # calculate the estimated observables and organize into an array
-  Y_refs = fncG( G_ref_inputs )
+  referenceObservations = fncG( referenceObservationInputs )
 
 
   # using the inputs of G, calculate the H matrix
-  H_inputs = ( ref_state[:,0:n_state], beacon_states, extras )
-  H_tilde   = fncH( H_inputs )
+  mappingMatrixInputs  = ( referenceState[:,0:stateDimension], beaconStateArray, angles, extras )
+  mappingMatrix        = fncH( mappingMatrixInputs )
 
 
   # calculate the deviation of the observables ( Y - G )
-  y    = Y_obs - Y_refs
+  observationDeviations = observations - referenceObservations
 
   # initiate an array to hold the filtered covariances
-  P_array = np.zeros( (n_samples, n_state, n_state) )
+  covArray = np.zeros( (nObservations, stateDimension, stateDimension) )
   # cycle through the observations/reference states and build up the filter data
-  for ii in xrange(n_samples) :
+  for ii in xrange(nObservations) :
       # pull out the STM
-      phi_t_t0  = np.reshape( ref_state[ii,n_state:], (n_state,n_state) )
+      phi_t_t0  = np.reshape( referenceState[ii,stateDimension:],\
+                             (stateDimension,stateDimension) )
       # matrix multiply the H matrix at time tii with that of the contemporary STM
       # RANGE AND RANGE RATE BATCH - hard coded 2 for observation type size
-      H    = np.dot( H_tilde[0+2*ii:2+2*ii,:], phi_t_t0 )
+      H    = np.dot( mappingMatrix[0+2*ii:2+2*ii,:], phi_t_t0 )
       # add the new H^T H result to the information matrix
-      info_matrix   += np.dot( H.T, np.dot( W, H ) )
-      # P_array[ii,:,:]   = aInv( info_matrix )
+      infoMatrix   += np.dot( H.T, np.dot( W, H ) )
+      # covArray[ii,:,:]   = aInv( infoMatrix )
       # add the H^T Y result to the observation information matrix
-      yii = np.zeros([len( y[ii,:]),1])
-      yii[:,0] = y[ii,:]
-      normal_matrix += np.dot( H.T, np.dot( W, yii))
+      normalMatrix += np.dot( H.T, np.dot( W, observationDeviations[ii,:].T))
 
   ##################################################################################
   #
@@ -201,77 +271,78 @@ def run_batch( input ) :
   #
   ##################################################################################
     
-  # perform least squares on the info_matrix and observation matrix to compute the residuals
-  x_hat = np.dot(np.linalg.inv(info_matrix), normal_matrix).reshape([len(IC)])
+  # perform least squares on the infoMatrix and observation matrix to compute the residuals
+  stateDevHat = np.reshape(np.linalg.lstsq( infoMatrix, normalMatrix )[0], [stateDimension])
 
-  # initiate a filtered ref_state
-  est_state = np.zeros( (ref_state.shape[0],n_state) )
+  # initiate a filtered referenceState
+  estimatedState = np.zeros( (referenceState.shape[0],stateDimension) )
 
   # initiate an array to hold the filtered covariances
-  # P_array = np.zeros( (n_samples, n_state, n_state) )
+  # covArray = np.zeros( (nObservations, stateDimension, stateDimension) )
 
   # the first filtered covariance is the inverse of the covariance matrix
-  P = aInv( info_matrix )
+  P = aInv( infoMatrix )
 
   # initiate an array for the state deviation vectors
-  x_hat_array = np.zeros( (n_samples, n_state) )
-  x_bar_array = np.zeros( (n_samples, n_state) )
+  stateDevHatArray = np.zeros( (nObservations, stateDimension) )
+  stateDevBarArray = np.zeros( (nObservations, stateDimension) )
 
-  for ii in xrange( ref_state.shape[0] ) :
+  for ii in xrange( referenceState.shape[0] ) :
     # pull the STM that is able to transform from the current time to t0
-    phi_t_t0  = np.reshape( ref_state[ii,n_state:], (n_state,n_state) )
-    # linearly transform deviation and at it to the ref_state and save
-    x_hat_array[ii,:] = np.dot( phi_t_t0, x_hat ).T
-    x_bar_array[ii,:] = np.dot( phi_t_t0, x_bar ).T
-    P_array[ii,:,:] = np.dot(np.dot( phi_t_t0, P ),  phi_t_t0.T)
+    phi_t_t0  = np.reshape( referenceState[ii,stateDimension:],\
+                            (stateDimension,stateDimension) )
+    # linearly transform deviation and at it to the referenceState and save
+    stateDevHatArray[ii,:] = np.dot( phi_t_t0, stateDevHat ).T
+    stateDevBarArray[ii,:] = np.dot( phi_t_t0, x_bar ).T
+    covArray[ii,:,:] = np.dot(np.dot( phi_t_t0, P ),  phi_t_t0.T)
     # add the deviation to the reference state 
-    est_state[ii,:]   = ref_state[ii,0:n_state] + x_hat_array[ii,:]
+    estimatedState[ii,:]   = referenceState[ii,0:stateDimension] + stateDevHatArray[ii,:]
     # store the transformed covariance matrix
-    # P_array[ii,:,:]   = np.dot( np.dot( phi_t_t0, P ), phi_t_t0.T )
+    # covArray[ii,:,:]   = np.dot( np.dot( phi_t_t0, P ), phi_t_t0.T )
 
-  # inputs for Y_est (G) calculation
-  G_est_inputs = ( est_state[:,0:n_state], beacon_states, extras )
+  # inputs for estimatedObservations (G) calculation
+  estimatedObservationInputs = ( estimatedState[:,0:stateDimension], beaconStateArray, angles, extras )
 
   # calculate the estimated observables and organize into an array
-  Y_est = fncG( G_est_inputs )
+  estimatedObservations = fncG( estimatedObservationInputs )
 
   # compute the postfits using the updated observables and the measured values
-  postfits = np.zeros([np.shape(x_hat_array)[0], np.shape(y)[1]])
-  postfitsDelta = np.zeros([np.shape(x_hat_array)[0], np.shape(y)[1]])
-  for ii in range(np.shape(x_hat_array)[0]):
-    postfitsDelta[ii,:] = extras['oldPost'][ii,:] - y[ii,:] + np.dot(H_tilde[0+2*ii:2+2*ii,:], x_hat_array[ii,0:np.shape(H_tilde)[1]])
-    postfits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*ii:2+2*ii,:], x_hat_array[ii,0:np.shape(H_tilde)[1]])
+  postfits      = np.zeros([np.shape(stateDevHatArray)[0], \
+                            np.shape(observationDeviations)[1]])
+  postfitsDelta = np.zeros([np.shape(stateDevHatArray)[0], \
+                            np.shape(observationDeviations)[1]])
+
+  for ii in range(np.shape(stateDevHatArray)[0]):
+    postfitsDelta[ii,:] = extras['oldPost'][ii,:] - observationDeviations[ii,:] + np.dot(mappingMatrix[0+2*ii:2+2*ii,:], stateDevHatArray[ii,0:np.shape(mappingMatrix)[1]])
+    postfits[ii,:] = observationDeviations[ii,:] - np.dot(mappingMatrix[0+2*ii:2+2*ii,:], stateDevHatArray[ii,:])
 
   # Anomaly detection
-  for ii in range(np.shape(x_hat_array)[0]):
+  for ii in range(np.shape(stateDevHatArray)[0]):
     for jj in range(np.shape(postfits)[1]):
-      if np.abs(postfits[ii,jj]) - 3*observation_uncertainty[jj, jj] > 0:
+      if np.abs(postfits[ii,jj]) - 3*observationUncertainty[jj, jj] > 0:
         extras['anomaly_num']+=1
         print 'Anomalous measurement detected at time ' , ii , 'on measurement type ', jj
 
   if extras['anomaly_num'] > extras['anomaly_threshold']:
     extras['anomaly'] = True
 
-  prefits = np.zeros([np.shape(x_hat_array)[0], np.shape(y)[1]])
-  for ii in range(1,np.shape(x_hat_array)[0]):
-    prefits[ii,:] = y[ii,:] - np.dot(H_tilde[0+2*(ii):2+2*(ii),:], x_bar_array[ii,:])
+  prefits = np.zeros([np.shape(stateDevHatArray)[0], np.shape(observationDeviations)[1]])
+  for ii in range(1,np.shape(stateDevHatArray)[0]):
+    prefits[ii,:] = observationDeviations[ii,:] - np.dot(mappingMatrix[0+2*(ii):2+2*(ii),:], stateDevBarArray[ii,:])
 
   # store various arrays in a data dictionary
-  extra_data                      = {}
-  extra_data['Y']                 = Y_obs
-  extra_data['P_array']           = P_array
-  extra_data['x_hat_array']       = x_hat_array
-  extra_data['prefit residuals']  = prefits
-  extra_data['postfit residuals'] = postfits
-  extra_data['postfit changes'] = postfitsDelta
-  # is this legacy code?
-  extras['x_hat_0']               += x_hat
-  extra_data['x_hat_0']           = extras['x_hat_0']
-  extra_data['anomaly_detected']  = [extras['anomaly'], extras['anomaly_num']]
+  extraData                       = {}
+  extraData['Y']                  = observations
+  extraData['covArray']           = covArray
+  extraData['stateDevHatArray']   = stateDevHatArray
+  extraData['prefit residuals']   = prefits
+  extraData['postfit residuals']  = postfits
+  extraData['postfit changes']    = postfitsDelta
+  extraData['stateDevHat']        = stateDevHat
+  extraData['anomaly_detected']   = [extras['anomaly'], extras['anomaly_num']]
 
 
-
-  return ref_state, est_state, extra_data
+  return referenceState, estimatedState, extraData
 
 
 ################################################################################

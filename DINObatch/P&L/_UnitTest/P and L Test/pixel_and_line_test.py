@@ -1,28 +1,20 @@
-## \file pixel_and_line_unit_test.py
-# This code initiates and runs a unit test for the following functions:
-# Pixel and Line G function (measurement generation)
-# Pixel and Line H function (measurement partials wrt estimate state)
-#
+
+import sys, os, inspect
+
+filename = inspect.getframeinfo(inspect.currentframe()).filename
+path = os.path.dirname(os.path.abspath(filename))
+dinoName = 'DINO_CREx'
+splitPath = path.split(dinoName)
+dinoCommonPath = splitPath[0] + dinoName + '/DINObatch/P&L/common_functions/'
+sys.path.append(dinoCommonPath)
 
 import numpy as np
 import pdb
 import pixel_and_line_symbolics
-from pixelLineBatch import fncH as H_function
-from pixelLineBatch import fncG as G_function
+from pixelLineBatch import fncH
+from pixelLineBatch import fncG 
 
 
-##
-# I'm making a list
-# - here we go
-#     - deeper
-#         - even deeper  
-#         .
-#     should be sub list
-#     .
-# should be list
-# .
-# should not be list
-#
 def main():
     spacecraft = np.array([[1000.,0.,0.,0.,0.,0.]])
     beacon     = np.array([[1200,1000,450]])
@@ -34,8 +26,10 @@ def main():
     ##################################################################################
     
     extras = {}
+    ## \var extras
     # Focal Length (mm)
-    extras['focal_length'] = 100.
+    # 
+    extras['FoL'] = 100.
 
     # Camera resolution (pixels)
     extras['resolution'] = [2048., 512.]
@@ -51,26 +45,26 @@ def main():
     extras['obs_beacons'] = [1.]
 
     angles = np.array([[0,np.pi / 4,np.pi / 2.]])
-    angles = np.array([[0,        0,np.pi / 2.]])
+    angles = np.array([0,        0,np.pi / 2.])
 
     args = ( spacecraft, beacon, angles, extras )
+    pdb.set_trace()
+    G = fncG( args )
 
-    G = G_function( args )
-
-    H = H_function( args )
+    H = fncH( args )
 
     symbolic_results = pixel_and_line_symbolics.main()
     
-    G_diff = G - np.array(symbolic_results[0:2])
+    diffG = G - np.array(symbolic_results[0:2])
 
-    H_diff = H[:,0:3] - np.array([symbolic_results[2:5],symbolic_results[5:8]])
+    diffH = H[:,0:3] - np.array([symbolic_results[2:5],symbolic_results[5:8]])
 
-    if np.any( np.greater( np.abs( G_diff ), 10**(-10) ) ):
+    if np.any( np.greater( np.abs( diffG ), 10**(-10) ) ):
        print 'P&L G Function did not pass unit test :('
     else:
        print 'P&L G Function passed unit test!'
 
-    if np.any( np.greater( np.abs( H_diff ), 10**(-10) ) ):
+    if np.any( np.greater( np.abs( diffH ), 10**(-10) ) ):
        print 'P&L H Function did not pass unit test :('
     else:
        print 'P&L H Function passed unit test!'
@@ -80,4 +74,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
