@@ -381,26 +381,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     ##  Post-Process sim data using camera, image processing, batch filter DINO modules
 
-
-
-    ###############################################################################
-    #
-    #       Pull in canned QE and Transmission curves from DINO C-REx files
-    #
-    ###############################################################################
-
-    # load tranmission curve for Canon 20D
-    tc = np.load('../dinoModels/SimCode/opnavCamera/tc/20D.npz')
-
-    # load QE curve for Hubble Space Telecope Advanced Camera for Surveys SITe CCD
-    qe = np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz')
-
-    ###############################################################################
-    #
-    #       Initialize camera
-    #
-    ###############################################################################
-
     earth = camera.beacon()
     earth.r_eq = 6378.137
     earth.id = 'Earth'
@@ -417,40 +397,28 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     moon.albedo = 0.12
 
     beacons = [earth, moon, mars]
-
     #need loop to define asteroids, too
+    
+    cam, ipParam, navParam = defineParameters(
+            (512,512),   #camera resolution, width then height
+            0.05,        #focal length in m
+            (0.01,0.01), #detector dimensions in m, with then height
+            beacons,     #list of beacons
+            #transmission curve dict
+            np.load('../dinoModels/SimCode/opnavCamera/tc/20D.npz'),
+            #quantum efficiency curve dict
+            np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz'),
+            1,           #bin size for wavelength functions (in nm)
+            0.01**2,     #effective area (m^2)
+            100,         #dark current electrons/s/pixel
+            100,         #read noise STD (in electrons per pixel)
+            100,         #bin size
+            2**32,       #saturation depth
+            1,           #Standard deviation for PSF (in Pizels)
+            0.01         #simulation timestep
+        )
 
-
-    #can kill these once I change the way camera is initialized
-    takeImage = 0
-    scState = -1
-    scDCM = -1
-
-    cam = camera.camera(
-        0.01,  # detector_height
-        0.01,  # detector_width
-        0.05,  # focal_length
-        512,  # resolution_height
-        512,  # resolution_width
-        np.identity(3),  # body2cameraDCM
-        1000,  # maximum magnitude
-        -1000,  # minimum magnitude (for debugging)
-        qe,
-        tc,
-        1,
-        0.01 ** 2,  # effective area in m^2
-        100,  # dark current in electrons per second
-        100,  # std for read noise in electrons
-        1000,  # bin size
-        2 ** 32,  # max bin depth
-        1,
-        0.01,  # simulation timestep
-        scState,  # position state of s/c
-        scDCM,  # intertal 2 body DCM for s/c
-        beacons,  # bodies to track in images
-        takeImage,  # takeImage message
-        db='../dinoModels/SimCode/opnavCamera/db/tycho.db'  # stellar database
-    )
+    
 
     #this is spoofing the output of the nav exec
     #telling the camera when to take an image.
@@ -524,7 +492,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
                 imgMRPFound.append(currentMRP)
 
 
-    # Generate inputs for navigation module
+    # Generate inputs for navigation modulec
     numNavInputs = len(imgTimesFound)
     imgTimesNav = np.reshape(imgTimesFound, (numNavInputs, 1))
     beaconIDsNav = np.reshape(beaconIDsFound, (numNavInputs, 1))
@@ -630,31 +598,90 @@ def opnavCamera_dynScenario(TheDynSim):
     #pull_DynCelestialOutputs(TheDynSim)
     plt.show()
 
-def defineParameters(camResolution, camFocalLength, camSensorSize, beaconIDs, beaconRadius):
+
+def defineParameters(
+    camResolution, 
+    camFocalLength, 
+    camSensorSize, 
+    beacons,
+    tc,
+    qe,
+    lambdaBinSize,
+    effectiveArea,
+    darkCurrent,
+    readSTD,
+    binSize,
+    maxBinDepth,
+    psfSTF,
+    simTimeStep
+    ):
     """
     Generates formatted inputs for camera, image processing, and navigation modules
     :params: camResolution      : (horizontal x vertical) camera resolution
     :params: camFocalLength     : camera focal length [m]
     :params: camSensorSize      : (horizontal x vertical) camera sensor size [m]
-    :params: beaconIDs          : N length list of beacon IDs
+    :params: beaconIDs          : N length list of beacon IDs (in same order as beaconRadius)
+    :params: beaconRadius       : N length list of beacon Radii (in same order as beaconIDs)
     :return: camInputs          : list of inputs for camera module
     :return: ipInputs           : list of inputs for image processing
     :return: navInputs          : lsit of inputs for navigation module
     """
 
+    beaconIDs = []
+    beaconRadius = []
+    for each in beacons:
+        beaconIDs.append(each.id)
+        beaconRadius.append(each.r_eq)
+
+
+    #init values for camera that will be set later.
+    scState = -1
+    scDCM = -1
+    takeImage = 0
+
+
+    cam = camera.camera(
+        camSensorSize[0], #detector width in m
+        camSensorSize[1], #detector height in m
+        camFocalLength,     #focal lenght in m
+        camResolution[0], #detector resolution (width direction)
+        camResolution[1], #detector resolution (height direction)
+        np.identity(3),  #body2cameraDCM
+        1000,            #maximum magnitude (for debugging)
+        -1000,           #minimum magnitude (for debugging)
+        qe,              #quantum efficiency dictionary
+        tc,              #transmission curve dictionary
+        lambdaBinSize,   #lambda bin size
+        effectiveArea,   #effective area in m^2
+        darkCurrent,     #dark current in electrons per second
+        readSTD,         #std for read noise in electrons
+        binSize,         #bin size
+        maxBinDepth,     #max bin depth
+        psfSTF,          #std for psf
+        simTimeStep,     #simulation timestep
+        scState,         # position state of s/c
+        scDCM,           # intertal 2 body DCM for s/c
+        beacons,         # bodies to track in images
+        takeImage,       # takeImage message
+        db='../dinoModels/SimCode/opnavCamera/db/tycho.db'  # stellar database
+    )
+
+
     # Camera Module Parameter Creation
 
-    camInputs = []
+    camInputs = cam
 
     # Image Processing Module Parameter Creation
     ipCamParam = {}
-    ipCamParam['resolution'] = camResolution
-    ipCamParam['focal length'] = camFocalLength
-    ipCamParam['sensor size'] = camSensorSize
-    ipCamParam['pixel size'] = (camSensorSize[0]/camResolution[0], camSensorSize[1]/camResolution[1])
-    ipCamParam['field of view'] = (2*math.degrees(math.atan2(camSensorSize[0]/2., camFocalLength)),
-                                 2*math.degrees(math.atan2(camSensorSize[1]/2., camFocalLength)))
-
+    ipCamParam['resolution'] = (cam.resolutionWidth,cam.resolutionHeight)
+    ipCamParam['focal length'] = cam.focalLength
+    ipCamParam['sensor size'] = (cam.detectorWidth,cam.detectorHeight)
+    ipCamParam['pixel size'] = (
+        cam.detectorWidth/cam.resolutionWidth, 
+        cam.detectorHeight/cam.resolutionHeight)
+    ipCamParam['field of view'] = (
+        cam.angularWidth,
+        cam.angularHeight)
     ipInputs = [ipCamParam, beaconIDs, beaconRadius]
 
 
