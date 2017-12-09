@@ -107,7 +107,7 @@ def pull_DynCelestialOutputs(TheDynSim, plots=True):
     BSKPlt.plot_spacecraft_orbit_0(dict_data_color, r_BN)
     if plots==True:
         BSKPlt.plot_multi_orbit_0(dict_data_color)
-        BSKPlt.plot_spacecraft_orbit_0(dict_data_color, r_sc)
+        BSKPlt.plot_spacecraft_orbit_0(dict_data_color, r_BN)
 
 
     sc_dict_data_color = {
@@ -124,13 +124,11 @@ def pull_DynCelestialOutputs(TheDynSim, plots=True):
         # 'r_beacon_7': [r_beacons[7], 'g'],
         # 'r_beacon_8': [r_beacons[8], 'g']
     }
-    return r_sun, r_earth, r_moon, r_mars, r_beacons
-        BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_sc)
-    print "Please make this work."
-        BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_BN)
     if plots==True:
-
-    return r_sc, r_sun, r_earth, r_moon, r_mars, r_beacons
+        BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_BN)
+        BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_BN)
+    print "Please make this work."
+    return r_sun, r_earth, r_moon, r_mars, r_beacons
 
 
 def pull_DynOutputs(TheBSKSim, plots=True):
@@ -397,7 +395,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     moon.id = 'Earth'
     moon.albedo = 0.12
 
-    beacons = [earth, moon, mars]
+    beacons = [earth,mars,moon]
     #need loop to define asteroids, too
 
     cam, ipParam, navParam = defineParameters(
@@ -411,9 +409,9 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
             np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz'),
             1,           #bin size for wavelength functions (in nm)
             0.01**2,     #effective area (m^2)
-            100,         #dark current electrons/s/pixel
-            100,         #read noise STD (in electrons per pixel)
-            100,         #bin size
+            10,         #dark current electrons/s/pixel
+            10,         #read noise STD (in electrons per pixel)
+            10,         #bin size
             2**32,       #saturation depth
             1,           #Standard deviation for PSF (in Pizels)
             0.01         #simulation timestep
@@ -424,22 +422,43 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     #this is spoofing the output of the nav exec
     #telling the camera when to take an image.
     takeImage = np.zeros(len(r_BN))
+
     takeImage[0] = 1
     takeImage[20] = 1
     takeImage[30] = 1
     takeImage[40] = 1
-    takeImage[47] = 1
+    takeImage[43] = 1
 
     lastTakeImage = 0
-    for i in range(0,len(r_sc)):
-        cam.scState = r_sc[i][1:4]
-        earth.state = r_earth[i][1:4]
-        moon.state = r_moon[i][1:4]
-        mars.state = r_mars[i][1:4]
+
+    for i in range(0,len(r_BN)):
+        cam.scState = r_BN[i][1:4]/1000
+        earth.state = r_earth[i][1:4]/1000
+        moon.state = r_moon[i][1:4]/1000
+        mars.state = r_mars[i][1:4]/1000
         #also need a loop here for 
         #updating beacon position once they're added
-        cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
 
+        #debugging pointing
+        sc2earth = earth.state-cam.scState
+        sc2earthNormed = sc2earth/np.linalg.norm(sc2earth)
+        RA = np.arctan2(sc2earthNormed[1],sc2earthNormed[0])
+        DE = np.arctan2(
+            sc2earthNormed[2],
+            np.sqrt(sc2earthNormed[0]**2 + sc2earthNormed[1]**2)
+            )
+
+        # from constants import au
+        # cam.scState = np.array([au/1000,-1e6, 0, 0, 0, 0])
+        # earth.state = np.array([au/1000, 0, 0, 0, 0, 0])
+        cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
+        cam.scDCM = rbk.euler3212C(np.array([RA,-DE,0]))
+
+        # cam.scDCM = np.array([
+        #     [ 0, 1, 0],
+        #     [-1, 0, 0],
+        #     [ 0, 0, 1]
+        #     ])
         # test that forces camera to point at cental star
         # in orion's belt
         # cam.scDCM = rbk.euler3212C(
@@ -690,6 +709,10 @@ def defineParameters(
         scDCM,           # intertal 2 body DCM for s/c
         beacons,         # bodies to track in images
         takeImage,       # takeImage message
+        debug = {
+            'addStars': 0,'rmOcc': 0, 'addBod': 1, 'psf': 1, 
+            'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 
+            'verbose': 1},
         db='../dinoModels/SimCode/opnavCamera/db/tycho.db'  # stellar database
     )
 
