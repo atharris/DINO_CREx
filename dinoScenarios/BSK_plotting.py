@@ -49,6 +49,24 @@ def plot3components(vec):
     plt.plot(time, vec[:, 2], color_y)
     plt.plot(time, vec[:, 3], color_z)
 
+def plot3Covar(covar):
+    time = covar[:, 0] * mc.NANO2MIN
+    plt.xlabel('Time, min')
+    plt.plot(time, 3*np.sqrt(covar[:, 1]), 'b--')
+    plt.plot(time, 3*np.sqrt(covar[:, 2]), 'r--')
+    plt.plot(time, 3*np.sqrt(covar[:, 3]), 'g--')
+    plt.plot(time, -3*np.sqrt(covar[:, 1]), 'b--')
+    plt.plot(time, -3*np.sqrt(covar[:, 2]), 'r--')
+    plt.plot(time, -3*np.sqrt(covar[:, 3]), 'g--')
+
+def plot_postfit(postFits, noise):
+    time = postFits[:, 0] * mc.NANO2MIN
+    plt.plot(time, postFits[:,1], 'b.')
+    plt.plot(time, 3*noise*np.ones(len(postFits[:, 0])), 'r--')
+    plt.plot(time, -3*noise*np.ones(len(postFits[:, 0])), 'r--')
+    plt.xlabel('Time, min')
+    plt.ylabel('PostFit')
+
 def plot_sigma(sigma):
     plot3components(sigma)
     plt.legend(['$\sigma_1$', '$\sigma_2$', '$\sigma_3$'])
@@ -56,6 +74,18 @@ def plot_sigma(sigma):
 
 def plot_omega(omega):
     plot3components(omega)
+    plt.ylabel('Angular Rate, rad/s')
+    plt.legend(['$\omega_1$', '$\omega_2$', '$\omega_3$'])
+
+def plot_sigmaCovar(sigma_err, covar):
+    plot3components(sigma_err)
+    plot3Covar(covar)
+    plt.legend(['$\sigma_1$', '$\sigma_2$', '$\sigma_3$'])
+    plt.ylabel('MRP')
+
+def plot_omegaCovar(omega_err, covar):
+    plot3components(omega_err)
+    plot3Covar(covar)
     plt.ylabel('Angular Rate, rad/s')
     plt.legend(['$\omega_1$', '$\omega_2$', '$\omega_3$'])
 
@@ -145,6 +175,50 @@ def plot_rotationalNav(sigma_BN, omega_BN_B):
         plt.title('Sc Rate: $^B{\omega_{BN}}$')
         plot_omega(omega_BN_B)
     return
+
+def plot_filterOut(sigma_err, omega_err, covar):
+    if arePlotsSaved:
+        plt.figure()
+        plot_sigmaCovar(sigma_err, covar[:,0:4])
+        save_plot("sigma_BN error and covariance")
+        plt.figure()
+        plot_omegaCovar(omega_err, np.stack((covar[:,0],covar[:,4],covar[:,5],covar[:,6]), axis=-1))
+        save_plot("omega_BN_B error and covariance")
+    else:
+        plt.figure()
+        plt.subplot(211)
+        plt.title('Sc Att Estimation: $\sigma_{BN}$')
+        plot_sigmaCovar(sigma_err, covar[:,0:4])
+        plt.subplot(212)
+        plt.title('Sc Rate Estimation: $^B{\omega_{BN}}$')
+        plot_omegaCovar(omega_err, np.stack((covar[:,0],covar[:,4],covar[:,5],covar[:,6]), axis=-1))
+    return
+
+def plot_filterPostFits(postFits, noise):
+    if arePlotsSaved:
+        plt.figure()
+        plot_postfit(np.stack((postFits[:,0],postFits[:,1]), axis=-1), noise[1,1])
+        save_plot("sigma_BN PostFit First Component")
+        plt.figure()
+        plot_postfit(np.stack((postFits[:,0],postFits[:,2]), axis=-1), noise[1,1])
+        save_plot("sigma_BN PostFit Second Component")
+        plt.figure()
+        plot_postfit(np.stack((postFits[:,0],postFits[:,3]), axis=-1), noise[1,1])
+        save_plot("sigma_BN PostFit Second Component")
+    else:
+        plt.figure()
+        plt.subplot(311)
+        plt.title('PostFit $\sigma_{BN}$ First Comp')
+        plot_postfit(np.stack((postFits[:,0],postFits[:,1]), axis=-1), noise[1,1])
+        plt.subplot(312)
+        plt.title('PostFit $\sigma_{BN}$ Second Comp')
+        plot_postfit(np.stack((postFits[:,0],postFits[:,2]), axis=-1), noise[1,1])
+        plt.subplot(313)
+        plt.title('PostFit $\sigma_{BN}$ Third Comp')
+        plot_postfit(np.stack((postFits[:,0],postFits[:,3]), axis=-1), noise[1,1])
+    return
+
+
 
 def plot_orbit(r_BN):
     plt.figure()

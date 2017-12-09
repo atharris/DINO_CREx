@@ -7,12 +7,13 @@ sys.path.append(bskPath + 'PythonModules')
 
 try:
     import SimulationBaseClass
+    import sim_model
 except ImportError:
     from Basilisk.utilities import SimulationBaseClass
+    from Basilisk.simulation import sim_model
 import DINO_DKE
 import DINO_FSW
 import DINO_multiScenarios as scene
-import sim_model
 
 
 class DINO_DynSim(SimulationBaseClass.SimBaseClass):
@@ -54,4 +55,4 @@ class DINO_DynSim(SimulationBaseClass.SimBaseClass):
         self.FSWClass = DINO_FSW.FSWClass(self)
 
 if __name__ == "__main__":
-    scene.multiOrbitBeacons_dynScenario(DINO_DynSim())
+    scene.attFilter_dynScenario(DINO_DynSim())

@@ -18,11 +18,16 @@ sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 sys.path.append('../dinoModels/SimCode/opnavCamera/dependencies')
 
-import simulationArchTypes
-import camera
+try:
+    import simulationArchTypes
+    import camera
+    import spacecraftPlus
+except ImportError:
+    import Basilisk.utilities.simulationArchTypes as simulationArchTypes
+    import Basilisk.simulation.spacecraftPlus as spacecraftPlus
+
 import bodies as bod
 from constants import au
-import spacecraftPlus
 import numpy as np
 
 # if this script is run from a custom folder outside of the Basilisk folder, then uncomment the

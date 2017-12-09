@@ -17,11 +17,16 @@ sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 
 import ekfFunctions as ekf
-import simulationArchTypes
-import imu_sensor
-import star_tracker
-import simple_nav
-import RigidBodyKinematics as rbk
+try:
+    import simulationArchTypes
+    import imu_sensor
+    import spacecraftPlus
+except ImportError:
+    from Basilisk.utilities import simulationArchTypes
+    from Basilisk.fswAlgorithms import fswMessages
+    import Basilisk.utilities.RigidBodyKinematics as rbk
+    from Basilisk.simulation import spacecraftPlus, imu_sensor, star_tracker, simple_nav
+
 
 # if this script is run from a custom folder outside of the Basilisk folder, then uncomment the
 # following line and specify the absolute bath to the Basilisk folder
@@ -41,11 +46,12 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         super(AttitudeFilter, self).__init__(modelName, modelActive, modelPriority)
 
         ## Input gyro, star tracker message names
-        self.inputStMsgName = []
+        self.inputStMsgName = "star_tracker_state"
         self.inputIMUMsgName = "won_t_work"
 
         ## Output body torque message name
         self.outputMsgName = "aekf_output_data"
+        self.filterMsgName = "aekf_filter_data"
 
         ## Input message ID (initialized to -1 to break messaging if unset)
         self.inputStMsgID = -1
@@ -53,6 +59,7 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
 
         ## Output message ID (initialized to -1 to break messaging if unset)
         self.outputMsgID = -1
+        self.filterMsgID = -1
 
         ## Input IMU, Star Tracker structures
         self.inputIMUMsgData = imu_sensor.IMUSensorIntMsg()
@@ -60,15 +67,20 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
 
         ## Output navigation estimate structure.
         self.outputMsgData = simple_nav.NavAttIntMsg()
+        self.filterMsgData = simple_nav.NavAttIntMsg()
 
         ##  Define Estimate variables
-        self.stateEst = np.zeros([6,]) #    state estimate is 3 delta MRPs, 3 bias states
-        self.outEst = np.zeros([6,]) #      Output is 3 BN MRPs, 3 angular rates
-        self.estCov = 100*np.identity(6) #     Estimated state covariance
+        self.stateEst = np.array([0.1,0.,0.,0.2,0.,0.]) #    state estimate is 3 delta MRPs, 3 bias states
+        self.outEst = np.zeros(6) #      Output is 3 BN MRPs, 3 angular rates
+        self.estCov = np.identity(6) #     Estimated state covariance
 
         ##  Define noise variables
         self.stateNoise = np.identity(6)
-        self.measNoise = np.identity(3)
+        self.stateNoise[0:3,0:3] = 0.0001**2*np.identity(3)
+        self.stateNoise[3:6,3:6] = 0.01**2*np.identity(3)
+        self.measNoise = 0.001*np.identity(3)
+
+        self.postFitRes = 0.
 
         ##  Define system models
         self.H = np.zeros([3, 6])
@@ -90,7 +102,10 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         print self.moduleID
         self.outputMsgID = simulationArchTypes.CreateNewMessage(self.outputMsgName, self.outputMsgData,
                                                                  self.moduleID)
+        self.filterMsgID = simulationArchTypes.CreateNewMessage(self.filterMsgName, self.filterMsgData,
+                                                                 self.moduleID)
         print "Output AEKF ID:", self.outputMsgID
+        print "Output AEKF Filter ID:", self.filterMsgID
         return
 
     ## The crossInit method is used to initialize all of the input messages of a class.
@@ -178,6 +193,22 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
 
         #   Finally, write the output message types:
         simulationArchTypes.WriteMessage(self.outputMsgID, currentTime, self.outputMsgData, self.moduleID)
+
+        # Write variable for post fit residuals
+        # This is a hack because of the messaging format currently and the different versions of BSK
+        # The filter message can't quite be used, so the filter data is being put in another msg
+        self.postFitRes = self.stMeas - np.dot(self.H, self.stateEst)
+        covarDiag1 = np.array([self.estCov[0,0],self.estCov[1,1],self.estCov[2,2]])
+        covarDiag2 = np.array([self.estCov[3,3],self.estCov[4,4],self.estCov[5,5]])
+
+        self.filterMsgData.timeTag = currentTime
+        self.filterMsgData.sigma_BN = covarDiag1
+        self.filterMsgData.omega_BN_B = self.postFitRes
+        self.filterMsgData.vehSunPntBdy = covarDiag2
+        simulationArchTypes.WriteMessage(self.filterMsgID, currentTime, self.filterMsgData, self.moduleID)
+
+
+
 
 
 
