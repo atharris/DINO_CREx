@@ -132,7 +132,6 @@ def pull_DynCelestialOutputs(TheDynSim, plots=True):
     print "Please make this work."
     return r_sun, r_earth, r_moon, r_mars, r_beacons
 
-    return r_sc, r_sun, r_earth, r_moon, r_mars, r_beacons
 
 def pull_DynOutputs(TheBSKSim, plots=True):
     # Pull Dyn Outputs
@@ -445,9 +444,9 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
             np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz'),
             1,           #bin size for wavelength functions (in nm)
             0.01**2,     #effective area (m^2)
-            100,         #dark current electrons/s/pixel
-            100,         #read noise STD (in electrons per pixel)
-            100,         #bin size
+            10,         #dark current electrons/s/pixel
+            10,         #read noise STD (in electrons per pixel)
+            10,         #bin size
             2**32,       #saturation depth
             1,           #Standard deviation for PSF (in Pizels)
             0.01         #simulation timestep
