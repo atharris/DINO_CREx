@@ -468,7 +468,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
                                                                      imgBeaconPos[indList],
                                                                      beaconIDs,
                                                                      beaconRadius,
-                                                                     makePlots=True,
+                                                                     makePlots=False,
                                                                      debugMode=True)
 
         for indBeacon in range(len(currentBeaconIDs)):
@@ -487,10 +487,12 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
         print '\nImage Processing Output: '
         print 'Image#: ', indList
-        print 'Found Beacon IDs, P/L, MRP'
+
+        print '\nFound Beacon IDs, P/L, MRP'
         print currentBeaconIDs, currentPL, currentMRP
-        print 'Initial Estimate MRP: ', imgMRP[indList]
-        print 'Initial Estimate DCM: ', cam.images[i].imgDCM
+        print '\nInitial Estimate MRP: ', imgMRP[indList]
+        print 'Initial Estimate DCM: '
+        print cam.images[i].imgDCM
 
 
     # Generate inputs for navigation modulec
@@ -498,6 +500,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     imgTimesNav = np.reshape(imgTimesFound, (numNavInputs, 1))
     beaconIDsNav = np.reshape(beaconIDsFound, (numNavInputs, 1))
     beaconPLNav = np.reshape(beaconPLFound, (numNavInputs, 2))
+    print 'imgMRPFOundPassThrough: ', imgMRPFoundPassThrough
     imgMRPNav = np.reshape(imgMRPFoundPassThrough, (numNavInputs, 3))
 
     print beaconIDsNav
