@@ -443,12 +443,23 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         #also need a loop here for 
         #updating beacon position once they're added
         cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
+
+        # test that forces camera to point at cental star
+        # in orion's belt
+        # cam.scDCM = rbk.euler3212C(
+        #     np.array([
+        #         np.deg2rad(84.05338572),
+        #         np.deg2rad(-1.20191725),
+        #         np.deg2rad(0)]))
+
         cam.takeImage = takeImage[i]
         cam.imgTime = r_BN[i][0]
         cam.updateState()
-
-    detectorArrays = []
+        if takeImage[i] == 1:
+            import pdb
+            pdb.set_trace()
     imgTimes = []
+    detectorArrays = []
     imgPos = []
     imgMRP = []
     imgBeaconPos = []
@@ -462,9 +473,10 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
         plt.figure()
         plt.imshow(cam.images[i].detectorArray)
+    
+    print('########################### END Image Generation ###########################')
     import pdb 
     pdb.set_trace()   
-    plt.show()
 
 
     # Run the Image Processing Module
@@ -501,7 +513,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
                 # (nav module to use sim attitude filter output)
                 imgMRPFound.append(currentMRP)
 
-
     # Generate inputs for navigation modulec
     numNavInputs = len(imgTimesFound)
     imgTimesNav = np.reshape(imgTimesFound, (numNavInputs, 1))
@@ -511,7 +522,10 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
 
     # Run the Navigation Module
+    print('########################### END Image Processing ###########################')
 
+    pdb.set_trace()
+    plt.show()
 
 
 def attFilter_dynScenario(TheDynSim):
@@ -756,5 +770,6 @@ def defineParameters(
     navParams['pixel_direction'] = 1.
     navParams['line_direction']  = 1.
 
+    navInputs = navParams
 
     return camInputs, ipInputs, navInputs
