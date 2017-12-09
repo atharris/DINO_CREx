@@ -48,8 +48,8 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     imageProcessingParam ={}
     imageProcessingParam['voteCountMinRatio'] = .01      # minimum ratio of positive matches out of possible matches
     imageProcessingParam['dthetaMax'] = 15.     #[deg] dependent on object ID reference catalog
-    imageProcessingParam['filenameSearchCatalog'] = '../../../../external/tycho_BTmag_cutoff.db'
-    imageProcessingParam['filenameObjectIDCatalog'] = '../../../../external/objectID_catalog.db'
+    imageProcessingParam['filenameSearchCatalog'] = '../external/tycho_BTmag_cutoff.db'
+    imageProcessingParam['filenameObjectIDCatalog'] = '../external/objectID_catalog.db'
     imageProcessingParam['dthetaError'] = 1E-3
 
     maxInitialEstimates = 20
@@ -228,7 +228,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
         N_ehat = []
         weight = []
 
-        for indStar in range(numObjectsFound):
+        for indStar in range(len(radec)):
 
             B_ehatTemp =idfunc.pixelline_to_ehat(
                 pixelLineCenterFound[indStar],
