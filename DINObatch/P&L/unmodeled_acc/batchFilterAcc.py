@@ -200,12 +200,12 @@ def run_batch( input ) :
   # if there exists a priori information. if not, use default
   if np.sum(np.sum( P_bar )) == 0 :
     infoMatrix = np.zeros( (stateDimension,stateDimension) )
-    normalMatrix = np.zeros( (stateDimension,1) )
+    normalMatrix = np.zeros( stateDimension )
  
   else :
     infoMatrix = aInv( P_bar )
     normalMatrix = np.dot( aInv( P_bar ), 
-                    np.expand_dims(x_bar,axis=1) )
+                    np.expand_dims(x_bar,axis=1) ).reshape([stateDimension])
 
   # input to the propagator takes the referenceState and STM at t0, as well as the list of times
   propagatorInput = ( IC0, phi0, timeSpan, extras ) 
