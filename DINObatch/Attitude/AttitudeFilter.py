@@ -51,7 +51,7 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
 
         ## Output body torque message name
         self.outputMsgName = "aekf_output_data"
-        self.outputFilterMsgName = "sunline_filter_data"
+        self.filterMsgName = "aekf_filter_data"
 
         ## Input message ID (initialized to -1 to break messaging if unset)
         self.inputStMsgID = -1
@@ -59,7 +59,7 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
 
         ## Output message ID (initialized to -1 to break messaging if unset)
         self.outputMsgID = -1
-        self.outputFilterMsgID = -1
+        self.filterMsgID = -1
 
         ## Input IMU, Star Tracker structures
         self.inputIMUMsgData = imu_sensor.IMUSensorIntMsg()
@@ -100,9 +100,10 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         print self.moduleID
         self.outputMsgID = simulationArchTypes.CreateNewMessage(self.outputMsgName, self.outputMsgData,
                                                                  self.moduleID)
-        self.outputFilterMsgID = simulationArchTypes.CreateNewMessage(self.outputFilterMsgName, self.outputFilterMsgData,
+        self.filterMsgID = simulationArchTypes.CreateNewMessage(self.filterMsgName, self.filterMsgData,
                                                                  self.moduleID)
         print "Output AEKF ID:", self.outputMsgID
+        print "Output AEKF Filter ID:", self.filterMsgID
         return
 
     ## The crossInit method is used to initialize all of the input messages of a class.

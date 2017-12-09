@@ -55,7 +55,7 @@ class FSWClass():
         #SimBase.AddModelToTask("ephemDiffConverterTask", self.ephemDifferenceConvWrap, self.ephemDifferenceConv, 10)
         #SimBase.AddModelToTask("vehicleConverterTask", self.vehicleEphConvWrap, self.vehicleEphConv, 9)
         SimBase.fswPyProc.addModelToTask("attitudeFilterTask", self.attFilter)
-
+        # SimBase.fswPyProc.addPythonTask("attitudeFilterTask")
 
     def SetEphemDifferenceConverter(self, SimBase):
         self.ephemDifferenceConv.ephBaseInMsgName = self.baseEphemeris
@@ -80,10 +80,11 @@ class FSWClass():
         return
 
     def SetAttitudeFilter(self):
+        self.attFilter.ModelTag = "attitudeFilter"
         self.attFilter.inputIMUMsgName =  "gyro_output_data"
         self.attFilter.inputStMsgName = "star_tracker_state"
         self.attFilter.outputMsgName = "aekf_output_data"
-        self.attFilter.outputFilterMsgName = "sunline_filter_data"
+        self.attFilter.filterMsgName = "aekf_filter_data"
         self.attFilter.dt = mc.NANO2SEC*self.defaultTaskTimeStep
         return
 
