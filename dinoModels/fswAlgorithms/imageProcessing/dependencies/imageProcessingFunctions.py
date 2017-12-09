@@ -497,37 +497,65 @@ def find_left_pixel(initial_pixel_loc, pixel_map, threshold):
 ##################################################
 ##################################################
 
-def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18, min_rad=0, max_rad=0, show_img=False):
-    """This function attempts to find the center of curves in a given image
-    If the minimum and/or maximum circle radius is unknown leave as 0
-    @param img The image is the only required argument
-    @param blur The kernel size
-    @param canny_thresh The threshold for the hysteresis procedure in the canny function
-    @param dp Inverse ratio of the accumulator resolution to the image resolution, recommend leaving as 1
-    @param center_dist The minimum distance between centers of detected circles
-    @param accum The accumulator threshold for circle centers. Smaller value gives more error.
-    @param min_rad The minimum radius for the circles
-    @oaram max_rad The maximum radius for the circles
-    @param show_img Set to show the images at each stage in the processing
-    @return An array of circles that should have the best matches first if there are multiple
-    """
-
+"""This function attempts to find the center of curves in a given image
+If the minimum and/or maximum circle radius is unknown leave as 0
+@param img The image is the only required argument
+@param blur The kernel size
+@param canny_thresh The threshold for the hysteresis procedure in the canny function
+@param dp Inverse ratio of the accumulator resolution to the image resolution, recommend leaving as 1
+@param center_dist The minimum distance between centers of detected circles
+@param accum The accumulator threshold for circle centers. Smaller value gives more error.
+@param min_rad The minimum radius for the circles
+@oaram max_rad The maximum radius for the circles
+@param show_img Set to show the images at each stage in the processing
+@param high_noise uses binary thresholding to before edge detection
+@return An array of circles that should have the best matches first if there are multiple
+"""
+def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18, min_rad=0, max_rad=0, high_noise=False, show_img=False):
+    image_scaling = 10.0
     img = np.uint8(img)
+
+    kernel = np.ones((3, 3), np.uint8)
+    # erosion followed by dilation
+    img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
 
     if show_img:
         cv2.namedWindow('before', cv2.WINDOW_NORMAL)
         cv2.resizeWindow('before', 600, 600)
         cv2.imshow('before', img)
-        cv2.imwrite('beacon_orig.png', img)
+        # cv2.imwrite('beacon_orig.png', img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
+    height, width = img.shape
+
+    resized = False
+
+    if height < 30 or width < 30:
+        img = cv2.resize(img, (int(image_scaling*width), int(image_scaling*height)), interpolation=cv2.INTER_CUBIC)
+        # the interpolation adds some smoothing to the image so we reduce the rest of the smoothing
+        # and lower the threshold of the edge detection
+        canny_thresh /= (image_scaling / 2)
+        blur = blur * 2
+        if not blur % 2:
+            blur += 1
+        resized = True
+        height, width = img.shape
+
     orrig_img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-    # orrig_img = img
+    orrig_img = np.copy(orrig_img)
+    min_rad = int(min(height, width) / 2)
+
+    if show_img and resized:
+        cv2.namedWindow('before', cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('before', 600, 600)
+        cv2.imshow('before', img)
+        # cv2.imwrite('beacon_orig.png', img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     img = cv2.medianBlur(img, blur)
-    cv2.GaussianBlur(img, (blur, blur), 0)
-    #cv2.imwrite('beacon_orig_blur.png', img)
+    img = cv2.GaussianBlur(img, (blur, blur), 0)
 
     if show_img:
         cv2.namedWindow('blur', cv2.WINDOW_NORMAL)
@@ -536,38 +564,84 @@ def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-    if show_img:
+    # try and figure out the proper canny threshold
+    if high_noise:
+        canny_thresh, img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    else:
+        canny_thresh, _ = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+
+    # if show_img:
+    if True:
         canny_img = cv2.Canny(img, canny_thresh, canny_thresh / 15)
         cv2.namedWindow('canny', cv2.WINDOW_NORMAL)
         cv2.resizeWindow('canny', 600, 600)
         cv2.imshow('canny', canny_img)
         cv2.waitKey(0)
-        cv2.imwrite('beacon_orig_canny.png', canny_img)
+        # cv2.imwrite('beacon_orig_canny.png', canny_img)
         cv2.destroyAllWindows()
 
-    circles = cv2.HoughCircles(img, cv2.HOUGH_GRADIENT, dp, center_dist,
-                               param1=canny_thresh, param2=accum, minRadius=min_rad,
-                               maxRadius=max_rad)
+    timeout = 30
+    while timeout:
+        timeout -= 1
+        accum = 1 if accum <= 0 else accum
+        circles = cv2.HoughCircles(img, cv2.HOUGH_GRADIENT, dp, center_dist,
+                                   param1=canny_thresh, param2=accum, minRadius=min_rad,
+                                   maxRadius=max_rad)
 
-    if circles is None:
-        # print "unable to find any circles"
+        if high_noise and circles is not None: # and circles.size/3 < 20:
+            tmp = np.uint16(np.around(circles))
+            average = np.uint16(np.mean(tmp[0, :], axis=0))
+            average = average[:2]/image_scaling
+            return average
+
+        if show_img and circles is not None:
+            tmp = np.uint16(np.around(circles))
+            average = np.uint16(np.mean(tmp[0, :], axis=0))
+
+            tmp_img = np.copy(orrig_img)
+            # for i in circles[0, :]:
+            #     cv2.circle(tmp_img, (i[0], i[1]), i[2], (0, 255, 0), 2)
+            #     cv2.circle(tmp_img, (i[0], i[1]), 2, (0, 0, 255), 3)
+
+            cv2.circle(tmp_img, (average[0], average[1]), average[2], (255, 0, 0), 2)
+
+            cv2.namedWindow('Detected circles', cv2.WINDOW_NORMAL)
+            cv2.resizeWindow('Detected circles', 600, 600)
+            cv2.imshow('Detected circles', tmp_img)
+            # cv2.imwrite('beacon_orig_circle.png', img_circle)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+
+        if circles is None:
+            # print "unable to find any circles"
+            accum -= 1
+            center_dist += 5
+            continue
+
+        num_circles = circles.size / 3
+        # print num_circles
+        if num_circles > 1:
+            accum += 1
+        elif num_circles is 1:
+            break
+        else:
+            accum -= 1
+            center_dist += 5
+
+    if not timeout:
         return None
 
+    for i in circles[0, :]:
+        cv2.circle(orrig_img, (i[0], i[1]), i[2], (0, 255, 0), 2)
+        cv2.circle(orrig_img, (i[0], i[1]), 2, (0, 0, 255), 3)
+
     if show_img:
-        tmp = np.uint16(np.around(circles))
-
-        average = np.uint16(np.mean(tmp[0, :], axis=0))
-
-        for i in circles[0, :]:
-            cv2.circle(orrig_img, (i[0], i[1]), i[2], (0, 255, 0), 2)
-            cv2.circle(orrig_img, (i[0], i[1]), 2, (0, 0, 255), 3)
-
-        # cv2.namedWindow('Detected circles', cv2.WINDOW_NORMAL)
-        # cv2.resizeWindow('Detected circles', 600, 600)
-        # img_circle = cv2.imshow('Detected circles', orrig_img)
+        cv2.namedWindow('Detected circles', cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('Detected circles', 600, 600)
+        cv2.imshow('Detected circles', orrig_img)
         # cv2.imwrite('beacon_orig_circle.png', img_circle)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     circles = np.squeeze(circles)
 
@@ -582,10 +656,10 @@ def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18
         # plt.savefig('centerfinding_roi.png')
         plt.show()
 
-    # print 'LOCAL MAX: ', np.amax(img)
+    if resized is True:
+        circles[:2] = circles[:2] / image_scaling
 
     return circles
-
 
 ##################################################
 ##################################################
