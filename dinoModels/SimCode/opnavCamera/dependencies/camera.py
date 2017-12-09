@@ -165,10 +165,7 @@ class camera:
 			msg = kwargs['debug']
 		except:
 			import bodies as bod
-			msg = { 'bodies': [
-			bod.earth,
-			bod.luna
-			], 
+			msg = {
 			'addStars': 1,'rmOcc': 1, 'addBod': 1, 'psf': 1, 
 			'raster': 1, 'photon': 1, 'dark': 1, 'read': 1, 
 			'verbose': 0}
@@ -1038,7 +1035,6 @@ class image:
 			#sort bodies by how far they are from the sc
 			#this needs to be done 
 			bodies.sort(key=lambda x:x.distFromSc, reverse=True)
-
 			for body in bodies:
 				n+=1
 				if msg['rmOcc']:
@@ -1052,7 +1048,6 @@ class image:
 					T = T[occCheck]
 					solidAngleSubtended = solidAngleSubtended[occCheck]
 					I = I[occCheck]
-
 
 				if msg['addBod']:
 					from lightSimFunctions import lightSim
@@ -1072,6 +1067,7 @@ class image:
 						body.r_eq,
 						body.id
 						)
+
 					if facets == -1: continue #if true, then lightSim FOV check failed
 					#position from center of body to facet
 
@@ -1134,31 +1130,31 @@ class image:
 		#this can be done far more efficiently with a DCM
 		#but I'm not really ready to test it yet
 		c1 = \
-		 n1*cos(beta)*cos(alpha) \
-		+n2*cos(beta)*sin(alpha) \
-		-n3*sin(beta)
+		 n1*cos(-beta)*cos(alpha) \
+		+n2*cos(-beta)*sin(alpha) \
+		-n3*sin(-beta)
 
 		c2 = \
 		 n1*(
-		 	sin(gamma)*sin(beta)*cos(alpha) - \
+		 	sin(gamma)*sin(-beta)*cos(alpha) - \
 		 	cos(gamma)*sin(alpha)
 		 	) \
 		+n2*(
-			sin(gamma)*sin(beta)*sin(alpha) + \
+			sin(gamma)*sin(-beta)*sin(alpha) + \
 			cos(gamma)*cos(alpha)
 			) \
-		+n3*sin(gamma)*cos(beta)
+		+n3*sin(gamma)*cos(-beta)
 
 		c3 = \
 		 n1*(
-		 	cos(gamma)*sin(beta)*cos(alpha) + \
+		 	cos(gamma)*sin(-beta)*cos(alpha) + \
 		 	sin(gamma)*sin(alpha)
 		 	) \
 		+n2*(
-			cos(gamma)*sin(beta)*sin(alpha) - \
+			cos(gamma)*sin(-beta)*sin(alpha) - \
 			sin(gamma)*cos(alpha)
 			) \
-		+n3*cos(gamma)*cos(beta)
+		+n3*cos(gamma)*cos(-beta)
 
 		#Remove stars outside the FOV in the c2 direction
 		ind = abs(c2/c1*self.camera.focalLength) < self.camera.detectorWidth/2
