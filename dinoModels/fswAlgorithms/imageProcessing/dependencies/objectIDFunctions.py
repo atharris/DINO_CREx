@@ -288,7 +288,7 @@ def objectIDStars(pl_in, attde_sc, imageProcessingParam, cameraParameters):
 
     # process votes to determine likeliest candidate
 
-    # list of max vote count each observed star
+    # list of max vote count each observed sta
     # maxVote = []
     # for indStar in range(nStars):
     #     maxVote[indStar] = max(netVoteCount[indStar])
@@ -323,8 +323,8 @@ def catalogIDsToRaDec(refIDs, fnameCatalog):
             cursor.execute("SELECT * FROM tycho_data WHERE id IS (?)", (refIDs[indID],))
 
             catalogMatch = cursor.fetchall()
-
-            radec.append((catalogMatch[0][1], catalogMatch[0][2]))
+            if refIDs[indID] != 'nan':
+                radec.append((catalogMatch[0][1], catalogMatch[0][2]))
 
     return radec
 
