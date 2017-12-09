@@ -29,23 +29,12 @@ import sys
 sys.path.insert(0, 'dependencies')
 from datetime import datetime
 import numpy as np
-from numpy import deg2rad
 import sqlite3
 import pdb
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
-from matplotlib import cm
-from matplotlib.colors import LogNorm
-import matplotlib.colors as colors
-import bodies as bod
 import camera
-from propagator import coe_2body
-import numpy.linalg as la
-from matplotlib.animation import FuncAnimation
 from constants import au
-import adcs
 from adcs import Euler321_2DCM
-from numpy.random import uniform
 
 print('################## Initializing ##################')
 
@@ -58,39 +47,57 @@ makeAll = 1
 #
 ###############################################################################
 
+print('############### Reading TC/QE Data ###############')
+
 #load tranmission curve for Canon 20D
-_20D = np.load('tc/20D.npz')
-tc = {}
-tc['lambda'] = _20D['x']
-tc['throughput'] = _20D['y']
+tc = np.load('tc/20D.npz')
 
 #load QE curve for Hubble Space Telecope Advanced Camera for Surveys SITe CCD
-ACS = np.load('qe/ACS.npz')
-qe = {}
-qe['lambda'] = ACS['x']
-qe['throughput'] = ACS['y']
+qe = np.load('qe/ACS.npz')
+
 
 
 
 
 ###############################################################################
 #
-#       Initialize camera
+#       Initializing Beacons
 #
 ###############################################################################
 
-bod.earth.state = np.array([au,0,0,0,0,0])
-bod.luna.state = bod.earth.state + 250000*np.array([0,1,0,0,0,0])
-scState = bod.earth.state - 250000*np.array([1,0,0,0,0,0])
+print('############## Initializing Beacons ##############')
+
+earth = camera.beacon()
+earth.r_eq = 6378.137
+earth.id = 'Earth'
+earth.albedo = 0.434
+
+moon = camera.beacon()
+moon.r_eq = 1738.1
+moon.id = 'Earth'
+moon.albedo = 0.12
+
+earth.state = np.array([au,0,0,0,0,0])
+moon.state = earth.state + 250000*np.array([0,1,0,0,0,0])
+scState = earth.state - 250000*np.array([1,0,0,0,0,0])
 scDCM = np.identity(3)
 
-bodies = [bod.earth,bod.luna]
+bodies = [earth,moon]
+
+###############################################################################
+#
+#       Initializing Cameras
+#
+###############################################################################
+
+print('############## Initializing Cameras ##############')
+
 msg = {
 	'addStars': 0,'rmOcc': 1, 'addBod': 1, 'psf': 1, 
-	'raster': 1, 'photon': 1, 'dark': 1, 'read': 1, 'dt': 0.01}
+	'raster': 1, 'photon': 1, 'dark': 1, 'read': 1}
 takeImage = 0
 
-#create camera with no stars in it for tests that don't need them
+#create camera with no stars in it for demos that don't need them
 #They will run significantly faster without them.
 cam = camera.camera(
 	0.019968, 			#detector_height
@@ -101,16 +108,16 @@ cam = camera.camera(
 	np.identity(3), 	#body2cameraDCM
 	1000,		    	#maximum magnitude
 	-1000,				#minimum magnitude (for debugging)
-	qe,
-	tc,
-	1,
+	qe,					#quantum efficiency curve loaded above
+	tc,					#transmission efficiency curve loaded above
+	1,					#lambda bin size
 	0.01**2, 			#effective area in m^2
 	100, 				#dark current in electrons per second
 	100, 				#std for read noise in electrons
-	1000, 				#bin size
+	100, 				#bin size
 	2**32, 				#max bin depth
-	1,
-	0.01, 				#simulation timestep
+	1,					#standard deviation 
+	0.001, 				#simulation timestep
 	scState,			#position state of s/c
 	scDCM,				#intertal 2 body DCM for s/c
 	bodies,				#bodies to track in images
@@ -118,10 +125,14 @@ cam = camera.camera(
 	debug=msg,			#debug message
 	db='db/tycho.db'	#stellar database
 	)
+
+
 msg = {
 	'addStars': 1,'rmOcc': 1, 'addBod': 1, 'psf': 1, 
-	'raster': 1, 'photon': 1, 'dark': 1, 'read': 1, 'dt': 0.01}
+	'raster': 1, 'photon': 1, 'dark': 1, 'read': 1}
 
+#create camera with all stars in it for demos that do need them
+#They will run significantly faster without them.
 starCam = camera.camera(
 	0.019968, 				#detector_height
 	0.019968, 				#detector_width
@@ -157,12 +168,13 @@ starCam = camera.camera(
 ###############################################################################
 
 if 0 or makeAll:
+	print('##################### Image 1 ####################')
 
 	cam.scState = np.array([au/1000,-1e6, 0, 0, 0, 0])
 
-	bod.earth.state = np.array([au/1000, 0, 0, 0, 0, 0])
+	earth.state = np.array([au/1000, 0, 0, 0, 0, 0])
 
-	bod.luna.state = np.array([au/1000, 0, 0, 0, 0, 0]) + \
+	moon.state = np.array([au/1000, 0, 0, 0, 0, 0]) + \
 		np.array([34862, -601522, 0, 0, 0 ,0])
 
 	cam.scDCM = np.array([
@@ -176,7 +188,7 @@ if 0 or makeAll:
 	cam.updateState()
 
 	plt.figure()
-	plt.imshow(cam.images[len(cam.images)-1].detectorArray.reshape(512,512))
+	plt.imshow(cam.images[len(cam.images)-1].detectorArray)
 	plt.title('Image 1 (Earth as Resolved Body, Moon as a Pt Source)')
 
 ###############################################################################
@@ -186,12 +198,13 @@ if 0 or makeAll:
 ###############################################################################
 
 if 0 or makeAll:
+	print('##################### Image 2 ####################')
 
 	cam.scState = np.array([au/1000,-4e6, 0, 0, 0, 0])
 
-	bod.earth.state = np.array([au/1000, 0, 0, 0, 0, 0])
+	earth.state = np.array([au/1000, 0, 0, 0, 0, 0])
 
-	bod.luna.state = np.array([au/1000, 0, 0, 0, 0, 0]) + \
+	moon.state = np.array([au/1000, 0, 0, 0, 0, 0]) + \
 		np.array([34862, -3.601522E6, 0, 0, 0 ,0])
 
 	cam.scDCM = np.array([
@@ -205,7 +218,7 @@ if 0 or makeAll:
 	cam.updateState()
 
 	plt.figure()
-	plt.imshow(cam.images[len(cam.images)-1].detectorArray.reshape(512,512))
+	plt.imshow(cam.images[len(cam.images)-1].detectorArray)
 	plt.title('Image 2 (Earth as Resolved Body, Moon as a Pt Source)')
 
 ###############################################################################
@@ -215,11 +228,13 @@ if 0 or makeAll:
 ###############################################################################
 
 if 0 or makeAll:
+	print('##################### Image 3 ####################')
+
 	cam.scState = np.array([au/1000,-1e6, 0, 0, 0, 0])
 
-	bod.earth.state = np.array([au/1000, 0, 0, 0, 0, 0])
+	earth.state = np.array([au/1000, 0, 0, 0, 0, 0])
 
-	bod.luna.state = np.array([au/1000, 0, 0, 0, 0, 0]) + \
+	moon.state = np.array([au/1000, 0, 0, 0, 0, 0]) + \
 		np.array([34862, -9E5, 0, 0, 0 ,0])
 
 	cam.scDCM = np.array([
@@ -233,7 +248,7 @@ if 0 or makeAll:
 	cam.updateState()
 
 	plt.figure()
-	plt.imshow(cam.images[len(cam.images)-1].detectorArray.reshape(512,512))
+	plt.imshow(cam.images[len(cam.images)-1].detectorArray)
 	plt.title('Image 3 (Beacons as large resolved bodies)')
 
 ###############################################################################
@@ -243,15 +258,16 @@ if 0 or makeAll:
 ###############################################################################
 
 if 0 or makeAll:
+	print('##################### Image 4 ####################')
 	cam.scState = np.array([au/1000,-5e5, 0, 0, 0, 0])
 
-	bod.earth.state = np.array([au/1000, 0, 0, 0, 0, 0])
+	earth.state = np.array([au/1000, 0, 0, 0, 0, 0])
 
-	bod.luna.state = np.array([au/1000, 0, 0, 0, 0, 0]) + \
+	moon.state = np.array([au/1000, 0, 0, 0, 0, 0]) + \
 		np.array([-2500, 0, 4000, 0, 0 ,0])
 
-	tmpMoonR = bod.luna.r_eq
-	bod.luna.r_eq = bod.earth.r_eq
+	tmpMoonR = moon.r_eq
+	moon.r_eq = earth.r_eq
 	cam.scDCM = np.array([
 		[ 0, 1, 0],
 		[-1, 0, 0],
@@ -263,7 +279,7 @@ if 0 or makeAll:
 	cam.updateState()
 
 	plt.figure()
-	plt.imshow(cam.images[len(cam.images)-1].detectorArray.reshape(512,512))
+	plt.imshow(cam.images[len(cam.images)-1].detectorArray)
 	plt.title('Image 4 (Blended Source)')
 
 ###############################################################################
@@ -273,12 +289,13 @@ if 0 or makeAll:
 ###############################################################################
 
 if 0 or makeAll:
+	print('##################### Image 5 ####################')
 	cam.scState = np.array([au/1000,-5e5, 0, 0, 0, 0])
 
-	bod.earth.state = np.array([au/1000, 0, 0, 0, 0, 0]) + \
+	earth.state = np.array([au/1000, 0, 0, 0, 0, 0]) + \
 		np.array([1.025e5, 0, -1e5, 0, 0 ,0])
 
-	bod.luna.state = np.array([au/1000, 0, 0, 0, 0, 0]) + \
+	moon.state = np.array([au/1000, 0, 0, 0, 0, 0]) + \
 		np.array([-9.5e4, 0, 9.5e4, 0, 0 ,0])
 
 	cam.scDCM = np.array([
@@ -292,7 +309,7 @@ if 0 or makeAll:
 	cam.updateState()
 
 	plt.figure()
-	plt.imshow(cam.images[len(cam.images)-1].detectorArray.reshape(512,512))
+	plt.imshow(cam.images[len(cam.images)-1].detectorArray)
 	plt.title('Image 5 (Corners)')
 
 ###############################################################################
@@ -302,15 +319,16 @@ if 0 or makeAll:
 ###############################################################################
 
 if 0 or makeAll:
+	print('##################### Image 6 ####################')
 	cam.scState = np.array([au/1000,-5e5, 0, 0, 0, 0])
 
-	bod.earth.state = np.array([au/1000, 0, 0, 0, 0, 0])
+	earth.state = np.array([au/1000, 0, 0, 0, 0, 0])
 
-	bod.luna.state = np.array([au/1000, 0, 0, 0, 0, 0]) + \
+	moon.state = np.array([au/1000, 0, 0, 0, 0, 0]) + \
 		np.array([-7000, 0, 4000, 0, 0 ,0])
 
-	tmpMoonR = bod.luna.r_eq
-	bod.luna.r_eq = bod.earth.r_eq
+	tmpMoonR = moon.r_eq
+	moon.r_eq = earth.r_eq
 	cam.scDCM = np.array([
 		[ 0, 1, 0],
 		[-1, 0, 0],
@@ -322,137 +340,38 @@ if 0 or makeAll:
 	cam.updateState()
 
 	plt.figure()
-	plt.imshow(cam.images[len(cam.images)-1].detectorArray.reshape(512,512))
+	plt.imshow(cam.images[len(cam.images)-1].detectorArray)
 	plt.title('Image 6 (Not Blended, but ROIs overlap)')
 
 ###############################################################################
 #
-#		Image 7 (Hot Pixels)
+#		Image 7 (simple slew)
 #
 ###############################################################################
 
 if 0 or makeAll:
-	starCam.scDCM = np.array([
-		[ 0, 1, 0],
-		[-1, 0, 0],
-		[ 0, 0, 1]
-		])
-
+	print('##################### Image 7 ####################')
 	msg['addBod'] = 0
 	msg['rmOcc'] = 0
 
 	starCam.takeImage = 1
-	starCam.updateState()
+
+	for i in range(0,10):
+		alpha = i*0.1
+
+		starCam.scDCM = Euler321_2DCM(
+			np.deg2rad(alpha),
+			np.deg2rad(0),
+			np.deg2rad(0)
+			)
+		starCam.updateState()
+
 	starCam.takeImage = 0
 	starCam.updateState()
 
-	location = np.array([  67238,  204676,    8502,    3127,   66954,   37175,
-	        198832,  143308,  171596,  148843,   36628,  139528,
-	        211838,  168193,   94000,  153682,   83715,  151847,
-	        110000,   86087,  137886,  245761,  126063,   34410,
-	         71959,   65053,  198715,   26613,   81186,  238110,
-	        116165,   13751,  222347,   39720,   70698,   12145,
-	        229304,  175423,  114801,  230443,  255514,   70676,
-	        177123,   85416,   28670,   79794,   76463,   56513,
-	        251937,  176083,  223210,   69272,  166395,  135999,
-	        214500,   82304,  135686,   95969,  222475,  197569,
-	         44762,   41205,   48567,   20308,   50656,  108693,
-	        226143,  180566,   71751,  184761,  113617,  138538,
-	         89182,  164795,   70876,  166511,   80919,  106320,
-	        130322,   33213,  193733,   64612,   54932,  180376,
-	        122599,   75537,   83099,  103414,  185201,   89593,
-	        237452,  121161,   85407,  224852,  176546,    3958,
-	        229694,   58432,   80575,  139825])
-
-	val = np.array([  1.57159880e+09,   1.98555011e+09,   2.85284607e+09,
-         1.80362116e+09,   8.79758079e+08,   5.44505254e+08,
-         6.35932276e+08,   1.24185567e+09,   3.12418006e+09,
-         5.66645652e+08,   3.58988980e+09,   4.46815068e+08,
-         3.69032977e+09,   4.12124175e+09,   4.27757839e+09,
-         2.39130333e+09,   3.90653374e+09,   1.94928756e+08,
-         3.92622941e+09,   1.05477115e+09,   2.77483925e+09,
-         3.20591270e+09,   2.52172439e+09,   2.19811753e+08,
-         3.06862038e+09,   1.76635087e+08,   3.22916703e+09,
-         2.02511379e+09,   3.53739037e+09,   9.74116192e+08,
-         9.01350595e+07,   5.18526954e+08,   3.14735436e+09,
-         1.15382492e+09,   8.03171441e+08,   3.20822869e+09,
-         3.56730659e+09,   1.78021667e+09,   1.96956049e+09,
-         3.07352237e+09,   1.38404406e+09,   1.32903194e+09,
-         3.20982962e+09,   7.11457694e+08,   2.23783572e+09,
-         1.52547654e+09,   6.43052018e+08,   1.81298153e+09,
-         3.84288041e+08,   3.88439744e+09,   3.02720398e+09,
-         5.00463803e+06,   3.62870716e+09,   3.62430177e+09,
-         1.53281628e+09,   3.07906954e+09,   3.47965714e+09,
-         2.25428634e+09,   3.21823533e+09,   2.42523942e+09,
-         1.56843470e+09,   3.35810259e+09,   9.43395350e+08,
-         7.16231196e+08,   2.03147121e+09,   1.47226573e+08,
-         3.94249594e+09,   3.08576703e+09,   1.80063064e+09,
-         2.53298980e+09,   3.22935951e+09,   1.18027328e+08,
-         1.93788056e+09,   3.23944939e+09,   8.20264454e+08,
-         3.38227856e+09,   2.53068987e+09,   2.77471913e+09,
-         1.12539277e+09,   3.20333961e+09,   4.09704746e+09,
-         2.61630188e+09,   3.71144967e+08,   1.69423439e+09,
-         2.39992578e+09,   2.92584988e+09,   3.64039911e+09,
-         1.18798527e+09,   3.31310671e+09,   3.83692086e+09,
-         3.90837016e+09,   2.21377588e+09,   4.01242718e+09,
-         4.07931836e+09,   2.25817344e+09,   1.65685211e+09,
-         3.69398739e+09,   4.16022443e+08,   2.70393188e+09,
-         4.08810387e+09])
-
-	for i in range(0,len(location)):
-		starCam.images[len(starCam.images)-1].detectorArray[location[i]] = \
-		val[i]
 	plt.figure()
-	plt.imshow(starCam.images[len(starCam.images)-1].detectorArray.reshape(512,512))
-	plt.title('Image 7 (Hot Pixels)')
-
-###############################################################################
-#
-#		Image 8 (Dark Pixels)
-#
-###############################################################################
-
-if 1 or makeAll:
-
-	starCam.scDCM = np.array([
-		[ 0, 1, 0],
-		[-1, 0, 0],
-		[ 0, 0, 1]
-		])
-
-	msg['addBod'] = 0
-	msg['rmOcc'] = 0
-
-	starCam.takeImage = 1
-	starCam.updateState()
-	starCam.takeImage = 0
-	starCam.updateState()
-
-	location = np.array([  67238,  204676,    8502,    3127,   66954,   37175,
-	        198832,  143308,  171596,  148843,   36628,  139528,
-	        211838,  168193,   94000,  153682,   83715,  151847,
-	        110000,   86087,  137886,  245761,  126063,   34410,
-	         71959,   65053,  198715,   26613,   81186,  238110,
-	        116165,   13751,  222347,   39720,   70698,   12145,
-	        229304,  175423,  114801,  230443,  255514,   70676,
-	        177123,   85416,   28670,   79794,   76463,   56513,
-	        251937,  176083,  223210,   69272,  166395,  135999,
-	        214500,   82304,  135686,   95969,  222475,  197569,
-	         44762,   41205,   48567,   20308,   50656,  108693,
-	        226143,  180566,   71751,  184761,  113617,  138538,
-	         89182,  164795,   70876,  166511,   80919,  106320,
-	        130322,   33213,  193733,   64612,   54932,  180376,
-	        122599,   75537,   83099,  103414,  185201,   89593,
-	        237452,  121161,   85407,  224852,  176546,    3958,
-	        229694,   58432,   80575,  139825])
-
-
-	for i in range(0,len(location)):
-		starCam.images[len(starCam.images)-1].detectorArray[location[i]] = \
-		0
-	plt.figure()
-	plt.imshow(starCam.images[len(starCam.images)-1].detectorArray.reshape(512,512))
-	plt.title('Image 8 (Dark Pixels)')
+	plt.imshow(starCam.images[len(starCam.images)-1].detectorArray)
+	plt.title('Image 9 (Simple Slew)')
 
 pdb.set_trace()
 
