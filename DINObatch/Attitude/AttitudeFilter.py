@@ -20,7 +20,9 @@ import ekfFunctions as ekf
 try:
     import simulationArchTypes
     import imu_sensor
+    import star_tracker
     import spacecraftPlus
+    import simple_nav
 except ImportError:
     from Basilisk.utilities import simulationArchTypes
     from Basilisk.fswAlgorithms import fswMessages
