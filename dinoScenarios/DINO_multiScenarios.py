@@ -525,14 +525,11 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         cam.takeImage = takeImage[i]
         cam.imgTime = r_BN[i][0]
         cam.updateState()
+        if takeImage[i] == 1:
+            import pdb
+            pdb.set_trace()
     imgTimes = []
     detectorArrays = []
-    imgPos = []
-    imgMRP = []
-    imgBeaconPos = []
-
-    detectorArrays = []
-    imgTimes = []
     imgPos = []
     imgMRP = []
     imgBeaconPos = []
@@ -705,7 +702,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
                 # (nav module to use sim attitude filter output)
                 imgMRPFound.append(currentMRP)
 
-
     # Generate inputs for navigation modulec
     numNavInputs = len(imgTimesFound)
     imgTimesNav = np.reshape(imgTimesFound, (numNavInputs, 1))
@@ -715,7 +711,10 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
 
     # Run the Navigation Module
+    print('########################### END Image Processing ###########################')
 
+    pdb.set_trace()
+    plt.show()
 
 
 def attFilter_dynScenario(TheDynSim):
