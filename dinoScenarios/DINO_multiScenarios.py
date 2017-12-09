@@ -497,6 +497,73 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     plt.show()
 
 
+    # Run the Image Processing Module
+
+    # required parameters from defineParameters function
+    camParamIP = ipParam[0]
+    beaconIDs = ipParam[1]
+    beaconRadius = ipParam[2]
+
+    imgTimesFound = []
+    beaconIDsFound = []
+    beaconPLFound = []
+    imgMRPFound = []                # will have 'None' entries when not able to detect enough objects
+    imgMRPFoundPassThrough = []     # identical attitude as input into the image processing module
+
+    for indList in range(len(imgTimes)):
+        currentBeaconIDs, currentPL, currentMRP = ip.imageProcessing(detectorArrays[indList],
+                                                                     camParamIP,
+                                                                     imgPos[indList],
+                                                                     imgMRP[indList],
+                                                                     imgBeaconPos[indList],
+                                                                     beaconIDs,
+                                                                     beaconRadius,
+                                                                     makePlots=False,
+                                                                     debugMode=True)
+
+        for indBeacon in range(len(currentBeaconIDs)):
+            imgTimesFound.append(imgTimes[indList])
+            beaconIDsFound.append(currentBeaconIDs[indBeacon])
+            beaconPLFound.append(currentPL[indBeacon])
+
+            # pass through attitude estimate for navigation module
+            imgMRPFoundPassThrough.append(imgMRP[indList])
+
+            # attitude output of image processing logged for informational purposes only
+            # (nav module to use sim attitude filter output)
+
+            if currentMRP is not None:
+                imgMRPFound.append(currentMRP)
+
+        print '\nImage Processing Output: '
+        print 'Image#: ', indList
+
+        print '\nFound Beacon IDs, P/L, MRP'
+        print currentBeaconIDs, currentPL, currentMRP
+        print '\nInitial Estimate MRP: ', imgMRP[indList]
+        print 'Initial Estimate DCM: '
+        print cam.images[i].imgDCM
+
+
+    # Generate inputs for navigation modulec
+    numNavInputs = len(imgTimesFound)
+    imgTimesNav = np.reshape(imgTimesFound, (numNavInputs, 1))
+    beaconIDsNav = np.reshape(beaconIDsFound, (numNavInputs, 1))
+    beaconPLNav = np.reshape(beaconPLFound, (numNavInputs, 2))
+    print 'imgMRPFOundPassThrough: ', imgMRPFoundPassThrough
+    imgMRPNav = np.reshape(imgMRPFoundPassThrough, (numNavInputs, 3))
+
+    print beaconIDsNav
+    print beaconPLNav
+    print imgMRPNav
+
+    import pdb
+    pdb.set_trace()
+
+    # Run the Navigation Module
+
+
+
 def attFilter_dynScenario(TheDynSim):
     """
     Executes a default scenario for stand-alone dynamic simulations
