@@ -1,5 +1,6 @@
 import sys, os, inspect
 import numpy as np
+import math
 
 bskName = 'Basilisk'
 bskPath = '../..' + '/' + bskName + '/'
@@ -13,6 +14,26 @@ try:
     # import batch_filter
     import ephem_difference
     import ephem_nav_converter
+    # import simulation related support
+    import spacecraftPlus
+    import simIncludeGravBody
+    import simIncludeRW
+    import simple_nav
+    import reactionWheelStateEffector
+    import rwVoltageInterface
+
+    # import FSW Algorithm related support
+    import MRP_PD
+    import inertial3D
+    import attTrackingError
+    import rwMotorTorque
+    import fswSetupRW
+    import rwMotorVoltage
+    import simulationArchTypes
+    import celestialTwoBodyPoint
+
+    # import message declarations
+    import fswMessages
 except ImportError:
     import Basilisk.utilities.macros as mc
     from Basilisk.fswAlgorithms import ephem_difference, ephem_nav_converter
@@ -25,27 +46,32 @@ class FSWClass():
         self.processName = SimBase.FSWProcessName
         self.defaultTaskTimeStep = mc.sec2nano(0.1)
 
-        # Create Tasks
-        #SimBase.fswProc.addTask(SimBase.CreateNewTask("vehicleConverterTask", self.defaultTaskTimeStep), 12)
-        #SimBase.fswProc.addTask(SimBase.CreateNewTask("ephemDiffConverterTask", self.defaultTaskTimeStep), 11)
-        #SimBase.fswProc.addTask(SimBase.CreateNewTask("batchFilterTask", self.defaultTaskTimeStep), 10)
-        SimBase.fswPyProc.createPythonTask("attitudeFilterTask", self.defaultTaskTimeStep,True, 30)
+        self.pyTaskName = "pyFswTask"
+        self.taskName = "FswTask"
 
-        # Create module data and module wraps
-        #self.batchFilterData = batch_filter.BatchConfig()
-        #self.batchFilterWrap = SimBase.setModelDataWrap(self.batchFilterData)
-        #self.batchFilterWrap.ModelTag = "batchFilter"
+        # Create Python Tasks
+        SimBase.fswPyProc.createPythonTask(self.pyTaskName, self.defaultTaskTimeStep,True, 30)
 
-        #self.ephemDifferenceConv = ephem_difference.EphemDifferenceData()
-        #self.ephemDifferenceConvWrap = SimBase.setModelDataWrap(self.ephemDifferenceConv)
-        #self.ephemDifferenceConvWrap.ModelTag = "ephemerisDifferenceConverter"
-
-
-        #self.vehicleEphConv = ephem_nav_converter.EphemNavConverterData()
-        #self.vehicleEphConvWrap = SimBase.setModelDataWrap(self.vehicleEphConv)
-        #self.vehicleEphConvWrap.ModelTag = "vehicleEphemerisConverter"
+        #   Create normal tasks
+        SimBase.fswProc.addTask(SimBase.CreateNewTask(self.taskName, self.defaultTaskTimeStep))
 
         self.attFilter = aekf.AttitudeFilter("attitudeFilter", True, 100)
+
+        self.mrpControlConfig = MRP_PD.MRP_PDConfig()
+        self.mrpControlWrap = SimBase.setModelDataWrap(self.mrpControlConfig)
+        self.mrpControlWrap.ModelTag = "MRP_PD"
+
+        self.rwMotorTorqueConfig = rwMotorTorque.rwMotorTorqueConfig()
+        self.rwMotorTorqueWrap = SimBase.setModelDataWrap(self.rwMotorTorqueConfig)
+        self.rwMotorTorqueWrap.ModelTag = "rwMotorTorque"
+
+        self.attErrorConfig = attTrackingError.attTrackingErrorConfig()
+        self.attErrorWrap = SimBase.setModelDataWrap(self.attErrorConfig)
+        self.attErrorWrap.ModelTag = "attErrorInertial3D"
+
+        self.attGuideConfig = celestialTwoBodyPoint.celestialTwoBodyPointConfig()
+        self.attGuideWrap = SimBase.setModelDataWrap(self.attGuideConfig)
+        self.attGuideWrap.ModelTag = "guidanceInertial3D"
 
         # Initialize all modules
         self.baseEphemeris = SimBase.DynClass.marsConvertName # ephemeris base for planet data and vehicle reference
@@ -54,29 +80,37 @@ class FSWClass():
         # Assign initialized modules to tasks
         #SimBase.AddModelToTask("ephemDiffConverterTask", self.ephemDifferenceConvWrap, self.ephemDifferenceConv, 10)
         #SimBase.AddModelToTask("vehicleConverterTask", self.vehicleEphConvWrap, self.vehicleEphConv, 9)
-        SimBase.fswPyProc.addModelToTask("attitudeFilterTask", self.attFilter)
-        # SimBase.fswPyProc.addPythonTask("attitudeFilterTask")
+        #SimBase.fswPyProc.addModelToTask(self.pyTaskName, self.attFilter)
 
-    def SetEphemDifferenceConverter(self, SimBase):
-        self.ephemDifferenceConv.ephBaseInMsgName = self.baseEphemeris
-        self.ephemDifferenceConv.ephBdyCount = 4
-        self.ephemDifferenceConv.baseScale = 1.0
+        SimBase.AddModelToTask(self.taskName, self.mrpControlWrap, self.mrpControlConfig)
+        SimBase.AddModelToTask(self.taskName, self.rwMotorTorqueWrap, self.rwMotorTorqueConfig)
+        SimBase.AddModelToTask(self.taskName, self.attGuideWrap, self.attGuideConfig)
+        SimBase.AddModelToTask(self.taskName, self.attErrorWrap, self.attErrorConfig)
 
-        self.ephemDifferenceConv.changeBodies[0].ephInMsgName = SimBase.DynClass.marsConvertName
-        self.ephemDifferenceConv.changeBodies[0].ephOutMsgName = 'mars_state_corr_eph'
-        self.ephemDifferenceConv.changeBodies[1].ephInMsgName = SimBase.DynClass.earthConvertName
-        self.ephemDifferenceConv.changeBodies[1].ephOutMsgName = 'earth_state_corr_eph'
-        self.ephemDifferenceConv.changeBodies[2].ephInMsgName = SimBase.DynClass.sunConvertName
-        self.ephemDifferenceConv.changeBodies[2].ephOutMsgName = 'sun_state_corr_eph'
-        self.ephemDifferenceConv.changeBodies[3].ephInMsgName = SimBase.DynClass.moonConvertName
-        self.ephemDifferenceConv.changeBodies[3].ephOutMsgName = 'moon_state_corr_eph'
 
-        #self.ephemDifferenceConv.changeBodies[4].ephInMsgName = "vehicle_state_eph"
-        #self.ephemDifferenceConv.changeBodies[4].ephOutMsgName = 'vehicle_state_corr_eph'
 
-    def SetVehicleEphemNavConverter(self):
-        self.vehicleEphConv.ephInMsgName = self.baseEphemeris
-        self.vehicleEphConv.stateOutMsgName = "vehicle_eph_state_est"
+    def SetPdController(self):
+        self.mrpControlConfig.inputGuidName = self.attErrorConfig.outputDataName
+        self.mrpControlConfig.inputGuidName = "attErrorInertial3DMsg"
+        self.mrpControlConfig.inputVehicleConfigDataName = "vehicleConfigName"
+        self.mrpControlConfig.outputDataName = "LrRequested"
+        self.mrpControlConfig.K = 3.5
+        self.mrpControlConfig.P = 30.0
+        return
+
+    def SetAttGuidance(self, SimBase):
+        self.attGuideConfig.outputDataName = "attGuideInertial"
+        self.attGuideConfig.inputNavDataName = SimBase.DynClass.simpleNavObject.outputTransName
+        self.attGuideConfig.inputCelMessName = SimBase.DynClass.earthGravBody.outputMsgName
+        self.attGuideConfig.inputSecMessName = SimBase.DynClass.sunGravBody.outputMsgName
+        self.attGuideConfig.singularityThresh = 1.0 * math.pi/180.0
+        return
+
+
+    def SetAttError(self, SimBase):
+        self.attErrorConfig.outputDataName = "attErrorInertial3DMsg"
+        self.attErrorConfig.inputRefName = self.attGuideConfig.outputDataName
+        self.attErrorConfig.inputNavName = SimBase.DynClass.simpleNavObject.outputAttName #self.attFilter.outputMsgName
         return
 
     def SetAttitudeFilter(self):
@@ -88,8 +122,22 @@ class FSWClass():
         self.attFilter.dt = mc.NANO2SEC*self.defaultTaskTimeStep
         return
 
+    def SetMotorTorqueConv(self, SimBase):
+        self.rwMotorTorqueConfig.outputDataName = SimBase.DynClass.rwStateEffector.InputCmds
+        self.rwMotorTorqueConfig.inputVehControlName = self.mrpControlConfig.outputDataName
+        self.rwMotorTorqueConfig.rwParamsInMsgName = "rwa_config_data_parsed"
+        # Make the RW control all three body axes
+        controlAxes_B = [
+            1, 0, 0
+            , 0, 1, 0
+            , 0, 0, 1
+        ]
+        self.rwMotorTorqueConfig.controlAxes_B = controlAxes_B
+
     def InitAllFSWObjects(self, SimBase):
-        #self.SetEphemDifferenceConverter(SimBase)
-        #self.SetVehicleEphemNavConverter()
+        self.SetAttGuidance(SimBase)
+        self.SetAttError(SimBase)
+        self.SetPdController()
+        self.SetMotorTorqueConv(SimBase)
         self.SetAttitudeFilter()
         return
