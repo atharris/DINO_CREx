@@ -50,8 +50,11 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     ROI_parameters['max_search_dist'] = minRes/10.
 
     imageProcessingParam ={}
-    imageProcessingParam['voteCountMinRatio'] = .25      # minimum ratio of positive matches out of possible matches
-    imageProcessingParam['dthetaMax'] = 12.             #[deg] dependent on object ID reference catalog
+    imageProcessingParam['voteCountMinRatio'] = .01      # minimum ratio of positive matches out of possible matches
+    imageProcessingParam['dthetaMax'] = 15.     #[deg] dependent on object ID reference catalog
+    imageProcessingParam['filenameSearchCatalog'] = '../external/tycho_BTmag_cutoff.db'
+    imageProcessingParam['filenameObjectIDCatalog'] = '../external/objectID_catalog.db'
+    imageProcessingParam['dthetaError'] = 1E-3
 
     # filepath to catalog files relative to image processing unit test locations
     # imageProcessingParam['filenameSearchCatalog'] = '../../../../external/tycho_mag_cutoff.db'

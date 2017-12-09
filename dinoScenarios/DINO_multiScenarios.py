@@ -502,15 +502,40 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         # also need a loop here for
         # updating beacon position once they're added
         cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
+
+        # test that forces camera to point at cental star
+        # in orion's belt
+        # cam.scDCM = rbk.euler3212C(
+        #     np.array([
+        #         np.deg2rad(84.05338572),
+        #         np.deg2rad(-1.20191725),
+        #         np.deg2rad(0)]))
+
         cam.takeImage = takeImage[i]
         cam.imgTime = r_BN[i][0]
         cam.updateState()
+        if takeImage[i] == 1:
+            import pdb
+            pdb.set_trace()
+    imgTimes = []
+    detectorArrays = []
+    imgPos = []
+    imgMRP = []
+    imgBeaconPos = []
 
-    for i in range(0, len(cam.images)):
+    for i in range(0,len(cam.images)):
+        detectorArrays.append(cam.images[i].detectorArray)
+        imgTimes.append(cam.images[i].imgTime)
+        imgPos.append(cam.images[i].imgPos)
+        imgMRP.append(rbk.C2MRP(cam.images[i].imgDCM))
+        imgBeaconPos.append(cam.images[i].imgBeaconPos)
+
         plt.figure()
         plt.imshow(cam.images[i].detectorArray)
-
-    plt.show()
+    
+    print('########################### END Image Generation ###########################')
+    import pdb 
+    pdb.set_trace()   
 
 
     # Run the Image Processing Module
@@ -577,7 +602,10 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     pdb.set_trace()
 
     # Run the Navigation Module
+    print('########################### END Image Processing ###########################')
 
+    pdb.set_trace()
+    plt.show()
 
 
 def attFilter_dynScenario(TheDynSim):
@@ -673,3 +701,155 @@ def opnavCamera_dynScenario(TheDynSim):
     pull_senseOutputs(TheDynSim)
     # pull_DynCelestialOutputs(TheDynSim)
     plt.show()
+
+
+def defineParameters(
+    camResolution, 
+    camFocalLength, 
+    camSensorSize, 
+    beacons,
+    tc,
+    qe,
+    lambdaBinSize,
+    effectiveArea,
+    darkCurrent,
+    readSTD,
+    binSize,
+    maxBinDepth,
+    psfSTD,
+    simTimeStep
+    ):
+    """
+    Generates formatted inputs for camera, image processing, and navigation modules
+    :params: camResolution      : (horizontal x vertical) camera resolution
+    :params: camFocalLength     : camera focal length [m]
+    :params: camSensorSize      : (horizontal x vertical) camera sensor size [m]
+    :params: beacons            : N length list of beacon objects
+    :params: tc                 : transmission curve dictionary (see SERs 4.3/4.3b)
+    :params: qe                 : transmission curve dictionary (see SERs 4.3/4.3b)
+    :params: lambdaBinSize      : bin size for lambda functions [nm]
+    :params: effectiveArea      : effective area of camera [m^2]
+    :params: darkCurrent        : dark current [electrons/s/pixel]
+    :params: readSTD            : standard deviation of read noise [electrons/pixel]
+    :params: binSize            : bin size [DN]
+    :params: maxBinDepth        : saturation depth [DN]
+    :params: psfSTD             : point spred funtion standard deviation [pixels]
+    :params: simTimeStep        : simulation time step [s]
+
+    :return: camInputs          : list of inputs for camera module
+    :return: ipInputs           : list of inputs for image processing
+    :return: navInputs          : lsit of inputs for navigation module
+    """
+
+    beaconIDs = []
+    beaconRadius = []
+    for each in beacons:
+        beaconIDs.append(each.id)
+        beaconRadius.append(each.r_eq)
+
+
+    #init values for camera that will be set later.
+    scState = -1
+    scDCM = -1
+    takeImage = 0
+
+
+    cam = camera.camera(
+        camSensorSize[0], #detector width in m
+        camSensorSize[1], #detector height in m
+        camFocalLength,     #focal lenght in m
+        camResolution[0], #detector resolution (width direction)
+        camResolution[1], #detector resolution (height direction)
+        np.identity(3),  #body2cameraDCM
+        1000,            #maximum magnitude (for debugging)
+        -1000,           #minimum magnitude (for debugging)
+        qe,              #quantum efficiency dictionary
+        tc,              #transmission curve dictionary
+        lambdaBinSize,   #lambda bin size
+        effectiveArea,   #effective area in m^2
+        darkCurrent,     #dark current in electrons per second
+        readSTD,         #std for read noise in electrons
+        binSize,         #bin size
+        maxBinDepth,     #max bin depth
+        psfSTD,          #std for psf
+        simTimeStep,     #simulation timestep
+        scState,         # position state of s/c
+        scDCM,           # intertal 2 body DCM for s/c
+        beacons,         # bodies to track in images
+        takeImage,       # takeImage message
+        db='../dinoModels/SimCode/opnavCamera/db/tycho.db'  # stellar database
+    )
+
+
+    # Camera Module Parameter Creation
+
+    camInputs = cam
+
+    # Image Processing Module Parameter Creation
+    ipCamParam = {}
+    ipCamParam['resolution'] = (cam.resolutionWidth,cam.resolutionHeight)
+    ipCamParam['focal length'] = cam.focalLength
+    ipCamParam['sensor size'] = (cam.detectorWidth,cam.detectorHeight)
+    ipCamParam['pixel size'] = (
+        cam.detectorWidth/cam.resolutionWidth, 
+        cam.detectorHeight/cam.resolutionHeight)
+    ipCamParam['field of view'] = (
+        cam.angularWidth,
+        cam.angularHeight)
+    ipInputs = [ipCamParam, beaconIDs, beaconRadius]
+
+
+
+    # Nav Module Parameter Creation
+
+    navParams = {}
+
+    # SPICE Parameters
+
+    # basic .bsp filename (generic, such as de430, etc)
+    navParams['basic_bsp']   = 'de430.bsp'
+    # .bsp filename for mission
+    navParams['mission_bsp'] = 'DINO_kernel.bsp'
+    # .tls filename 
+    navParams['tls']         = 'naif0011.tls'
+    # abcorr for spkzer
+    navParams['abcorr'] = 'NONE'
+    # reference frame
+    navParams['ref_frame'] = 'J2000'
+
+    # Force Parameters
+    
+    #   Gravity
+    # body vector for primary and secondary gravitational bodies
+    navParams['bodies']    = ['SUN', '3', '399']
+    # specify primary and secondary indices
+    navParams['primary']   = 0
+    navParams['secondary'] = [1, 2]
+    # respective GP vector
+    navParams['mu']        = [1.32712428 * 10 ** 11, 3.986004415 * 10 ** 5, 4.305 * 10 ** 4]
+    #   SRP
+    # A/M ratio multiplied by solar pressure constant at 1 AU with adjustments
+    # Turboprop document Eq (64)
+    navParams['SRP']       = 0.3**2/14. * 149597870.**2 * 1358. / 299792458. / 1000. 
+    # coefficient of reflectivity
+    navParams['cR']        = 1.
+
+    # Camera/P&L Parameters
+
+    # Focal Length (mm)
+    navParams['FoL']             = 100.
+    # default inertial to camera transformation matrices
+    navParams['DCM_BI']          = np.eye(3)
+    navParams['DCM_TVB']         = np.eye(3)
+    # Camera resolution (pixels)
+    navParams['resolution']      = [1024., 1024.]
+    # width and height of pixels in camera
+    navParams['pixel_width']     = 5.
+    navParams['pixel_height']    = 5.
+    # direction coefficient of pixel and line axes
+    navParams['pixel_direction'] = 1.
+    navParams['line_direction']  = 1.
+
+    navInputs = navParams
+
+    return camInputs, ipInputs, navInputs
