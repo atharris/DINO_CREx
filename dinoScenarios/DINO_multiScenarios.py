@@ -636,7 +636,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
                 # (nav module to use sim attitude filter output)
                 imgMRPFound.append(currentMRP)
 
-
     # Generate inputs for navigation modulec
     numNavInputs = len(imgTimesFound)
     imgTimesNav = np.reshape(imgTimesFound, (numNavInputs, 1))
