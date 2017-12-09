@@ -9,12 +9,11 @@ import objectIDFunctions as idfunc
 import dynamicFunctions as dyn
 
 
-
 def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
-                    r_N_beacons, beaconIDs, beaconRadius, makePlts = False):
+                    r_N_beacons, beaconIDs, beaconRadius, makePlts=False, debugMode=False):
     """
     Identifies objects in an image using a reference catalog.
-    @param  imageMap            1xN numpy array of image where N is image horizontal resolution x image vertical
+    @param  imageMap            NxM numpy array of image where N is image horizontal resolution and M is vertical
                                 resolution.
     @param  cameraParameters:    python dict with the following entries
                                 ['resolution'] tuple of horizontal x vertical camera sensor resolution
@@ -31,7 +30,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     """
 
 
-    debugMode = True
+    # debugMode = True
 
     ##################################################
     ##################################################
@@ -54,18 +53,21 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     imageProcessingParam['dthetaMax'] = 12.     #[deg] dependent on object ID reference catalog
     imageProcessingParam['filenameSearchCatalog'] = '../../../../external/tycho_mag_cutoff.db'
     imageProcessingParam['filenameObjectIDCatalog'] = '../../../../external/objectID_catalog.db'
-    imageProcessingParam['dthetaError'] = 1E-5
+    imageProcessingParam['dthetaError'] = 5E-3
 
     maxInitialEstimates = 20
 
+    if debugMode:
+        print ROI_parameters
+        print 'Angular Size Requirements'
+        print angularSizeMin
 
     ##################################################
     ##################################################
     # Process Inputs
 
-    # normalize to a 12 bit image and reshape 1D pixel map to 2D pixel map
+    # normalize to a 12 bit image
     imageMap = (imageMap/np.amax(imageMap)) * 4096
-    # imageMap = imageMap.reshape(cameraParameters['resolution'][0], cameraParameters['resolution'][1])
 
     # convert modified rodriguez parameter to a direction cosine matrix
     BN_dcm_cam = dyn.mrp2dcm(sigma_BN_est)
@@ -152,7 +154,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     if debugMode:
         print '\n# of Initial Estimates of Pt Sources: ', len(pixel_line_ptSource_i)
         for currentPL in pixel_line_ptSource_i:
-            print currentPL
+            print round(currentPL[0], 4), round(currentPL[1],4)
 
         if numBeaconsResolved > 0:
             print '\nInitial Estimate of Resolved Bodies'
@@ -168,24 +170,29 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     pixelLineCenter, DN = imfunc.findCentroidPointSource(
         imageMap, pixel_line_ptSource_i, ROI_parameters)
 
-    if numBeaconsResolved > 0:
-
-        pixelLineCenterResolved, DN = imfunc.findCenterResolvedBody(
-            imageMap, pixel_line_resolved_i, ROI_parameters)
-
-        pixelLineCenter = np.vstack(pixelLineCenterResolved, pixelLineCenter)
+    print pixelLineCenter.shape
+    print pixelLineCenter[0]
 
     pixelLineCenterFound = []
     for currentPL in pixelLineCenter:
         if currentPL is not None:
             pixelLineCenterFound.append(currentPL)
 
+    if numBeaconsResolved > 0:
+        pixelLineCenterResolved, DN = imfunc.findCenterResolvedBody(
+            imageMap, pixel_line_resolved_i, ROI_parameters)
+
+        for currentPL in pixelLineCenterResolved:
+            if currentPL is not None:
+                pixelLineCenterFound = np.vstack((currentPL, pixelLineCenterFound))
+
+
     numObjectsFound = len(pixelLineCenterFound)
 
     if debugMode:
         print '\n# of Identified Pixel and Line Center Locations: ', numObjectsFound
         for ind in range(numObjectsFound):
-            print pixelLineCenterFound[ind]
+            print round(pixelLineCenterFound[ind][0], 4), round(pixelLineCenterFound[ind][1],4)
 
 
     ##################################################
@@ -307,8 +314,8 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
         for ind in range(numObjectsFound):
             # plt.scatter(pixelLineInitialEstimates[ind][0], pixelLineInitialEstimates[ind][1],
             #             color='r', marker='+', s=10)
-            plt.scatter(pixelLineCenter[ind][0]-.5,
-                        pixelLineCenter[ind][1]-.5,
+            plt.scatter(pixelLineCenterFound[ind][0]-.5,
+                        pixelLineCenterFound[ind][1]-.5,
                         color='y', marker='+', s=10)
         plt.title('Measured Center Locations')
         plt.savefig('measured_centers.png')
@@ -329,6 +336,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
             plt.imshow(imageMap[windowYMin: windowYMax,
                        windowXMin:windowXMax],
                        interpolation='none', cmap='viridis')
+
             # add half pixel to initial estimates to compensate for imshow plotting
             plt.scatter(pixelLineInitialEstimates[ind][0]-windowXMin-.5,
                         pixelLineInitialEstimates[ind][1]-windowYMin-.5,
@@ -340,7 +348,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
                         # pixelLineCenterFound[ind][1]-windowYMin+.5,
                         # color='g', marker='+', s=30)
             # plt.scatter(0,0,color='w',marker='+',s=30)
-            plt.show()
+            # plt.show()
 
 
     ##################################################

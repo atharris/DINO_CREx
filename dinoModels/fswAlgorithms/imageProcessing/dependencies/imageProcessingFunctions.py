@@ -1,8 +1,3 @@
-#	Title   : find_centroid_functions.py
-#	Author  : Joe Park
-#	Date    : 08/22/2017
-#	Synopsis: Finds centroid of a point source from a pixel map image. DINO C-REx module.
-
 import math         #common math functions
 import numpy as np  #matrix algebra
 import matplotlib.pyplot as plt
@@ -171,7 +166,7 @@ def apply_ROI_border(pixel_map, ROI_parameters):
     ##############################################
     # find total value of all pixels in ROI border
 
-    if pixel_map.shape[0] >= 2*border_ROI or pixel_map.shape[1] >= 2*border_ROI:
+    if pixel_map.shape[0] >= 2*border_ROI and pixel_map.shape[1] >= 2*border_ROI:
 
         sum_pixels_border = 0
 
