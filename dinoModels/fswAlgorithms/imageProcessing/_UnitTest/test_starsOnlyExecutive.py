@@ -62,7 +62,7 @@ cameraParam['pixel size'] = file_in['pixelSize']
 # only include detected beacons and PL coordinates
 idsOutput, pixelLineOutput, sigma_BN_output = ip.imageProcessing(
     ex_image, cameraParam, r_N_cam, sigma_BN_cam,
-    r_N_beacons, beaconIDs, beaconRadius, True)
+    r_N_beacons, beaconIDs, beaconRadius, makePlts=True, debugMode=True)
 
 
 
