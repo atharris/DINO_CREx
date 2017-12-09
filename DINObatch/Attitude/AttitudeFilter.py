@@ -21,6 +21,9 @@ try:
     import simulationArchTypes
     import imu_sensor
     import spacecraftPlus
+    import star_tracker
+    import simple_nav
+    import RigidBodyKinematics as rbk
 except ImportError:
     from Basilisk.utilities import simulationArchTypes
     from Basilisk.fswAlgorithms import fswMessages

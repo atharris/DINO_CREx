@@ -46,7 +46,6 @@ import opnavCamera
 #   Define the base class for simulation dynamics
 class DynamicsClass():
     #   Constructor method; sets basic parameters for the simulation
-    def __init__(self, SimBase):
     def __init__(self, SimBase, updateRate=0.01):
         # Define process name, task name and task time-step
         self.processName = SimBase.DynamicsProcessName
@@ -98,10 +97,10 @@ class DynamicsClass():
     def SetSpacecraftObject(self):
         self.scObject.ModelTag = "spacecraftBody"
         # -- Crate a new variable for the sim sc inertia I_sc. Note: this is currently accessed from FSWClass
-        self.I_sc = [900., 0., 0.,
-                    0., 800., 0.,
-                    0., 0., 600.]
-        self.scObject.hub.mHub = 750.0  # kg - spacecraft mass
+        self.I_sc = [9., 0., 0.,
+                    0., 8., 0.,
+                    0., 0., 6.]
+        self.scObject.hub.mHub = 10.0  # kg - spacecraft mass
         self.scObject.hub.r_BcB_B = [[0.0], [0.0], [0.0]]  # m - position vector of body-fixed point B relative to CM
         self.scObject.hub.IHubPntBc_B = sp.np2EigenMatrix3d(self.I_sc)
         self.scObject.hub.useTranslation = True
