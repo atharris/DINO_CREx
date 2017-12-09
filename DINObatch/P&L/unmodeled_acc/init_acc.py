@@ -234,7 +234,7 @@ def main():
     extras['line_direction'] = 1.
 
     # Are we using the real dynamics for the ref or the trueData
-    extras['realData']= 'OFF'
+    extras['realData']= 'ON'
 
     # Add anomaly detection parameters
     extras['anomaly']= False
@@ -294,12 +294,12 @@ def main():
     
     # a priori uncertainty for the referenceStates
     covBar = np.zeros((IC.shape[0], IC.shape[0]))
-    covBar[0, 0] = 10000**2
-    covBar[1, 1] = 10000**2
-    covBar[2, 2] = 10000**2
-    covBar[3, 3] = .1**2
-    covBar[4, 4] = .1**2
-    covBar[5, 5] = .1**2
+    covBar[0, 0] = 3000**2
+    covBar[1, 1] = 3000**2
+    covBar[2, 2] = 3000**2
+    covBar[3, 3] = .03**2
+    covBar[4, 4] = .03**2
+    covBar[5, 5] = .03**2
     covBar[6, 6] = (10**(-8))**2
     covBar[7, 7] = (10**(-8))**2
     covBar[8, 8] = (10**(-8))**2
