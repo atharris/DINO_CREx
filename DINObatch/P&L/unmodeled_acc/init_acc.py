@@ -248,7 +248,7 @@ def main():
     trueEphemeris, timeSpan = dg.generate_data(sc_ephem_file=DINO_kernel,
                                           planet_beacons = ['earth','mars barycenter'],
                                           beaconIDs=[],
-                                          n_observations=24,
+                                          n_observations=48,
                                           start_et=start_et,
                                           end_et=end_et,
                                           extras = extras,
@@ -314,8 +314,8 @@ def main():
     # Takes the form of variance. Currently, the same value is used in both
     # the creation of the measurements as well as the weighting of the filter (W)
     observationUncertainty = np.identity(2)
-    observationUncertainty[0, 0] = 0.2 ** 2
-    observationUncertainty[1, 1] = 0.2 ** 2
+    observationUncertainty[0, 0] = 0.2
+    observationUncertainty[1, 1] = 0.2
 
     # the initial STM is an identity matrix
     phi0 = np.identity(IC.shape[0])
