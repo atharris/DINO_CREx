@@ -454,7 +454,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     takeImage[47] = 1
 
     lastTakeImage = 0
-    import pdb
     for i in range(0,len(r_sc)):
         cam.scState = r_sc[i][1:4]
         earth.state = r_earth[i][1:4]
@@ -475,9 +474,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         cam.takeImage = takeImage[i]
         cam.imgTime = r_BN[i][0]
         cam.updateState()
-        if takeImage[i] == 1:
-            import pdb
-            pdb.set_trace()
     imgTimes = []
     detectorArrays = []
     imgPos = []
