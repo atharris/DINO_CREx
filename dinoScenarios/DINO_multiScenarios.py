@@ -272,11 +272,7 @@ def basicOrbit_dynScenario(TheDynSim):
     :params: TheDynSim: instantiation of class DINO_DynSim
     :return: None
     """
-    # Log data for post-processing and plotting
-    simulationTime = mc.sec2nano(139643.532)
-    numDataPoints = 100
-    samplingTime = simulationTime / (numDataPoints - 1)
-    log_DynOutputs(TheDynSim, samplingTime)
+
 
     # Initialize Simulation
     TheDynSim.InitializeSimulation()
@@ -286,6 +282,14 @@ def basicOrbit_dynScenario(TheDynSim):
     mu = TheDynSim.DynClass.earthGravBody.mu
     rN, vN = om.elem2rv(mu, oe)
     om.rv2elem(mu, rN, vN)
+
+    orbPeriod =  period = 2*np.pi *np.sqrt((oe.a**3.)/mu)
+
+    # Log data for post-processing and plotting
+    simulationTime = mc.sec2nano(orbPeriod)
+    numDataPoints = int(orbPeriod)
+    samplingTime = simulationTime / (numDataPoints - 1)
+    log_DynOutputs(TheDynSim, samplingTime)
 
     # Initialize Spacecraft States within the state manager (after initialization)
     posRef = TheDynSim.DynClass.scObject.dynManager.getStateObject("hubPosition")
