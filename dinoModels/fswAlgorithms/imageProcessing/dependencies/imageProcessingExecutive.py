@@ -21,7 +21,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
                                 ['pixel size'] tuple of horizontal x vertical camera sensor pixel size [m]
                                 ['field of view'] tuple of horizontal x vertical field of view [deg]
     @param  r_N_cam
-    @param  sigma_BN_est        Initial estimate of s/c attitude in modified rodriguez parameters
+    @param  sigma_BN_est        Initial estimate of s/c attitude in a direction cosine matrix
     @param  beaconIDs
     @param  beaconRadius
     @return objectID            List of reference catalog ID values for identified objects (NaN if none found)
@@ -55,13 +55,14 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     # filepath to catalog files relative to image processing unit test locations
     # imageProcessingParam['filenameSearchCatalog'] = '../../../../external/tycho_mag_cutoff.db'
     # imageProcessingParam['filenameObjectIDCatalog'] = '../../../../external/objectID_catalog.db'
+
     # filepath to catalog files relative to dinoScenarios
     imageProcessingParam['filenameSearchCatalog'] = '../external/tycho_mag_cutoff.db'
     imageProcessingParam['filenameObjectIDCatalog'] = '../external/objectID_catalog.db'
 
-    imageProcessingParam['dthetaError'] = 5E-3
+    imageProcessingParam['dthetaError'] =7.5E-4
 
-    maxInitialEstimates = 15
+    maxInitialEstimates = 20
 
 
     ##################################################
@@ -73,7 +74,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
 
     # convert modified rodriguez parameter to a direction cosine matrix
     BN_dcm_cam = dyn.mrp2dcm(sigma_BN_est)
-
+    # BN_dcm_cam = dcm_BN_est
 
     ##################################################
     ##################################################
