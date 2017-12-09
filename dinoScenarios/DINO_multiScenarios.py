@@ -204,11 +204,14 @@ def pull_aekfOutputs(TheBSKSim):
     omega_err =  np.copy(omega_hat_BN)
     sigma_err[:,1:4] = np.array(sigma_hat_BN)[:,1:4]-np.array(sigma_BN)[:,1:4]
     omega_err[:,1:4] = np.array(omega_hat_BN)[:,1:4]-np.array(omega_BN_B)[:,1:4]
-    covarLog = np.zeros([np.shape(sigma_err)[0],6,6])
+    covarLog = np.zeros([np.shape(sigma_err)[0],7])
+    covarLog[:,0:4] = covarLog1
+    covarLog[:,4:7] = covarLog2[:,1:4]
     # Plot Relevant Dyn Outputs
     # BSKPlt.plot_orbit(r_BN)
     BSKPlt.plot_rotationalNav(sigma_hat_BN, omega_hat_BN)
     BSKPlt.plot_filterOut(sigma_err, omega_err, covarLog)
+    BSKPlt.plot_filterPostFits(postFitLog, 0.001*np.identity(3))
 
     return sigma_hat_BN, omega_hat_BN
 

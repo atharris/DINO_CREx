@@ -67,16 +67,18 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
 
         ## Output navigation estimate structure.
         self.outputMsgData = simple_nav.NavAttIntMsg()
-        self.outputFilterMsgData = fswMessages.SunlineFilterFswMsg()
+        self.filterMsgData = simple_nav.NavAttIntMsg()
 
         ##  Define Estimate variables
-        self.stateEst = np.zeros(6) #    state estimate is 3 delta MRPs, 3 bias states
+        self.stateEst = np.array([0.1,0.,0.,0.2,0.,0.]) #    state estimate is 3 delta MRPs, 3 bias states
         self.outEst = np.zeros(6) #      Output is 3 BN MRPs, 3 angular rates
-        self.estCov = 100*np.identity(6) #     Estimated state covariance
+        self.estCov = np.identity(6) #     Estimated state covariance
 
         ##  Define noise variables
         self.stateNoise = np.identity(6)
-        self.measNoise = np.identity(3)
+        self.stateNoise[0:3,0:3] = 0.0001**2*np.identity(3)
+        self.stateNoise[3:6,3:6] = 0.01**2*np.identity(3)
+        self.measNoise = 0.001*np.identity(3)
 
         self.postFitRes = 0.
 
@@ -193,10 +195,18 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
         simulationArchTypes.WriteMessage(self.outputMsgID, currentTime, self.outputMsgData, self.moduleID)
 
         # Write variable for post fit residuals
+        # This is a hack because of the messaging format currently and the different versions of BSK
+        # The filter message can't quite be used, so the filter data is being put in another msg
         self.postFitRes = self.stMeas - np.dot(self.H, self.stateEst)
-        self.outputFilterMsgData.postFitRes = np.array(self.postFitRes)
-        self.outputFilterMsgData.covar = self.estCov
-        simulationArchTypes.WriteMessage(self.outputFilterMsgID, currentTime, self.outputFilterMsgData, self.moduleID)
+        covarDiag1 = np.array([self.estCov[0,0],self.estCov[1,1],self.estCov[2,2]])
+        covarDiag2 = np.array([self.estCov[3,3],self.estCov[4,4],self.estCov[5,5]])
+
+        self.filterMsgData.timeTag = currentTime
+        self.filterMsgData.sigma_BN = covarDiag1
+        self.filterMsgData.omega_BN_B = self.postFitRes
+        self.filterMsgData.vehSunPntBdy = covarDiag2
+        simulationArchTypes.WriteMessage(self.filterMsgID, currentTime, self.filterMsgData, self.moduleID)
+
 
 
 
