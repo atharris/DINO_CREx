@@ -20,6 +20,14 @@ try:
     import radiation_pressure
     import star_tracker
     import imu_sensor
+
+    import simIncludeRW
+    import reactionWheelStateEffector
+    import rwVoltageInterface
+
+
+    # import message declarations
+    import fswMessages
 except ImportError:
     from Basilisk import __path__
     import Basilisk.utilities.macros as mc
@@ -61,8 +69,14 @@ class DynamicsClass():
         # Lists to store gravity bodies and spice planet data
         self.gravBodyList = []
         self.spicePlanetNames = []
+
+        self.rwFactory = simIncludeRW.rwFactory()
+        self.varRWModel = self.rwFactory.BalancedWheels
+
+
         # Initialize all modules and write init one-time messages
         self.InitAllDynObjects()
+
 
         # Assign initialized modules to tasks
         SimBase.AddModelToTask(self.taskName, self.spiceObject, None, 20)
@@ -72,11 +86,8 @@ class DynamicsClass():
         SimBase.AddModelToTask(self.taskName, self.srpDynEffector, None, 18)
         SimBase.AddModelToTask(self.taskName, self.starTracker,None, 8)
         SimBase.AddModelToTask(self.taskName, self.gyroModel,None,7)
-        #SimBase.dynPyProc.addModelToTask("opnavCameraTask",self.opnavCamera)
-        beaconInd = 21
-#        for beacon in self.beaconList:
-#            SimBase.AddModelToTask(self.taskName, beacon, None, beaconInd)
-#            beaconInd = beaconInd+1
+        SimBase.AddModelToTask(self.taskName, self.rwStateEffector,None,6)
+
 
     # ------------------------------------------------------------------------------------------- #
     # These are module-initialization methods
@@ -251,6 +262,34 @@ class DynamicsClass():
         self.gyroModel.PMatrixAccel = np.array(PMatrixAccel).reshape(3,3)
         self.gyroModel.walkBoundsAccel = np.array(errorBoundsAccel)
 
+    def AddRWs(self):
+        self.RW1 = self.rwFactory.create('Honeywell_HR16'
+                               , [1, 0, 0]
+                               , maxMomentum=50.
+                               , Omega=100.  # RPM
+                               , RWModel=self.varRWModel
+                               )
+        self.RW2 = self.rwFactory.create('Honeywell_HR16'
+                               , [0, 1, 0]
+                               , maxMomentum=50.
+                               , Omega=200.  # RPM
+                               , RWModel=self.varRWModel
+                               )
+
+        self.RW3 = self.rwFactory.create('Honeywell_HR16'
+                               , [0, 0, 1]
+                               , maxMomentum=50.
+                               , Omega=300.  # RPM
+                               , rWB_B=[0.5, 0.5, 0.5]  # meters
+                               , RWModel=self.varRWModel
+                               )
+
+        self.numRW = self.rwFactory.getNumOfDevices()
+
+        # create RW object container and tie to spacecraft object
+        self.rwStateEffector = reactionWheelStateEffector.ReactionWheelStateEffector()
+        self.rwFactory.addToSpacecraft("ReactionWheels", self.rwStateEffector, self.scObject)
+
     def AddOpnavCamera(self):
         self.opnavCamera = opnavCamera.opnavCamera("opnavCamera")
         self.opnavCamera.ModelTag = "opnavCamera"
@@ -270,4 +309,5 @@ class DynamicsClass():
         self.AddStarTracker()
         #self.AddOpnavCamera()
         self.AddGyro()
+        self.AddRWs()
 

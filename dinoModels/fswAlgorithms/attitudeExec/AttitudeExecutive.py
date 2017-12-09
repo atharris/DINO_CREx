@@ -7,46 +7,75 @@ import math
 import csv
 import logging
 
+import AttExec as ae
+
 # @cond DOXYGEN_IGNORE
 filename = inspect.getframeinfo(inspect.currentframe()).filename
 path = os.path.dirname(os.path.abspath(filename))
 
 bskName = 'Basilisk'
-bskPath = '../..' + '/' + bskName + '/'
+bskPath = '../../../..' + '/' + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
+
+import spice_interface
+import simple_nav
+
 
 # if this script is run from a custom folder outside of the Basilisk folder, then uncomment the
 # following line and specify the absolute bath to the Basilisk folder
 #bskPath = '/Users/hp/Documents/Research/' + bskName + '/'
 # @endcond
-
-class PythonModule(simulationArchTypes.PythonModelClass):
+class PythonMRPPD(simulationArchTypes.PythonModelClass):
     def __init__(self, modelName, modelActive=True, modelPriority=-1):
-        super(PythonModule, self).__init__(modelName, modelActive, modelPriority)
+        super(PythonMRPPD, self).__init__(modelName, modelActive, modelPriority)
+
+        ## Proportional gain term used in control
+        self.K = 0
+        ## Derivative gain term used in control
+        self.P = 0
+        ##  Convergence Counter
+        self.convCounter = 0
+        self.convTarget = 10
+        self.obsCounter = 0
+        self.obsTime = 30
+        self.targInd = 0
+        self.targList = []
+        self.sysMode = 0 #  0 for observation, 1 if in safe mode. Needs to be reset.
 
         ## Input guidance structure message name
-        self.inputMsgName = ""
+        self.inputGuidName = ""
+        ## Input vehicle configuration structure message name
+        self.inputVehicleConfigDataName = ""
+        ##  Input target SPICE data msg names
+        self.inputTargetMessageNames = []
         ## Output body torque message name
-        self.outputMsgName = ""
+        self.outputDataName = ""
+
         ## Input message ID (initialized to -1 to break messaging if unset)
-        self.inputMsgID = -1
+        self.inputGuidID = -1
+        ## Input message ID (initialized to -1 to break messaging if unset)
+        self.inputVehConfigID = -1
+        self.inputTargetIDs = [-1]
         ## Output message ID (initialized to -1 to break messaging if unset)
-        self.outputMsgID = -1
+        self.outputDataID = -1
+
 
         ## Output Lr torque structure instantiation.  Note that this creates the whole class for interation
         # with the messaging system
-        self.outputMsgData = other_module.OutputMsgStruct()
-
+        self.outputMessageData = MRP_PD.CmdTorqueBodyIntMsg()
+        ## Input guidance error structure instantiation.  Note that this creates the whole class for interation
+        # with the messaging system
+        self.inputGuidMsg = MRP_PD.AttGuidFswMsg()
         ## Input vehicle configuration structure instantiation.  Note that this creates the whole class for interation
         # with the messaging system
-        self.inputMsgData = other_module.OutputMsgStruct()
+        self.inputConfigMsg = MRP_PD.VehicleConfigFswMsg()
 
     ## The selfInit method is used to initialze all of the output messages of a class.
     # It is important that ALL outputs are initialized here so that other models can
     # subscribe to these messages in their crossInit method.
     def selfInit(self):
-        self.outputMsgID = simulationArchTypes.CreateNewMessage(self.outputMsgName, self.outputMsgData,
+        self.outputDataID = simulationArchTypes.CreateNewMessage(self.outputDataName, self.outputMessageData,
                                                                  self.moduleID)
         return
 
@@ -54,14 +83,22 @@ class PythonModule(simulationArchTypes.PythonModelClass):
     #  This subscription assumes that all of the other models present in a given simulation
     #  instance have initialized their messages during the selfInit step.
     def crossInit(self):
-        self.inputMsgID = simulationArchTypes.SubscribeToMessage(self.inputMsgName, self.inputMsgData, self.moduleID)
+
+        self.inputGuidID = simulationArchTypes.SubscribeToMessage(self.inputGuidName, self.inputGuidMsg, self.moduleID)
+        self.inputVehConfigID = simulationArchTypes.SubscribeToMessage(self.inputVehicleConfigDataName,
+                                                                       self.inputConfigMsg, self.moduleID)
         return
 
     ## The reset method is used to clear out any persistent variables that need to get changed
     #  when a task is restarted.  This method is typically only called once after selfInit/crossInit,
     #  but it should be written to allow the user to call it multiple times if necessary.
     def reset(self, currentTime):
+        self.sysMode = 0
         return
+
+    def addTarget(self, targetMsgName):
+        self.targetList.append(self.targetList[-1]+1)
+        self.inputTargetMessageNames.append(targetMsgName)
 
     ## The updateState method is the cyclical worker method for a given Basilisk class.  It
     # will get called periodically at the rate specified in the Python task that the model is
@@ -69,11 +106,33 @@ class PythonModule(simulationArchTypes.PythonModelClass):
     # requirements though, be careful about how much processing you put into a Python updateState
     # method.  You could easily detonate your sim's ability to run in realtime.
     def updateState(self, currentTime):
-        #   First, read messages we've subscribed to:
-        simulationArchTypes.ReadMessage(self.inputMsgID, self.inputMsgData, self.moduleID)
-        #   Next, implement your routines or functions to process the input data and store it:
-        localInputData = self.inputMsgData
-        localOutputData = foo(localInputData)
-        self.outputMsgData = localOutputData
-        #   Finally, write the output message types:
-        simulationArchTypes.WriteMessage(self.outputMsgID, currentTime, self.outputMsgData, self.moduleID)
+        simulationArchTypes.ReadMessage(self.inputGuidID, self.inputGuidMsg, self.moduleID)
+        lrCmd = np.array(self.inputGuidMsg.sigma_BR) * self.K + np.array(self.inputGuidMsg.omega_BR_B) * self.P
+        self.outputMessageData.torqueRequestBody = (-lrCmd).tolist()
+        simulationArchTypes.WriteMessage(self.outputDataID, currentTime, self.outputMessageData, self.moduleID)
+
+        return
+
+    def findTargetMrp(self):
+
+        return
+
+    def checkIfObserving(self):
+        if self.sigmaError < self.sigmaThreshold and self.rateError < self.rateThreshold:
+            self.convCounter = self.convCounter+1
+        else:
+            convCounter = 0
+
+        if self.convCounter > self.convTarget and self.obsCounter < self.obsTime:
+            self.takeImage = 1
+        else:
+            self.takeImage = 0
+
+        if self.obsCounter > self.obsTime:
+            self.obsCounter = 0
+            self.convCounter = 0
+            try:
+                self.targInd = self.targInd+1
+            except:
+                self.sysMode = 1
+                print "Entering safe mode!"

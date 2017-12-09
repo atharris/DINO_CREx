@@ -61,8 +61,8 @@ def log_FSWOutputs(TheBSKSim, samplingTime):
 
 # ------------------------------------- DATA PULLING ------------------------------------------------------ #
 
-def pull_DynCelestialOutputs(TheDynSim):
-    r_sc = TheDynSim.pullMessageLogData(TheDynSim.DynClass.scObject.scStateOutMsgName + '.r_BN_N', range(3))
+def pull_DynCelestialOutputs(TheDynSim, plots=True):
+    r_BN = TheDynSim.pullMessageLogData(TheDynSim.DynClass.scObject.scStateOutMsgName + '.r_BN_N', range(3))
     r_earth = TheDynSim.pullMessageLogData(TheDynSim.DynClass.earthGravBody.bodyInMsgName + '.PositionVector', range(3))
     r_sun = TheDynSim.pullMessageLogData(TheDynSim.DynClass.sunGravBody.bodyInMsgName + '.PositionVector', range(3))
     r_mars = TheDynSim.pullMessageLogData(TheDynSim.DynClass.marsGravBody.bodyInMsgName + '.PositionVector', range(3))
@@ -74,7 +74,7 @@ def pull_DynCelestialOutputs(TheDynSim):
     # Print Dyn Celestial Outputs
     print '\n\n'
     print 'CELESTIAL:'
-    print 'r_sc = ', la.norm(r_sc[-1:, 1:])
+    print 'r_BN = ', la.norm(r_BN[-1:, 1:])
     print 'r_earth = ', la.norm(r_earth[-1:, 1:])
     print 'r_sun = ', la.norm(r_sun[-1:, 1:])
     print 'r_mars = ', la.norm(r_mars[-1:, 1:])
@@ -98,7 +98,7 @@ def pull_DynCelestialOutputs(TheDynSim):
         # 'r_beacon_8': [r_beacons[8], 'g']
     }
     BSKPlt.plot_multi_orbit_0(dict_data_color)
-    BSKPlt.plot_spacecraft_orbit_0(dict_data_color, r_sc)
+    BSKPlt.plot_spacecraft_orbit_0(dict_data_color, r_BN)
 
 
     sc_dict_data_color = {
@@ -116,7 +116,7 @@ def pull_DynCelestialOutputs(TheDynSim):
         # 'r_beacon_8': [r_beacons[8], 'g']
     }
     if plots==True:
-        BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_sc)
+        BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_BN)
     return r_sun, r_earth, r_moon, r_mars, r_beacons
 
 
@@ -300,9 +300,9 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     """
     # Log data for post-processing and plotting
     #   Set length of simulation in nanoseconds from the simulation start.
-    simulationTime = mc.sec2nano(10)
+    simulationTime = mc.sec2nano(50.)
     #   Set the number of data points to be logged, and therefore the sampling frequency
-    numDataPoints = 100000
+    numDataPoints = 50
     samplingTime = simulationTime / (numDataPoints - 1)
     log_DynOutputs(TheDynSim, samplingTime)
     log_DynCelestialOutputs(TheDynSim, samplingTime)
@@ -362,7 +362,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     # Pull data for post-processing and plotting
     r_BN, v_BN, sigma_BN, omega_BN_B = pull_DynOutputs(TheDynSim)
     sigma_tilde_BN, omega_tilde_BN = pull_senseOutputs(TheDynSim)
-    r_sc, r_sun, r_earth, r_moon, r_mars, r_beacons = pull_DynCelestialOutputs(TheDynSim)
+    r_sun, r_earth, r_moon, r_mars, r_beacons = pull_DynCelestialOutputs(TheDynSim)
 
     ##  Post-Process sim data using camera, image processing, batch filter DINO modules
 
@@ -439,15 +439,16 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     #this is spoofing the output of the nav exec
     #telling the camera when to take an image.
-    takeImage = np.zeros(len(r_sc))
-    takeImage[100] = 1
-    takeImage[200] = 1
-    takeImage[300] = 1
-    takeImage[400] = 1
+    takeImage = np.zeros(len(r_BN))
+    takeImage[0] = 1
+    takeImage[20] = 1
+    takeImage[30] = 1
+    takeImage[40] = 1
+    takeImage[47] = 1
 
     lastTakeImage = 0
-    for i in range(0,len(r_sc)):
-        cam.scState = r_sc[i][1:4]
+    for i in range(0,len(r_BN)):
+        cam.scState = r_BN[i][1:4]
         earth.state = r_earth[i][1:4]
         moon.state = r_moon[i][1:4]
         mars.state = r_mars[i][1:4]
@@ -455,11 +456,9 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         #updating beacon position once they're added
         cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
         cam.takeImage = takeImage[i]
-        cam.imgTime = r_sc[i][0]
+        cam.imgTime = r_BN[i][0]
         cam.updateState()
 
-    import pdb 
-    pdb.set_trace()
     for i in range(0,len(cam.images)):
         plt.figure()
         plt.imshow(cam.images[i].detectorArray)
