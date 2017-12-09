@@ -36,7 +36,12 @@ try:
     import fswMessages
 except ImportError:
     import Basilisk.utilities.macros as mc
+    from Basilisk.utilities import simIncludeRW, simulationArchTypes
+    from Basilisk.simulation import sim_model, spacecraftPlus, gravityEffector, simple_nav, spice_interface
+    from Basilisk.simulation import ephemeris_converter, radiation_pressure, star_tracker, imu_sensor
+    from Basilisk.simulation import reactionWheelStateEffector, rwVoltageInterface
     from Basilisk.fswAlgorithms import ephem_difference, ephem_nav_converter
+    from Basilisk.fswAlgorithms import MRP_PD, inertial3D, attTrackingError, rwMotorTorque, celestialTwoBodyPoint
 
 import AttitudeFilter as aekf
 
@@ -80,7 +85,7 @@ class FSWClass():
         # Assign initialized modules to tasks
         #SimBase.AddModelToTask("ephemDiffConverterTask", self.ephemDifferenceConvWrap, self.ephemDifferenceConv, 10)
         #SimBase.AddModelToTask("vehicleConverterTask", self.vehicleEphConvWrap, self.vehicleEphConv, 9)
-        #SimBase.fswPyProc.addModelToTask(self.pyTaskName, self.attFilter)
+        SimBase.fswPyProc.addModelToTask(self.pyTaskName, self.attFilter)
 
         SimBase.AddModelToTask(self.taskName, self.mrpControlWrap, self.mrpControlConfig)
         SimBase.AddModelToTask(self.taskName, self.rwMotorTorqueWrap, self.rwMotorTorqueConfig)

@@ -25,15 +25,17 @@ try:
     import reactionWheelStateEffector
     import rwVoltageInterface
 
-
     # import message declarations
     import fswMessages
 except ImportError:
     from Basilisk import __path__
     import Basilisk.utilities.macros as mc
     import Basilisk.utilities.unitTestSupport as sp
+    from Basilisk.utilities import simIncludeRW
     from Basilisk.simulation import sim_model, spacecraftPlus, gravityEffector, simple_nav, spice_interface
     from Basilisk.simulation import ephemeris_converter, radiation_pressure, star_tracker, imu_sensor
+    from Basilisk.simulation import reactionWheelStateEffector, rwVoltageInterface
+
     bskSpicePath = __path__[0] + '/supportData/EphemerisData/'
 
 #import simMessages
