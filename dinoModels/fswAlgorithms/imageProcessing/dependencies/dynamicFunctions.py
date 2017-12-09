@@ -102,6 +102,13 @@ def dcm2mrp(C):
     return mrp
 
 
+def mrpshadow(mrp):
+
+    mrpsq = mrp[0]**2 + mrp[1]**2 + mrp[2]**2
+    mrp_s = -mrp/mrpsq
+
+    return mrp_s
+
 def mrp2dcm(mrp):
 
     if np.linalg.norm(mrp) > 1:
@@ -153,37 +160,6 @@ def crp2dcm(crp):
                     [c31,c32,c33]])
 
     return dcm
-
-
-def mrp2dcm(mrp):
-
-    if np.linalg.norm(mrp) > 1:
-        mrp = mrpshadow(mrp)
-
-    mrp1 = mrp[0]
-    mrp2 = mrp[1]
-    mrp3 = mrp[2]
-    mrpsq = mrp1**2 + mrp2**2 + mrp3**2
-    a = 1/(1+mrpsq)**2
-
-    c11 = 4*(mrp1**2-mrp2**2-mrp3**2)+(1-mrpsq)**2
-    c12 = 8*mrp1*mrp2+4*mrp3*(1-mrpsq)
-    c13 = 8*mrp1*mrp3-4*mrp2*(1-mrpsq)
-    c21 = 8*mrp2*mrp1-4*mrp3*(1-mrpsq)
-    c22 = 4*(-mrp1**2+mrp2**2-mrp3**2)+(1-mrpsq)**2
-    c23 = 8*mrp2*mrp3+4*mrp1*(1-mrpsq)
-    c31 = 8*mrp3*mrp1+4*mrp2*(1-mrpsq)
-    c32 = 8*mrp3*mrp2-4*mrp1*(1-mrpsq)
-    c33 = 4*(-mrp1**2-mrp2**2+mrp3**2)+(1-mrpsq)**2
-
-    C = a*np.array([
-        [c11, c12, c13],
-        [c21, c22, c23],
-        [c31, c32, c33]
-    ])
-
-    return C
-
 
 def dcm2mrp(C):
 

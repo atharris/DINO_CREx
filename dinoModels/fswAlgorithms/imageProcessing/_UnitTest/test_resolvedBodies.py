@@ -31,9 +31,7 @@ print file_in['imageMap']
 
 ex_image = ex_image.reshape(512, 512)
 
-
 BN_dcm_cam = file_in['scDCM']
-sigma_BN_cam = dyn.dcm2mrp(BN_dcm_cam)
 
 r_N_cam = file_in['scPos'][0:3]
 
@@ -66,6 +64,7 @@ cameraParam['pixel size'] = file_in['pixelSize']
 idsOutput, pixelLineOutput, sigma_BN_output = ip.imageProcessing(
     ex_image, cameraParam, r_N_cam, sigma_BN_cam,
     r_N_beacons, beaconIDs, beaconRadius, makePlts=True, debugMode=True)
+
 
 
 
