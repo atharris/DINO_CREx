@@ -58,4 +58,4 @@ class DINO_DynSim(SimulationBaseClass.SimBaseClass):
         self.FSWClass = DINO_FSW.FSWClass(self, updateRate=fswUpdateRate)
 
 if __name__ == "__main__":
-    scene.basicOrbit_dynScenario(DINO_DynSim(0.1, 0.1))
+    scene.multiOrbitBeacons_dynScenario(DINO_DynSim(0.1, 0.1))
