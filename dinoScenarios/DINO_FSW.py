@@ -85,7 +85,7 @@ class FSWClass():
         # Assign initialized modules to tasks
         #SimBase.AddModelToTask("ephemDiffConverterTask", self.ephemDifferenceConvWrap, self.ephemDifferenceConv, 10)
         #SimBase.AddModelToTask("vehicleConverterTask", self.vehicleEphConvWrap, self.vehicleEphConv, 9)
-        #SimBase.fswPyProc.addModelToTask(self.pyTaskName, self.attFilter)
+        SimBase.fswPyProc.addModelToTask(self.pyTaskName, self.attFilter)
 
         SimBase.AddModelToTask(self.taskName, self.mrpControlWrap, self.mrpControlConfig)
         SimBase.AddModelToTask(self.taskName, self.rwMotorTorqueWrap, self.rwMotorTorqueConfig)
