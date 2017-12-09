@@ -45,10 +45,12 @@ import opnavCamera
 class DynamicsClass():
     #   Constructor method; sets basic parameters for the simulation
     def __init__(self, SimBase):
+    def __init__(self, SimBase, updateRate=0.01):
         # Define process name, task name and task time-step
         self.processName = SimBase.DynamicsProcessName
         self.taskName = "DynamicsTask"
         self.taskTimeStep = mc.sec2nano(0.01)
+        self.taskTimeStep = mc.sec2nano(updateRate)
 
         # Create tasks
         SimBase.dynProc.addTask(SimBase.CreateNewTask(self.taskName, self.taskTimeStep))
