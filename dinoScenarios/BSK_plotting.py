@@ -10,8 +10,13 @@ sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 
 
-import macros as mc
+try:
+    import macros as mc
+except ImportError:
+    import Basilisk.utilities.macros as mc
+
 import socket
+
 home = expanduser("~")
 try:
     hostIP = socket.gethostbyname(socket.gethostname())

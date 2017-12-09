@@ -50,6 +50,16 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
             search_col_min = current_beacon[0] - 1
             search_col_max = current_beacon[0] + 1
 
+            # make sure search border is within image resolution
+            if search_row_min < 0:
+                search_row_min = 0
+            if search_col_min < 0:
+                search_col_min = 0
+            if search_row_max >= pixel_map_height - 1:
+                search_row_max = pixel_map_height - 1
+            if search_col_max >= pixel_map_width - 1:
+                search_col_max = pixel_map_width - 1
+
             signal_found = False
             search_iterations = 0
 
@@ -100,9 +110,9 @@ def generate_point_source_ROI(pixel_map, pixel_line_beacon_i, ROI_parameters):
                     search_row_min = 0
                 if search_col_min < 0:
                     search_col_min = 0
-                if search_row_max > pixel_map_height-1:
+                if search_row_max >= pixel_map_height-1:
                     search_row_max = pixel_map_height-1
-                if search_col_max > pixel_map_width-1:
+                if search_col_max >= pixel_map_width-1:
                     search_col_max = pixel_map_width-1
 
                 # Made another search.  Increment search_iterations.
@@ -643,7 +653,7 @@ def findCenterResolvedBody(pixel_map, pixel_line_beacon_i, ROI_parameters):
         if center is not None:
             loc_center[i] = (center[0] + corner_ROI[i][1], center[1] + corner_ROI[i][0])
         else:
-            loc_center = None
+            loc_center[i] = None
 
     return loc_center, DN
 

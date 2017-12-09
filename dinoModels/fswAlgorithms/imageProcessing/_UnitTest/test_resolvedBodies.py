@@ -23,7 +23,7 @@ import imageProcessingExecutive as ip
 # cam_fov = (2 * math.degrees(math.atan2(cam_sensor_size[0] / 2., cam_focal_length)),
 #            2 * math.degrees(math.atan2(cam_sensor_size[1] / 2., cam_focal_length)))
 
-file_in = np.load('test_cases/testcase2.npz')
+file_in = np.load('test_cases/testcase0.npz')
 
 ex_image = file_in['imageMap']
 
@@ -43,7 +43,6 @@ beaconRadius = (6378.1, 1737.)
 r_N_beacons = (file_in['earthPos'][0:3],
                 file_in['moonPos'][0:3])
 
-numBeacons = len(beaconIDs)
 
 cameraParam = {}
 cameraParam['resolution'] = file_in['resolution']
@@ -51,11 +50,6 @@ cameraParam['focal length'] = file_in['focalLength']
 cameraParam['sensor size'] = file_in['sensorSize']
 cameraParam['field of view'] = file_in['FoV']
 cameraParam['pixel size'] = file_in['pixelSize']
-
-# sensor x height width 0.01
-# focal length 0.05
-# resolution 512 512
-# pixel size .01/512
 
 
 ##################################################
@@ -65,7 +59,7 @@ cameraParam['pixel size'] = file_in['pixelSize']
 # only include detected beacons and PL coordinates
 idsOutput, pixelLineOutput, sigma_BN_output = ip.imageProcessing(
     ex_image, cameraParam, r_N_cam, sigma_BN_cam,
-    r_N_beacons, beaconIDs, beaconRadius, makePlts=True, debugMode=True)
+    r_N_beacons, beaconIDs, beaconRadius, makePlots=True, debugMode=True)
 
 
 

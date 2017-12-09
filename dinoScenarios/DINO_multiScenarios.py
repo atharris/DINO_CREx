@@ -2,6 +2,7 @@ import sys, os, inspect
 import matplotlib.pyplot as plt
 from numpy import linalg as la
 import numpy as np
+import math
 
 # filename = inspect.getframeinfo(inspect.currentframe()).filename
 # path = os.path.dirname(os.path.abspath(filename))
@@ -9,12 +10,27 @@ bskName = 'Basilisk'
 bskPath = '../..' + '/' + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
+sys.path.append('../dinoModels/SimCode/opnavCamera/')
+sys.path.append('../dinoModels/SimCode/opnavCamera/dependencies')
+sys.path.append('../dinoModels/fswAlgorithms/imageProcessing/dependencies')
 
-import macros as mc
-import unitTestSupport as sp
-import orbitalMotion as om
-import RigidBodyKinematics as rbk
+
 import BSK_plotting as BSKPlt
+
+try:
+    import macros as mc
+    import unitTestSupport as sp
+    import orbitalMotion as om
+    import RigidBodyKinematics as rbk
+except ImportError:
+    import Basilisk.utilities.macros as mc
+    import Basilisk.utilities.unitTestSupport as sp
+    import Basilisk.utilities.orbitalMotion as om
+    import Basilisk.utilities.RigidBodyKinematics as rbk
+    from Basilisk.fswAlgorithms import *
+
+import camera
+import imageProcessingExecutive as ip
 
 # ------------------------------------- DATA LOGGING ------------------------------------------------------ #
 
@@ -26,14 +42,19 @@ def log_DynCelestialOutputs(TheDynSim, samplingTime):
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.moonGravBody.bodyInMsgName, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.gyroModel.OutputDataMsg, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.starTracker.outputStateMessage, samplingTime)
-    for ind in range(0,len(TheDynSim.DynClass.beaconList)):
-        TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.beaconList[ind].scStateOutMsgName, samplingTime)
+#    for ind in range(0,len(TheDynSim.DynClass.beaconList)):
+#        TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.beaconList[ind].scStateOutMsgName, samplingTime)
 
     return
 
 def log_DynOutputs(TheBSKSim, samplingTime):
     TheBSKSim.TotalSim.logThisMessage(TheBSKSim.DynClass.scObject.scStateOutMsgName, samplingTime)
     TheBSKSim.TotalSim.logThisMessage(TheBSKSim.DynClass.simpleNavObject.outputAttName, samplingTime)
+    return
+
+def log_aekfOutputs(TheBskSim, samplingTime):
+#    print "Att filter msg name:", TheBskSim.FSWClass.attFilter.outputMsgName
+#    TheBskSim.TotalSim.logThisMessage(TheBskSim.FSWClass.attFilter.outputMsgName, samplingTime)
     return
 
 def log_FSWOutputs(TheBSKSim, samplingTime):
@@ -50,8 +71,8 @@ def pull_DynCelestialOutputs(TheDynSim):
     r_mars = TheDynSim.pullMessageLogData(TheDynSim.DynClass.marsGravBody.bodyInMsgName + '.PositionVector', range(3))
     r_moon = TheDynSim.pullMessageLogData(TheDynSim.DynClass.moonGravBody.bodyInMsgName + '.PositionVector', range(3))
     r_beacons = []
-    for ind in range(0,len(TheDynSim.DynClass.beaconList)):
-        r_beacons.append(TheDynSim.pullMessageLogData(TheDynSim.DynClass.beaconList[ind].scStateOutMsgName + '.r_BN_N', range(3)))
+#    for ind in range(0,len(TheDynSim.DynClass.beaconList)):
+#        r_beacons.append(TheDynSim.pullMessageLogData(TheDynSim.DynClass.beaconList[ind].scStateOutMsgName + '.r_BN_N', range(3)))
 
     # Print Dyn Celestial Outputs
     print '\n\n'
@@ -87,7 +108,7 @@ def pull_DynCelestialOutputs(TheDynSim):
         'moon': [r_moon, 'cyan'],
         'earth': [r_earth, 'dodgerblue'],
         'mars': [r_mars, 'r'],
-        'r_beacon_0': [r_beacons[0], 'g'],
+#        'r_beacon_0': [r_beacons[0], 'g'],
         # 'r_beacon_1': [r_beacons[1], 'g'],
         # 'r_beacon_2': [r_beacons[2], 'g'],
         # 'r_beacon_3': [r_beacons[3], 'g'],
@@ -98,6 +119,8 @@ def pull_DynCelestialOutputs(TheDynSim):
         # 'r_beacon_8': [r_beacons[8], 'g']
     }
     BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_sc)
+
+    return r_sc, r_sun, r_earth, r_moon, r_mars, r_beacons
 
 
 
@@ -126,6 +149,10 @@ def pull_DynOutputs(TheBSKSim):
     #BSKPlt.plot_orbit(r_BN)
     BSKPlt.plot_rotationalNav(sigma_BN, omega_BN_B)
 
+    return r_BN, v_BN, sigma_BN, omega_BN_B
+
+
+
 def pull_senseOutputs(TheBSKSim):
     # Pull Dyn Outputs
     beta_tilde_BN = TheBSKSim.pullMessageLogData(TheBSKSim.DynClass.starTracker.outputStateMessage + '.qInrtl2Case', range(4))
@@ -149,6 +176,26 @@ def pull_senseOutputs(TheBSKSim):
     # Plot Relevant Dyn Outputs
     # BSKPlt.plot_orbit(r_BN)
     BSKPlt.plot_rotationalNav(sigma_tilde_BN, omega_tilde_BN)
+    return sigma_tilde_BN, omega_tilde_BN
+
+def pull_aekfOutputs(TheBSKSim):
+    # Pull Dyn Outputs
+    sigma_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName+ '.sigma_BN', range(3))
+    omega_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName+ '.omega_BN_B', range(3))
+
+
+    # Print Dyn Outputs
+    print '\n\n'
+    print 'DYNAMICS:'
+    print 'sigma_hat_BN = ', sigma_hat_BN[-3:, 1:], '\n'
+    print 'omega_hat_BN = ', omega_hat_BN[-3:, 1:], '\n'
+    testRBN, testVBN = define_dino_earthSOI()
+
+    # Plot Relevant Dyn Outputs
+    # BSKPlt.plot_orbit(r_BN)
+    BSKPlt.plot_rotationalNav(sigma_hat_BN, omega_hat_BN)
+
+    return sigma_hat_BN, omega_hat_BN
 
 def pull_FSWOutputs(TheBSKSim):
     sigma_RN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.trackingErrorData.inputRefName + ".sigma_RN", range(3))
@@ -256,7 +303,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     """
     # Log data for post-processing and plotting
     #   Set length of simulation in nanoseconds from the simulation start.
-    simulationTime = mc.sec2nano(139643.532)
+    simulationTime = mc.sec2nano(10)
     #   Set the number of data points to be logged, and therefore the sampling frequency
     numDataPoints = 100000
     samplingTime = simulationTime / (numDataPoints - 1)
@@ -311,8 +358,189 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     ephemFile.close()
 
+    # Configure a simulation stop time time and execute the simulation run
+    TheDynSim.ConfigureStopTime(simulationTime)
+    TheDynSim.ExecuteSimulation()
+
+    # Pull data for post-processing and plotting
+    r_BN, v_BN, sigma_BN, omega_BN_B = pull_DynOutputs(TheDynSim)
+    sigma_tilde_BN, omega_tilde_BN = pull_senseOutputs(TheDynSim)
+    r_sc, r_sun, r_earth, r_moon, r_mars, r_beacons = pull_DynCelestialOutputs(TheDynSim)
+
+    ##  Post-Process sim data using camera, image processing, batch filter DINO modules
+
+    earth = camera.beacon()
+    earth.r_eq = 6378.137
+    earth.id = 'Earth'
+    earth.albedo = 0.434
+
+    mars = camera.beacon()
+    mars.r_eq = 3396.2
+    mars.id = 'Mars'
+    mars.albedo = 0.17
+
+    moon = camera.beacon()
+    moon.r_eq = 1738.1
+    moon.id = 'Earth'
+    moon.albedo = 0.12
+
+    beacons = [earth, moon, mars]
+    #need loop to define asteroids, too
+
+    cam, ipParam, navParam = defineParameters(
+            (512,512),   #camera resolution, width then height
+            0.05,        #focal length in m
+            (0.01,0.01), #detector dimensions in m, with then height
+            beacons,     #list of beacons
+            #transmission curve dict
+            np.load('../dinoModels/SimCode/opnavCamera/tc/20D.npz'),
+            #quantum efficiency curve dict
+            np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz'),
+            1,           #bin size for wavelength functions (in nm)
+            0.01**2,     #effective area (m^2)
+            100,         #dark current electrons/s/pixel
+            100,         #read noise STD (in electrons per pixel)
+            100,         #bin size
+            2**32,       #saturation depth
+            1,           #Standard deviation for PSF (in Pizels)
+            0.01         #simulation timestep
+        )
 
 
+    #this is spoofing the output of the nav exec
+    #telling the camera when to take an image.
+    takeImage = np.zeros(len(r_sc))
+    takeImage[100] = 1
+    takeImage[200] = 1
+    takeImage[300] = 1
+    takeImage[400] = 1
+
+    lastTakeImage = 0
+    for i in range(0,len(r_sc)):
+        cam.scState = r_sc[i][1:4]
+        earth.state = r_earth[i][1:4]
+        moon.state = r_moon[i][1:4]
+        mars.state = r_mars[i][1:4]
+        #also need a loop here for 
+        #updating beacon position once they're added
+        cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
+        cam.takeImage = takeImage[i]
+        cam.imgTime = r_sc[i][0]
+        cam.updateState()
+
+    detectorArrays = []
+    imgTimes = []
+    imgPos = []
+    imgMRP = []
+    imgBeaconPos = []
+
+    for i in range(0,len(cam.images)):
+        detectorArrays.append(cam.images[i].detectorArray)
+        imgTimes.append(cam.images[i].imgTime)
+        imgPos.append(cam.images[i].imgPos)
+        imgMRP.append(rbk.C2MRP(cam.images[i].imgDCM))
+        imgBeaconPos.append(cam.images[i].imgBeaconPos)
+
+        plt.figure()
+        plt.imshow(cam.images[i].detectorArray)
+
+    plt.show()
+
+
+    # Run the Image Processing Module
+
+    # required parameters from defineParameters function
+    camParamIP = ipParam[0]
+    beaconIDs = ipParam[1]
+    beaconRadius = ipParam[2]
+
+    imgTimesFound = []
+    beaconIDsFound = []
+    beaconPLFound = []
+    imgMRPFound = []                # will have 'None' entries when not able to detect enough objects
+    imgMRPFoundPassThrough = []     # identical attitude as input into the image processing module
+
+    for indList in range(len(imgTimes)):
+        currentBeaconIDs, currentPL, currentMRP = ip.imageProcessing(detectorArrays[indList],
+                                                                     camParamIP,
+                                                                     imgPos[indList],
+                                                                     imgMRP[indList],
+                                                                     imgBeaconPos[indList],
+                                                                     beaconIDs,
+                                                                     beaconRadius,
+                                                                     makePlots=False,
+                                                                     debugMode=True)
+
+        if currentBeaconIDs is not None:
+            for indBeacon in range(len(currentBeaconIDs)):
+                imgTimesFound.append(imgTimes[indList])
+                beaconIDsFound.append(currentBeaconIDs[indBeacon])
+                beaconPLFound.append(currentPL[indBeacon])
+
+                # pass through attitude estimate for navigation module
+                imgMRPFoundPassThrough.append(imgMRP[indList])
+
+                # attitude output of image processing logged for informational purposes only
+                # (nav module to use sim attitude filter output)
+                imgMRPFound.append(currentMRP)
+
+        print '\nImage Processing Output: '
+        print 'Image#: ', indList
+        print 'Found Beacon IDs, P/L, MRP'
+        print currentBeaconIDs, currentPL, currentMRP
+        print 'Initial Estimate MRP: ', imgMRP[indList]
+
+
+    # Generate inputs for navigation modulec
+    numNavInputs = len(imgTimesFound)
+    imgTimesNav = np.reshape(imgTimesFound, (numNavInputs, 1))
+    beaconIDsNav = np.reshape(beaconIDsFound, (numNavInputs, 1))
+    beaconPLNav = np.reshape(beaconPLFound, (numNavInputs, 2))
+    imgMRPNav = np.reshape(imgMRPFoundPassThrough, (numNavInputs, 3))
+
+    import pdb
+    pdb.set_trace()
+
+    # Run the Navigation Module
+
+
+
+def attFilter_dynScenario(TheDynSim):
+    """
+    Executes a default scenario for stand-alone dynamic simulations
+    :params: TheDynSim: instantiation of class DINO_DynSim
+    :return: None
+    """
+    # Log data for post-processing and plotting
+    #   Set length of simulation in nanoseconds from the simulation start.
+    simulationTime = mc.sec2nano(100)
+    #   Set the number of data points to be logged, and therefore the sampling frequency
+    numDataPoints = 10000
+    samplingTime = simulationTime / (numDataPoints - 1)
+    log_DynOutputs(TheDynSim, samplingTime)
+    log_DynCelestialOutputs(TheDynSim, samplingTime)
+    log_aekfOutputs(TheDynSim, samplingTime)
+
+    # Initialize Simulation
+    TheDynSim.InitializeSimulationAndDiscover()
+
+    # Set up the orbit using classical orbit elements
+    #oe = define_default_orbit()
+    mu = TheDynSim.DynClass.mu
+    rN, vN = define_dino_postTMI()
+    om.rv2elem(mu, rN, vN)
+
+    # Initialize Spacecraft States within the state manager (after initialization)
+    posRef = TheDynSim.DynClass.scObject.dynManager.getStateObject("hubPosition")
+    velRef = TheDynSim.DynClass.scObject.dynManager.getStateObject("hubVelocity")
+    sigmaRef = TheDynSim.DynClass.scObject.dynManager.getStateObject("hubSigma")
+    omegaRef = TheDynSim.DynClass.scObject.dynManager.getStateObject("hubOmega")
+
+    #   Set the spacecraft initial position, velocity, attitude parameters
+    posRef.setState(sp.np2EigenVectorXd(rN))  # r_BN_N [m]
+    velRef.setState(sp.np2EigenVectorXd(vN))  # r_BN_N [m]
+    sigmaRef.setState([[0.1], [0.2], [-0.3]])  # sigma_BN_B
+    omegaRef.setState([[0.001], [-0.01], [0.03]])  # omega_BN_B [rad/s]
 
     # Configure a simulation stop time time and execute the simulation run
     TheDynSim.ConfigureStopTime(simulationTime)
@@ -321,12 +549,13 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     # Pull data for post-processing and plotting
     pull_DynOutputs(TheDynSim)
     pull_senseOutputs(TheDynSim)
-    pull_DynCelestialOutputs(TheDynSim)
-    plt.show()
+    pull_aekfOutputs(TheDynSim)
+    #pull_DynCelestialOutputs(TheDynSim)
+    # plt.show()
 
-def attFilter_dynScenario(TheDynSim):
+def opnavCamera_dynScenario(TheDynSim):
     """
-    Executes a default scenario for stand-alone dynamic simulations
+    Executes a default scenario for stand-alone camera simulation
     :params: TheDynSim: instantiation of class DINO_DynSim
     :return: None
     """
@@ -369,3 +598,156 @@ def attFilter_dynScenario(TheDynSim):
     pull_senseOutputs(TheDynSim)
     #pull_DynCelestialOutputs(TheDynSim)
     plt.show()
+
+
+def defineParameters(
+    camResolution, 
+    camFocalLength, 
+    camSensorSize, 
+    beacons,
+    tc,
+    qe,
+    lambdaBinSize,
+    effectiveArea,
+    darkCurrent,
+    readSTD,
+    binSize,
+    maxBinDepth,
+    psfSTD,
+    simTimeStep
+    ):
+    """
+    Generates formatted inputs for camera, image processing, and navigation modules
+    :params: camResolution      : (horizontal x vertical) camera resolution
+    :params: camFocalLength     : camera focal length [m]
+    :params: camSensorSize      : (horizontal x vertical) camera sensor size [m]
+    :params: beacons            : N length list of beacon objects
+    :params: tc                 : transmission curve dictionary (see SERs 4.3/4.3b)
+    :params: qe                 : transmission curve dictionary (see SERs 4.3/4.3b)
+    :params: lambdaBinSize      : bin size for lambda functions [nm]
+    :params: effectiveArea      : effective area of camera [m^2]
+    :params: darkCurrent        : dark current [electrons/s/pixel]
+    :params: readSTD            : standard deviation of read noise [electrons/pixel]
+    :params: binSize            : bin size [DN]
+    :params: maxBinDepth        : saturation depth [DN]
+    :params: psfSTD             : point spred funtion standard deviation [pixels]
+    :params: simTimeStep        : simulation time step [s]
+
+    :return: camInputs          : list of inputs for camera module
+    :return: ipInputs           : list of inputs for image processing
+    :return: navInputs          : lsit of inputs for navigation module
+    """
+
+    beaconIDs = []
+    beaconRadius = []
+    for each in beacons:
+        beaconIDs.append(each.id)
+        beaconRadius.append(each.r_eq)
+
+
+    #init values for camera that will be set later.
+    scState = -1
+    scDCM = -1
+    takeImage = 0
+
+
+    cam = camera.camera(
+        camSensorSize[0], #detector width in m
+        camSensorSize[1], #detector height in m
+        camFocalLength,     #focal lenght in m
+        camResolution[0], #detector resolution (width direction)
+        camResolution[1], #detector resolution (height direction)
+        np.identity(3),  #body2cameraDCM
+        1000,            #maximum magnitude (for debugging)
+        -1000,           #minimum magnitude (for debugging)
+        qe,              #quantum efficiency dictionary
+        tc,              #transmission curve dictionary
+        lambdaBinSize,   #lambda bin size
+        effectiveArea,   #effective area in m^2
+        darkCurrent,     #dark current in electrons per second
+        readSTD,         #std for read noise in electrons
+        binSize,         #bin size
+        maxBinDepth,     #max bin depth
+        psfSTD,          #std for psf
+        simTimeStep,     #simulation timestep
+        scState,         # position state of s/c
+        scDCM,           # intertal 2 body DCM for s/c
+        beacons,         # bodies to track in images
+        takeImage,       # takeImage message
+        db='../dinoModels/SimCode/opnavCamera/db/tycho.db'  # stellar database
+    )
+
+
+    # Camera Module Parameter Creation
+
+    camInputs = cam
+
+    # Image Processing Module Parameter Creation
+    ipCamParam = {}
+    ipCamParam['resolution'] = (cam.resolutionWidth,cam.resolutionHeight)
+    ipCamParam['focal length'] = cam.focalLength
+    ipCamParam['sensor size'] = (cam.detectorWidth,cam.detectorHeight)
+    ipCamParam['pixel size'] = (
+        cam.detectorWidth/cam.resolutionWidth, 
+        cam.detectorHeight/cam.resolutionHeight)
+    ipCamParam['field of view'] = (
+        cam.angularWidth,
+        cam.angularHeight)
+    ipInputs = [ipCamParam, beaconIDs, beaconRadius]
+
+
+
+    # Nav Module Parameter Creation
+
+    navParams = {}
+
+    # SPICE Parameters
+
+    # basic .bsp filename (generic, such as de430, etc)
+    navParams['basic_bsp']   = 'de430.bsp'
+    # .bsp filename for mission
+    navParams['mission_bsp'] = 'DINO_kernel.bsp'
+    # .tls filename 
+    navParams['tls']         = 'naif0011.tls'
+    # abcorr for spkzer
+    navParams['abcorr'] = 'NONE'
+    # reference frame
+    navParams['ref_frame'] = 'J2000'
+
+    # Force Parameters
+    
+    #   Gravity
+    # body vector for primary and secondary gravitational bodies
+    navParams['bodies']    = ['SUN', '3', '399']
+    # specify primary and secondary indices
+    navParams['primary']   = 0
+    navParams['secondary'] = [1, 2]
+    # respective GP vector
+    navParams['mu']        = [1.32712428 * 10 ** 11, 3.986004415 * 10 ** 5, 4.305 * 10 ** 4]
+    #   SRP
+    # A/M ratio multiplied by solar pressure constant at 1 AU with adjustments
+    # Turboprop document Eq (64)
+    navParams['SRP']       = 0.3**2/14. * 149597870.**2 * 1358. / 299792458. / 1000. 
+    # coefficient of reflectivity
+    navParams['cR']        = 1.
+
+    # Camera/P&L Parameters
+
+    # Focal Length (mm)
+    navParams['FoL']             = 100.
+    # default inertial to camera transformation matrices
+    navParams['DCM_BI']          = np.eye(3)
+    navParams['DCM_TVB']         = np.eye(3)
+    # Camera resolution (pixels)
+    navParams['resolution']      = [1024., 1024.]
+    # width and height of pixels in camera
+    navParams['pixel_width']     = 5.
+    navParams['pixel_height']    = 5.
+    # direction coefficient of pixel and line axes
+    navParams['pixel_direction'] = 1.
+    navParams['line_direction']  = 1.
+
+    navInputs = []
+
+
+    return camInputs, ipInputs, navInputs
