@@ -383,7 +383,8 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     moon = camera.beacon()
     moon.r_eq = 1738.1
     moon.id = 'Moon'
-    moon.albedo = 0.12
+    # moon.albedo = 0.12
+    moon.albedo = .7
 
     beacons = [earth, mars, moon]
     #need loop to define asteroids, too
@@ -489,6 +490,9 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     beaconPLFound = []
     imgMRPFound = []                # will have 'None' entries when not able to detect enough objects
     imgMRPFoundPassThrough = []     # identical attitude as input into the image processing module
+
+    print '\nBeacon ID Check:'
+    print beaconIDs
 
     for indList in range(len(imgTimes)):
         currentBeaconIDs, currentPL, currentMRP = ip.imageProcessing(detectorArrays[indList],

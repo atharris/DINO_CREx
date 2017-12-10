@@ -44,7 +44,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     minRes = min(cameraParameters['resolution'])
     imageMax = np.amax(imageMap)
     ROI_parameters = {}
-    ROI_parameters['signal_threshold'] = imageMax/2000.
+    ROI_parameters['signal_threshold'] = 200.
     ROI_parameters['ROI_border_width'] = 1
     ROI_parameters['max_search_dist'] = minRes/10.
 
