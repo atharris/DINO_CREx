@@ -210,7 +210,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
 
         if currentPL is not None:
 
-            if indCentroid < numBeaconsPtSource
+            if indCentroid < numBeaconsPtSource:
                 pixelLineCenterFound.append(currentPL)
 
             if indCentroid >= numBeaconsPtSource:
