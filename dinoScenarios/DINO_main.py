@@ -58,4 +58,8 @@ class DINO_DynSim(SimulationBaseClass.SimBaseClass):
         self.FSWClass = DINO_FSW.FSWClass(self, updateRate=fswUpdateRate)
 
 if __name__ == "__main__":
-    scene.attFilter_dynScenario(DINO_DynSim(0.1, 0.1))
+    # basicOrbit_dynScenario
+    # multiOrbitBeacons_dynScenario
+    # attFilter_dynScenario
+    # opnavCamera_dynScenario
+    scene.basicOrbit_dynScenario(DINO_DynSim(0.1, 0.1))
