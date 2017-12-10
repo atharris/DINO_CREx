@@ -570,8 +570,8 @@ def hough_circles(img, blur=5, canny_thresh=200, dp=1, center_dist=200, accum=18
     else:
         canny_thresh, _ = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
 
-    # if show_img:
-    if True:
+    if show_img:
+    # if True:
         canny_img = cv2.Canny(img, canny_thresh, canny_thresh / 15)
         cv2.namedWindow('canny', cv2.WINDOW_NORMAL)
         cv2.resizeWindow('canny', 600, 600)

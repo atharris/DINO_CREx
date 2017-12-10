@@ -251,10 +251,10 @@ def objectIDStars(pl_in, imageProcessingParam, cameraParameters):
     print '\nSumming Votes'
 
     # DEBUGGING
-    # print
-    # for ind in range(nStars):
-    #     print 'Star ID ', ind, ': ', runningVoteCount[ind]
-    # print
+    print
+    for ind in range(nStars):
+        print 'Star ID ', ind, ': ', runningVoteCount[ind]
+    print
 
     # container for net vote results
     # netIDs[0] = [4,3,6,8] ... measured id0 star has votes for reference ID's 4,3,6,8
@@ -292,6 +292,9 @@ def objectIDStars(pl_in, imageProcessingParam, cameraParameters):
 
             else:
                 netIDs.append(None)
+
+        else:
+            netIDs.append(None)
 
     # process votes to determine likeliest candidate
 

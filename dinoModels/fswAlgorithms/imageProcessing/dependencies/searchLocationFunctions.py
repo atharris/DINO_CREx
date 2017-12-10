@@ -209,11 +209,11 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
             print "ERROR: Star Catalog Field of View Min/Max RA and Dec Calculation"
 
 
-    # print '\nInertial RA and Dec for star catalog lookup'
-    # print radec_corners[0]
-    # print radec_corners[1]
-    # print radec_corners[2]
-    # print radec_corners[3]
+    print '\nInertial RA and Dec for star catalog lookup'
+    print radec_corners[0]
+    print radec_corners[1]
+    print radec_corners[2]
+    print radec_corners[3]
 
     # remove star catalog entries outside of rectangular field of view
     s.execute("SELECT * FROM tycho_data WHERE RA BETWEEN (?) AND (?)"
@@ -231,6 +231,7 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
     ra = []
     dec = []
     id = []
+
     for ind in range(n_stars):
         ra.append(rows[ind][1])
         dec.append(rows[ind][2])
