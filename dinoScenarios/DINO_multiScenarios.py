@@ -385,7 +385,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     moon.id = 'Moon'
     moon.albedo = 0.12
 
-    beacons = [earth, moon, mars]
+    beacons = [earth, mars, moon]
     #need loop to define asteroids, too
 
     cam, ipParam, navParam = defineParameters(
@@ -406,7 +406,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
             1,           #Standard deviation for PSF (in Pixels)
             0.01         #simulation timestep
         )
-
 
     #this is spoofing the output of the nav exec
     #telling the camera when to take an image.
@@ -477,8 +476,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         plt.imshow(cam.images[i].detectorArray)
 
     plt.show()
-    import pdb
-    pdb.set_trace()
 
     # Run the Image Processing Module
 
