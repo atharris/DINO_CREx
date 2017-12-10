@@ -433,9 +433,9 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
             [ 0, 0, 1]
             ])
 
-        if i < 150:
+        if i == 100 or i == 101:
             sc2bdy = earth.state - cam.scState
-        elif i < 250:
+        elif i == 200 or i == 201:
             sc2bdy = moon.state - cam.scState
         else:
             sc2bdy = mars.state - cam.scState
