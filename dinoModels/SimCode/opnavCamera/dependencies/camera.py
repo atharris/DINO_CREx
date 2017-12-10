@@ -749,7 +749,7 @@ class image:
 			DCM_0 = self.DCM[0]
 			DCM_0_inv = inv(DCM_0)
 			alpha_0 = arctan2(DCM_0[0,1],DCM_0[0,0])
-			beta_0 = arcsin(DCM_0[0,2])
+			beta_0 = -arcsin(DCM_0[0,2])
 			gamma_0 = arctan2(DCM_0[1,2],DCM_0[2,2])
 
 			#All of the other DCMs at this point are transformations from

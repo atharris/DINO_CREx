@@ -373,6 +373,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     earth.r_eq = 6378.137
     earth.id = 'Earth'
     earth.albedo = 0.434
+    # earth.albedo = 1e30
 
     mars = camera.beacon()
     mars.r_eq = 3396.2
@@ -402,7 +403,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
             100,         #read noise STD (in electrons per pixel)
             100,         #bin size
             2**32,       #saturation depth
-            1,           #Standard deviation for PSF (in Pizels)
+            1,           #Standard deviation for PSF (in Pixels)
             0.01         #simulation timestep
         )
 
@@ -411,23 +412,51 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     #telling the camera when to take an image.
     takeImage = np.zeros(len(r_sc))
     takeImage[100] = 1
-    takeImage[200] = 1
-    takeImage[300] = 1
-    takeImage[400] = 1
+    # takeImage[200] = 1
+    # takeImage[300] = 1
+    # takeImage[400] = 1
 
     lastTakeImage = 0
     for i in range(0,len(r_sc)):
-        cam.scState = r_sc[i][1:4]
-        earth.state = r_earth[i][1:4]
-        moon.state = r_moon[i][1:4]
-        mars.state = r_mars[i][1:4]
+        cam.scState = r_sc[i][1:4]/1000
+        earth.state = r_earth[i][1:4]/1000
+        moon.state = r_moon[i][1:4]/1000
+        mars.state = r_mars[i][1:4]/1000
         #also need a loop here for 
         #updating beacon position once they're added
+
+        from constants import au
+        # cam.scState = np.array([au/1000,-1e6, 1e6])
+        # earth.state = np.array([au/1000, 0, 0])
+        cam.scDCM = np.array([
+            [ 0, 1, 0],
+            [-1, 0, 0],
+            [ 0, 0, 1]
+            ])
+
+        sc2earth = earth.state - cam.scState
+        sc2earthNormed = sc2earth/np.linalg.norm(sc2earth)
+        RA = np.arctan2(sc2earthNormed[1],sc2earthNormed[0])
+        DE = np.arctan2(
+            sc2earthNormed[2],
+            np.sqrt(sc2earthNormed[0]**2 + sc2earthNormed[1]**2)
+            )
+
+        cam.scDCM = rbk.euler3212C(np.array([RA,-DE,0]))
+
+        # test that forces camera to point at cental star
+        # in orion's belt
+        # cam.scDCM = rbk.euler3212C(
+        #     np.array([
+        #         np.deg2rad(191.93049537),
+        #         np.deg2rad(59.68873246),
+        #         np.deg2rad(0)]))
         cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
         cam.takeImage = takeImage[i]
         cam.imgTime = r_sc[i][0]
         cam.updateState()
-
+        import pdb
+        pdb.set_trace()
     detectorArrays = []
     imgTimes = []
     imgPos = []
@@ -683,6 +712,10 @@ def defineParameters(
         scDCM,           # intertal 2 body DCM for s/c
         beacons,         # bodies to track in images
         takeImage,       # takeImage message
+        debug =  {
+            'addStars': 1,'rmOcc': 1, 'addBod': 1, 'psf': 1, 
+            'raster': 1, 'photon': 1, 'dark': 1, 'read': 1, 
+            'verbose': 1},
         db='../dinoModels/SimCode/opnavCamera/db/tycho.db'  # stellar database
     )
 
