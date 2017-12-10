@@ -382,7 +382,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     moon = camera.beacon()
     moon.r_eq = 1738.1
-    moon.id = 'Earth'
+    moon.id = 'Moon'
     moon.albedo = 0.12
 
     beacons = [earth, moon, mars]
@@ -414,7 +414,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     takeImage[100] = 1
     takeImage[200] = 1
     takeImage[300] = 1
-    takeImage[400] = 1
 
     lastTakeImage = 0
     for i in range(0,len(r_sc)):
@@ -434,15 +433,18 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
             [ 0, 0, 1]
             ])
 
-        sc2earth = earth.state - cam.scState
-        sc2earthNormed = sc2earth/np.linalg.norm(sc2earth)
-        RA = np.arctan2(sc2earthNormed[1],sc2earthNormed[0])
-        DE = np.arctan2(
-            sc2earthNormed[2],
-            np.sqrt(sc2earthNormed[0]**2 + sc2earthNormed[1]**2)
-            )
-
+        if i < 150:
+            sc2bdy = earth.state - cam.scState
+        elif i < 250:
+            sc2bdy = moon.state - cam.scState
+        else:
+            sc2bdy = mars.state - cam.scState
+        
+        sc2bdyNormed = sc2bdy/np.linalg.norm(sc2bdy)
+        RA = np.arctan2(sc2bdyNormed[1],sc2bdyNormed[0])
+        DE = np.arctan2(sc2bdyNormed[2],np.sqrt(sc2bdyNormed[0]**2 + sc2bdyNormed[1]**2))
         cam.scDCM = rbk.euler3212C(np.array([RA,-DE,0]))
+
 
         # test that forces camera to point at cental star
         # in orion's belt
@@ -475,7 +477,8 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         plt.imshow(cam.images[i].detectorArray)
 
     plt.show()
-
+    import pdb
+    pdb.set_trace()
 
     # Run the Image Processing Module
 
@@ -714,7 +717,7 @@ def defineParameters(
         beacons,         # bodies to track in images
         takeImage,       # takeImage message
         debug =  {
-            'addStars': 1,'rmOcc': 1, 'addBod': 1, 'psf': 1, 
+            'addStars': 0,'rmOcc': 1, 'addBod': 1, 'psf': 1, 
             'raster': 1, 'photon': 1, 'dark': 1, 'read': 1, 
             'verbose': 1},
         db='../dinoModels/SimCode/opnavCamera/db/tycho.db'  # stellar database
