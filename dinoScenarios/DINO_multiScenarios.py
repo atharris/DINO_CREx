@@ -190,21 +190,39 @@ def pull_senseOutputs(TheBSKSim, plots=True):
 
 
 def pull_aekfOutputs(TheBSKSim, plots=True):
-    # Pull Dyn Outputs
-    sigma_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName + '.sigma_BN', range(3))
-    omega_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName + '.omega_BN_B', range(3))
+    # Pull Dyn OutputsTheBSKSim.DynClass.simpleNavObject.outputAttName + ".sigma_BN", range(3)
+    sigma_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName+ '.sigma_BN', range(3))
+    omega_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName+ '.omega_BN_B', range(3))
 
-    if plots == True:
-        # Print Dyn Outputs
-        print '\n\n'
-        print 'DYNAMICS:'
-        print 'sigma_hat_BN = ', sigma_hat_BN[-3:, 1:], '\n'
-        print 'omega_hat_BN = ', omega_hat_BN[-3:, 1:], '\n'
-        testRBN, testVBN = define_dino_earthSOI()
+    # Pull true outputs in order to debug and plot fitler plots
+    # Note that these are taken at a 5x higher sample rate. Can't figure out why...
+    sigma_BN = TheBSKSim.pullMessageLogData(TheBSKSim.DynClass.simpleNavObject.outputAttName + ".sigma_BN", range(3))[0:-1:5,:]
+    omega_BN_B = TheBSKSim.pullMessageLogData(TheBSKSim.DynClass.simpleNavObject.outputAttName + ".omega_BN_B", range(3))[0:-1:5,:]
 
-        # Plot Relevant Dyn Outputs
-        # BSKPlt.plot_orbit(r_BN)
-        BSKPlt.plot_rotationalNav(sigma_hat_BN, omega_hat_BN)
+    # Pull filter msg data
+    covarLog1 = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.filterMsgName+ '.sigma_BN', range(3))
+    covarLog2 = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.filterMsgName+ '.vehSunPntBdy', range(3))
+    postFitLog = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.filterMsgName+ '.omega_BN_B', range(3))
+
+    # Print Dyn Outputs
+    print '\n\n'
+    print 'DYNAMICS:'
+    print 'sigma_hat_BN = ', sigma_hat_BN[-3:, 1:], '\n'
+    print 'omega_hat_BN = ', omega_hat_BN[-3:, 1:], '\n'
+    testRBN, testVBN = define_dino_earthSOI()
+
+    sigma_err = np.copy(sigma_hat_BN)
+    omega_err =  np.copy(omega_hat_BN)
+    sigma_err[:,1:4] = np.array(sigma_hat_BN)[:,1:4]-np.array(sigma_BN)[:,1:4]
+    omega_err[:,1:4] = np.array(omega_hat_BN)[:,1:4]-np.array(omega_BN_B)[:,1:4]
+    covarLog = np.zeros([np.shape(sigma_err)[0],7])
+    covarLog[:,0:4] = covarLog1
+    covarLog[:,4:7] = covarLog2[:,1:4]
+    # Plot Relevant Dyn Outputs
+    # BSKPlt.plot_orbit(r_BN)
+    BSKPlt.plot_rotationalNav(sigma_hat_BN, omega_hat_BN)
+    BSKPlt.plot_filterOut(sigma_err, omega_err, covarLog)
+    BSKPlt.plot_filterPostFits(postFitLog, 0.001*np.identity(3))
 
     return sigma_hat_BN, omega_hat_BN
 
