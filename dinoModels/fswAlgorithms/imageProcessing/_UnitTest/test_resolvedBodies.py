@@ -23,8 +23,8 @@ import imageProcessingExecutive as ip
 # cam_fov = (2 * math.degrees(math.atan2(cam_sensor_size[0] / 2., cam_focal_length)),
 #            2 * math.degrees(math.atan2(cam_sensor_size[1] / 2., cam_focal_length)))
 
-file_in = np.load('test_cases/testcase0.npz')
-# file_in = np.load('../../../../../../Desktop/camera/output/testcase2.npz')
+# file_in = np.load('test_cases/testcase0.npz')
+file_in = np.load('../../../../../../Desktop/camera/output/testcase0_3.npz')
 
 ex_image = file_in['imageMap']
 
@@ -64,6 +64,8 @@ print 'Image Processing Output: '
 print idsOutput
 print pixelLineOutput
 print sigma_BN_output
+
+print file_in['ids']
 
 # -90 rot3 no issue
 

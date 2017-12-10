@@ -139,6 +139,9 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, BN_dcm_est,
     pixel_line_stars_i, catalogIDs = locfunc.initial_stars_estimate(
         BN_dcm_cam, cameraParameters, imageProcessingParam['filenameSearchCatalog'])
 
+    print 'refIDs'
+    print catalogIDs
+
     pixel_line_ptSource_i = pixel_line_stars_i
 
     if len(pixel_line_ptSource_i) > maxInitialEstimates:
