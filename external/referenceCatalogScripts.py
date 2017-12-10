@@ -223,7 +223,7 @@ if makeObjectIDCatalog:
             #             ra1[ind_row], ra2[ind_row], dec1[ind_row], dec2[ind_row]))
             oID.execute("INSERT INTO tycho_objectID("
                         "id_objectID, id1, id2, dtheta) VALUES(?,?,?,?)",
-                       (id_objectID[ind_row], id1[ind_row], id2[ind_row], dtheta[ind_row],8))
+                       (id_objectID[ind_row], id1[ind_row], id2[ind_row], dtheta[ind_row]))
 
     objectID_catalog.close()
 

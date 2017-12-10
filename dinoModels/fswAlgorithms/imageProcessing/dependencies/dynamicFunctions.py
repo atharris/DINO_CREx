@@ -83,6 +83,65 @@ def unitvector_to_radec(ehat):
 
     return radec
 
+#################################################
+
+def dcm2prv(dcm):
+    'Input DCM as 3x3 array to get phi (rad) and e_hat (1x3 array) for Principal Rotation Vector parameters'
+    c11 = dcm[0, 0]
+    c12 = dcm[0, 1]
+    c13 = dcm[0, 2]
+    c21 = dcm[1, 0]
+    c22 = dcm[1, 1]
+    c23 = dcm[1, 2]
+    c31 = dcm[2, 0]
+    c32 = dcm[2, 1]
+    c33 = dcm[2, 2]
+
+    phi = math.acos(.5*(c11+c22+c33-1))
+    e_denom = 1/(2*math.sin(phi))
+    e_hat = np.array([e_denom*(c23-c32),
+                      e_denom*(c31-c13),
+                      e_denom*(c12-c21)])
+
+    return (phi, e_hat)
+
+def prv2ep(phi, ehat):
+    'Input Principal Rotation Vector parameters, phi (rad) and ehat, to get Euler Parameters, beta (1x4 array)'
+
+    beta = np.array([math.cos(phi/2),
+                     ehat[0]*math.sin(phi/2),
+                     ehat[1]*math.sin(phi/2),
+                     ehat[2]*math.sin(phi/2)])
+
+    return beta
+
+def prv2dcm(phi, ehat):
+    'Input Principal Rotation Vector parameters, phi (rad), and ehat, to get DCM (3x3 array)'
+
+    eps = 1-math.cos(phi)
+    e1 = ehat[0]
+    e2 = ehat[1]
+    e3 = ehat[2]
+    cphi = math.cos(phi)
+    sphi = math.sin(phi)
+
+    C = np.array([[e1**2*eps+cphi, e1*e2*eps+e3*sphi, e1*e3*eps-e2*sphi],
+                  [e2*e1*eps-e3*sphi, e2**2*eps+cphi, e2*e3*eps+e1*sphi],
+                  [e3*e1*eps+e2*sphi, e3*e2*eps-e1*sphi, e3**2*eps+cphi]])
+
+    return C
+
+def ep2mrp(beta):
+    'Input Euler Parameters, beta (1x4 array), to get Modified Rodriguez Parameters, sigma (1x3 array)'
+
+    sig = np.array([beta[1]/(1+beta[0]),
+                    beta[2]/(1+beta[0]),
+                    beta[3]/(1+beta[0])])
+
+    return sig
+
+#################################################
+
 def dcm2mrp(C):
 
     zeta = math.sqrt((C[0,0]+C[1,1]+C[2,2])+1)

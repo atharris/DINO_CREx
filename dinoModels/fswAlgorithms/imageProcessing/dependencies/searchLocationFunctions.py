@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 import sys, os, inspect
 # sys.path.append('../../../../../external/')
+import objectIDFunctions as oID
 
 
 ##################################################
@@ -108,11 +109,25 @@ def initial_stars_estimate(BN_dcm_sc, cameraParameters, fname_catalog):
     lowerleft = np.array([e1, e2, -e3])
     lowerright = np.array([e1, -e2, -e3])
 
+    print '\nVectors to Corners in Body Coord.'
+    print upperleft
+    print upperright
+    print lowerleft
+    print lowerright
+
+    print '\nBN DCM Matrix'
+    print BN_dcm_sc
     # convert unit vectors from body frame to heliocentric inertial frame
     ul_helio = np.matmul(BN_dcm_sc.T, upperleft)
     ur_helio = np.matmul(BN_dcm_sc.T, upperright)
     ll_helio = np.matmul(BN_dcm_sc.T, lowerleft)
     lr_helio = np.matmul(BN_dcm_sc.T, lowerright)
+
+    print '\nUL, UR, LL, LR Corner in HCI'
+    print ul_helio
+    print ur_helio
+    print ll_helio
+    print lr_helio
 
     # calculate inertial RA and Dec from inertial unit vectors
     ra_N_ul = math.degrees(math.atan2(ul_helio[1], ul_helio[0]))
@@ -216,6 +231,8 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
     print radec_corners[1]
     print radec_corners[2]
     print radec_corners[3]
+    print ra_min, ra_max
+    print dec_min, dec_max
 
     # remove star catalog entries outside of rectangular field of view
     s.execute("SELECT * FROM tycho_data WHERE RA BETWEEN (?) AND (?)"
@@ -282,9 +299,9 @@ def radec_to_pixelline(N_radec, BN_dcm_cam, cameraParameters):
 
         e_star_cam = np.matmul(BN_dcm_cam, e_star_helio)
 
-        #print 'Unit vector to star (HCI): ', e_star_helio
-        #print 'Unit vector to star (camera coord.): ', e_star_cam
-        e1_cam_helio = np.matmul(BN_dcm_cam.T, np.array([1,0,0]))
+        # print 'Unit vector to star (HCI): ', e_star_helio
+        # print 'Unit vector to star (camera coord.): ', e_star_cam
+        # e1_cam_helio = np.matmul(BN_dcm_cam.T, np.array([1,0,0]))
         # print 'e1 camera unit vector (HCI): ', e1_cam_helio
         # print 'Angular separation: ', math.degrees(math.acos(np.dot(e_star_helio, e1_cam_helio)))
 
@@ -300,6 +317,13 @@ def radec_to_pixelline(N_radec, BN_dcm_cam, cameraParameters):
                 and current_line <= cam_res[1] and current_line >= 0:
             pixel_line.append((current_pixel, current_line))
             #print 'STAR IN FIELD OF VIEW FOUND'
+
+
+    # for ind in range(len(pixel_line)):
+    #     print 'Check: ', N_radec[0][ind], N_radec[1][ind]
+    #     print 'Verify: ', oID.pixelline_to_radec(pixel_line[ind],
+    #                                              BN_dcm_cam,
+    #                                              cameraParameters)
 
     return pixel_line
 

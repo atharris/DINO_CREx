@@ -200,9 +200,6 @@ def objectIDStars(pl_in, imageProcessingParam, cameraParameters):
             if indStar == pairIndex[indSearch][0] or indStar == pairIndex[indSearch][1]:
                 searchesPerObject[indStar] = searchesPerObject[indStar]+1
 
-    print '\nNumber of Object ID Catalog Searches'
-    for ind in range(nStars):
-        print searchesPerObject[ind]
 
     # open object ID reference catalog
     ref_catalog = sql.connect(fname_catalog)
@@ -245,13 +242,10 @@ def objectIDStars(pl_in, imageProcessingParam, cameraParameters):
                 else:
                     runningVoteCount[star2].extend(matchedIDs)
 
-        print 'Number of Catalog Searches: ', len(dtheta)
-
     # transform running list of IDs into a net vote count for each possible ID
-    print '\nSumming Votes'
-
     # DEBUGGING
-    print
+
+    print '\nSumming Votes'
     for ind in range(nStars):
         print 'Star ID ', ind, ': ', runningVoteCount[ind]
     print
@@ -261,7 +255,8 @@ def objectIDStars(pl_in, imageProcessingParam, cameraParameters):
     # netVoteCount[0] = [2,2,3,3] ... measured id0 star has vote counts of 2 for reference ids 4,3 and 3 votes for 6,8
     netIDs = []
     netVoteCount = []
-    voteResults = []
+    voteMinCount = []
+    weights = []
 
     for indStar in range(nStars):
 
@@ -283,18 +278,29 @@ def objectIDStars(pl_in, imageProcessingParam, cameraParameters):
             for indVote in range(len(uniqueIDs)):
                 np.vstack((netVotes, np.array([uniqueIDs[indVote], counts[indVote]])))
 
-            # Store positive ID matches or None if not found
-            if max(counts) >= voteMinCount and len(runningVoteCount[indStar]) > 2:
+            # Store positive ID matches or None if not found or an ambiguous ID
+            currentMax = max(counts)
+            if currentMax >= voteMinCount and len(runningVoteCount[indStar]) > 2:
 
-                # voteResults.append(netVotes)
-                netIDs.append(uniqueIDs[np.argmax(counts)])
-                # netVoteCount.append(max(counts))
+                # check if another ID has equal vote count
+                counts2 = list(counts)
+                counts2.remove(currentMax)
+                currentMax2 = max(counts2)
+
+                if currentMax > currentMax2:
+
+                    # voteResults.append(netVotes)
+                    netIDs.append(uniqueIDs[np.argmax(counts)])
+                    # weights.append(max(counts)/searchesPerObject[indStar])
+                    weights.append(currentMax)
 
             else:
                 netIDs.append(None)
+                weights.append(None)
 
         else:
             netIDs.append(None)
+            weights.append(None)
 
     # process votes to determine likeliest candidate
 
@@ -309,7 +315,7 @@ def objectIDStars(pl_in, imageProcessingParam, cameraParameters):
 
     objectID = netIDs
 
-    return objectID
+    return objectID, weights
 
 
 ##################################################
