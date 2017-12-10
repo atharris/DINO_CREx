@@ -138,14 +138,13 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     pixel_line_ptSource_i = pixel_line_stars_i
 
     if len(pixel_line_ptSource_i) > maxInitialEstimates:
-        pixel_line_ptSource_i = pixel_line_ptSource_i[0:maxInitialEstimates-1]
+        pixel_line_ptSource_i = pixel_line_ptSource_i[0:maxInitialEstimates]
 
-    #
     if numBeaconsPtSource > 0:
         pixel_line_beacon_ptSource_i = locfunc.initial_beacons_estimate(
             N_r_beaconsPtSource, r_N_cam, BN_dcm_cam, cameraParameters)
-        pixel_line_ptSource_i = np.vstack((pixel_line_ptSource_i,
-                                           pixel_line_beacon_ptSource_i))
+        pixel_line_ptSource_i = np.vstack((pixel_line_beacon_ptSource_i,
+                                           pixel_line_ptSource_i))
 
     pixelLineInitialEstimates = pixel_line_ptSource_i
 
@@ -222,10 +221,6 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
                 beaconIDsFound.append(beaconIDsPtSource[indCentroid])
                 pixelLineCenterBeaconFound.append(currentPL)
 
-            if indCentroid >= numBeaconsPtSource:
-                pixelLineCenterStars.append(currentPL)
-                refCatalogIDsMatched.append(catalogIDs[indCentroid])
-
 
     numStarsFound = len(pixelLineCenterStars)
     numBeaconsFound = len(pixelLineCenterBeaconFound)
@@ -235,7 +230,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
 
         print 'Centroiding and Center-finding:'
         # print '\n# of Measured Pixel and Line Center Locations: ', numObjectsFound
-        print '# of Measured Star Locations: ', numStarsFound
+        print '# of Measured Pt Source Locations: ', numStarsFound
         if numBeaconsResolvedFound > 0:
             print '# of Measured Resolved Beacons: ', numBeaconsResolvedFound
         print '\nMeasured Beacon Locations'
@@ -260,10 +255,13 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
         objectIDsMatched = []
         pixelLineCenterFoundMatched = []
 
-        for ind in range(numStarsFound):
+
+        print numObjectsID
+        print pixelLineCenterFound
+        for ind in range(numObjectsID):
             if objectIDs[ind] is not None:
                 objectIDsMatched.append(objectIDs[ind])
-                pixelLineCenterFoundMatched.append(pixelLineCenterFound[ind])
+                pixelLineCenterFoundMatched.append(pixelLineCenterStars[ind])
 
         numObjectsFoundMatched = len(objectIDsMatched)
 
