@@ -12,8 +12,7 @@ sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 sys.path.append('../dinoModels/SimCode/opnavCamera/')
 sys.path.append('../dinoModels/SimCode/opnavCamera/dependencies')
-sys.path.append('../dinoModels/fswAlgorithms/imageProcessing/dependencies/')
-
+sys.path.append('../dinoModels/fswAlgorithms/imageProcessing/dependencies')
 
 
 import BSK_plotting as BSKPlt
@@ -125,11 +124,9 @@ def pull_DynCelestialOutputs(TheDynSim, plots=True):
         # 'r_beacon_7': [r_beacons[7], 'g'],
         # 'r_beacon_8': [r_beacons[8], 'g']
     }
-    if plots==True:
-        BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_BN)
-        BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_sc)
-    print "Please make this work."
-    return r_sun, r_earth, r_moon, r_mars, r_beacons
+    BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_sc)
+
+    return r_sc, r_sun, r_earth, r_moon, r_mars, r_beacons
 
 
 def pull_DynOutputs(TheBSKSim, plots=True):
@@ -422,7 +419,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
             0.01         #simulation timestep
         )
 
-    
 
     #this is spoofing the output of the nav exec
     #telling the camera when to take an image.
@@ -445,7 +441,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         cam.takeImage = takeImage[i]
         cam.imgTime = r_BN[i][0]
         cam.updateState()
-
 
 
     # Run the Image Processing Module
@@ -492,6 +487,88 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         print currentBeaconIDs, currentPL, currentMRP
         print 'Initial Estimate MRP: ', imgMRP[indList]
         print 'Initial Estimate DCM: ', cam.images[i].imgDCM
+
+    # Generate inputs for navigation modulec
+    numNavInputs = len(imgTimesFound)
+    imgTimesNav = np.reshape(imgTimesFound, (numNavInputs, 1))
+    beaconIDsNav = np.reshape(beaconIDsFound, (numNavInputs, 1))
+    beaconPLNav = np.reshape(beaconPLFound, (numNavInputs, 2))
+    imgMRPNav = np.reshape(imgMRPFoundPassThrough, (numNavInputs, 3))
+
+    print beaconIDsNav
+    print beaconPLNav
+    print imgMRPNav
+
+    import pdb
+    pdb.set_trace()
+
+    # Run the Navigation Module
+
+
+    detectorArrays = []
+    imgTimes = []
+    imgPos = []
+    imgMRP = []
+    imgBeaconPos = []
+
+    for i in range(0,len(cam.images)):
+        detectorArrays.append(cam.images[i].detectorArray)
+        imgTimes.append(cam.images[i].imgTime)
+        imgPos.append(cam.images[i].imgPos)
+        imgMRP.append(rbk.C2MRP(cam.images[i].imgDCM))
+        imgBeaconPos.append(cam.images[i].imgBeaconPos)
+
+        plt.figure()
+        plt.imshow(cam.images[i].detectorArray)
+
+    plt.show()
+
+
+    # Run the Image Processing Module
+
+    # required parameters from defineParameters function
+    camParamIP = ipParam[0]
+    beaconIDs = ipParam[1]
+    beaconRadius = ipParam[2]
+
+    imgTimesFound = []
+    beaconIDsFound = []
+    beaconPLFound = []
+    imgMRPFound = []                # will have 'None' entries when not able to detect enough objects
+    imgMRPFoundPassThrough = []     # identical attitude as input into the image processing module
+
+    for indList in range(len(imgTimes)):
+        currentBeaconIDs, currentPL, currentMRP = ip.imageProcessing(detectorArrays[indList],
+                                                                     camParamIP,
+                                                                     imgPos[indList],
+                                                                     imgMRP[indList],
+                                                                     imgBeaconPos[indList],
+                                                                     beaconIDs,
+                                                                     beaconRadius,
+                                                                     makePlots=True,
+                                                                     debugMode=True)
+
+        for indBeacon in range(len(currentBeaconIDs)):
+            imgTimesFound.append(imgTimes[indList])
+            beaconIDsFound.append(currentBeaconIDs[indBeacon])
+            beaconPLFound.append(currentPL[indBeacon])
+
+            # pass through attitude estimate for navigation module
+            imgMRPFoundPassThrough.append(imgMRP[indList])
+
+            # attitude output of image processing logged for informational purposes only
+            # (nav module to use sim attitude filter output)
+
+            if currentMRP is not None:
+                imgMRPFound.append(currentMRP)
+
+        print '\nImage Processing Output: '
+        print 'Image#: ', indList
+        print 'Found Beacon IDs, P/L, MRP'
+        print currentBeaconIDs, currentPL, currentMRP
+        print 'Initial Estimate MRP: ', imgMRP[indList]
+        print 'Initial Estimate DCM: ', cam.images[i].imgDCM
+
 
     # Generate inputs for navigation modulec
     numNavInputs = len(imgTimesFound)
@@ -557,7 +634,7 @@ def attFilter_dynScenario(TheDynSim):
     pull_senseOutputs(TheDynSim)
     pull_aekfOutputs(TheDynSim)
     #pull_DynCelestialOutputs(TheDynSim)
-    plt.show()
+    # plt.show()
 
 def opnavCamera_dynScenario(TheDynSim):
     """
@@ -753,5 +830,6 @@ def defineParameters(
     navParams['pixel_direction'] = 1.
     navParams['line_direction']  = 1.
 
+    navInputs = []
 
     return camInputs, ipInputs, navInputs

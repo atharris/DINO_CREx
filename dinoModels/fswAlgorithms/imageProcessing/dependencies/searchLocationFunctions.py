@@ -10,7 +10,7 @@ import dynamicFunctions as dyn
 import matplotlib.pyplot as plt
 
 import sys, os, inspect
-sys.path.append('../../../../external')
+# sys.path.append('../../../../../external/')
 
 
 ##################################################
@@ -171,6 +171,8 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
     """
 
     # open star catalog
+    # print fname_catalog
+    # os.getcwd()
     star_catalog = sql.connect(fname_catalog)
     s = star_catalog.cursor()
     s.execute("SELECT * FROM tycho_data")

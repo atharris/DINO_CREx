@@ -10,7 +10,7 @@ import dynamicFunctions as dyn
 
 
 def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
-                    r_N_beacons, beaconIDs, beaconRadius, makePlts=False, debugMode=False):
+                    r_N_beacons, beaconIDs, beaconRadius, makePlots=False, debugMode=False):
     """
     Identifies objects in an image using a reference catalog.
     @param  imageMap            NxM numpy array of image where N is image horizontal resolution and M is vertical
@@ -47,7 +47,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     ROI_parameters = {}
     ROI_parameters['signal_threshold'] = 200.
     ROI_parameters['ROI_border_width'] = 1
-    ROI_parameters['max_search_dist'] = minRes/100.
+    ROI_parameters['max_search_dist'] = minRes/10.
 
     imageProcessingParam ={}
     imageProcessingParam['voteCountMinRatio'] = .25      # minimum ratio of positive matches out of possible matches
@@ -69,7 +69,6 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
         print 'Max Search Distance: ', ROI_parameters['max_search_dist']
         print 'Pixel Size Min: ', pixelSizeMin
 
-
     ##################################################
     ##################################################
     # Process Inputs
@@ -87,10 +86,9 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     # Check Current status of target beacons
     # 0 for out of field of view, 1 for point source, 2 for resolved body
 
-    BN_dcm_cam = dyn.mrp2dcm(sigma_BN_est)
-
     numBeacons = len(beaconIDs)
-    beaconStatus = imfunc.checkBeaconStatus(r_N_beacons, r_N_cam, BN_dcm_cam, cameraParameters['field of view'],
+    beaconStatus = imfunc.checkBeaconStatus(r_N_beacons, r_N_cam, BN_dcm_cam,
+                                            cameraParameters['field of view'],
                                             beaconRadius, angularSizeMin)
 
     # Separate visible beacons from non-visible
@@ -119,7 +117,6 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     numBeaconsPtSource = len(N_r_beaconsPtSource)
     numBeaconsResolved = len(N_r_beaconsResolved)
 
-
     if debugMode:
         print '\nBeacon Status'
         print 'Visible Beacons: ', beaconIDsVisible
@@ -130,7 +127,9 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     ##################################################
     ##################################################
     # Conduct initial search location for beacons and stars in field of view
-    # print '\nInitial Search Location ...'
+    # Note that the order is important as earlier estimates are detected in the image first
+    # Order is given in priority to resolved beacons, pt source beacons, then stars
+
 
     # search for stars in field of view
     pixel_line_stars_i, catalogIDs = locfunc.initial_stars_estimate(
@@ -138,12 +137,11 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
 
     pixel_line_ptSource_i = pixel_line_stars_i
 
-
     if len(pixel_line_ptSource_i) > maxInitialEstimates:
         pixel_line_ptSource_i = pixel_line_ptSource_i[0:maxInitialEstimates-1]
 
+    #
     if numBeaconsPtSource > 0:
-
         pixel_line_beacon_ptSource_i = locfunc.initial_beacons_estimate(
             N_r_beaconsPtSource, r_N_cam, BN_dcm_cam, cameraParameters)
         pixel_line_ptSource_i = np.vstack((pixel_line_ptSource_i,
@@ -153,7 +151,6 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
 
 
     if numBeaconsResolved > 0:
-
         pixel_line_resolved_i = locfunc.initial_beacons_estimate(
             N_r_beaconsResolved, r_N_cam, BN_dcm_cam, cameraParameters)
         pixelLineInitialEstimates = np.vstack((pixel_line_resolved_i,
@@ -174,7 +171,6 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     ##################################################
     ##################################################
     # Determine Center and Centroid Locations
-    print '\nCentroiding Center-finding ...'
 
     pixelLineCenterFound = []           # all objects with centers detected
     beaconIDsFound = []
@@ -222,54 +218,63 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
                 refCatalogIDsMatched.append(catalogIDs[indCentroid])
 
 
+            if indCentroid < numBeaconsPtSource:
+                beaconIDsFound.append(beaconIDsPtSource[indCentroid])
+                pixelLineCenterBeaconFound.append(currentPL)
+
+            if indCentroid >= numBeaconsPtSource:
+                pixelLineCenterStars.append(currentPL)
+                refCatalogIDsMatched.append(catalogIDs[indCentroid])
+
+
+    numStarsFound = len(pixelLineCenterStars)
+    numBeaconsFound = len(pixelLineCenterBeaconFound)
     numObjectsFound = len(pixelLineCenterFound)
 
     if debugMode:
-        print '\n# of Identified Pixel and Line Center Locations: ', numObjectsFound
-        for ind in range(numObjectsFound):
-            print round(pixelLineCenterFound[ind][0], 4), round(pixelLineCenterFound[ind][1],4)
+
+        print 'Centroiding and Center-finding:'
+        # print '\n# of Measured Pixel and Line Center Locations: ', numObjectsFound
+        print '# of Measured Star Locations: ', numStarsFound
+        if numBeaconsResolvedFound > 0:
+            print '# of Measured Resolved Beacons: ', numBeaconsResolvedFound
+        print '\nMeasured Beacon Locations'
+        for ind in range(numBeaconsFound):
+            print round(pixelLineCenterBeaconFound[ind][0], 4), round(pixelLineCenterBeaconFound[ind][1],4)
+        print '\nMeasured Star Locations'
+        for ind in range(numStarsFound):
+            print round(pixelLineCenterStars[ind][0], 4), round(pixelLineCenterStars[ind][1],4)
 
 
 
     ##################################################
     ##################################################
-    # Conduct Object ID
-    print '\nObject ID ...'
+    # Conduct Object ID for Stars
 
-    beaconIDsFound = []
-    pixelLineBeaconFound = []
-
-    if numBeaconsResolved > 0:
-        for ind in range(numBeacons):
-            if beaconStatus[ind] == 2:
-                beaconIDsFound.append(beaconIDs)
-                pixelLineBeaconFound.append(pixelLineCenterResolved[ind])
-
-    if numBeaconsVisible == 0:
-        objectIDs = idfunc.objectIDStars(pixelLineCenterFound, imageProcessingParam, cameraParameters)
-
-        if debugMode:
-            print '\nStar #', '\t\t', \
-                "%6s" % 'Pixel ', '\t\t', \
-                "%6s" % 'Line  ', '\t\t', \
-                "%6s" % 'Ref ID', '\t\t', \
-                "%6s" % 'Obj ID', '\t\t'
-            for ind in range(numObjectsFound):
-                print 'Star #', ind, '\t:', \
-                    "%6s" % round(pixelLineCenter[ind][0], 2), '\t', \
-                    "%6s" % round(pixelLineCenter[ind][1], 2), '\t\t', \
-                    "%6s" % catalogIDs[ind], '\t\t', \
-                    "%6s" % objectIDs[ind]
-
+    # if numBeaconsResolved == 0:
+    if numStarsFound > 3:
+        objectIDs = idfunc.objectIDStars(pixelLineCenterStars, imageProcessingParam, cameraParameters)
+        numObjectsID = len(objectIDs)
 
         # remove unidentified object IDs from results
         objectIDsMatched = []
         pixelLineCenterFoundMatched = []
 
-        for ind in range(numObjectsFound):
+        for ind in range(numStarsFound):
             if objectIDs[ind] is not None:
                 objectIDsMatched.append(objectIDs[ind])
                 pixelLineCenterFoundMatched.append(pixelLineCenterFound[ind])
+
+        numObjectsFoundMatched = len(objectIDsMatched)
+
+        if debugMode:
+            print '\nObject ID ...'
+            print 'ObjectID Output: '
+            print objectIDsMatched
+
+    else:
+        numObjectsFoundMatched = 0
+
 
         numObjectsFoundMatched = len(objectIDsMatched)
 
@@ -279,7 +284,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
 
     print '\nAttitude Determination ...'
 
-    if numBeaconsResolved == 0 and numObjectsFoundMatched >= 2:
+    if numObjectsFoundMatched >= 3:
 
         radec = idfunc.catalogIDsToRaDec(objectIDsMatched,
                                          imageProcessingParam['filenameSearchCatalog'])
@@ -328,7 +333,6 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
                     "%6s" % radec[ind][0], \
                     "%6s" % radec[ind][1]
 
-
             print '\nQUEST Attitude Solution: '
             print dcmQUEST
 
@@ -345,7 +349,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     ##################################################
     # Optional Plot Generation
 
-    if makePlts:
+    if makePlots:
 
         # original image
         fig1 = plt.figure(1)
@@ -377,28 +381,28 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
         # plt.show()
         plt.close()
 
-        numZoomPlots = 4
-        windowSize = 10
-        for ind in range(numZoomPlots):
-            fig4 = plt.figure(4)
-            x = int(round(pixelLineInitialEstimates[ind][0]))
-            y = int(round(pixelLineInitialEstimates[ind][1]))
-            print '\n', x ,y, pixelLineCenterFound[ind], pixelLineInitialEstimates[ind]
-            windowXMin = x - windowSize
-            windowXMax = x + windowSize
-            windowYMin = y - windowSize
-            windowYMax = y + windowSize
-            plt.imshow(imageMap[windowYMin: windowYMax,
-                       windowXMin:windowXMax],
-                       interpolation='none', cmap='viridis')
+        # numZoomPlots = 4
+        # windowSize = 10
+        # for ind in range(numZoomPlots):
+        #     fig4 = plt.figure(4)
+        #     x = int(round(pixelLineInitialEstimates[ind][0]))
+        #     y = int(round(pixelLineInitialEstimates[ind][1]))
+        #     print '\n', x ,y, pixelLineCenterFound[ind], pixelLineInitialEstimates[ind]
+        #     windowXMin = x - windowSize
+        #     windowXMax = x + windowSize
+        #     windowYMin = y - windowSize
+        #     windowYMax = y + windowSize
+            # plt.imshow(imageMap[windowYMin: windowYMax,
+            #            windowXMin:windowXMax],
+            #            interpolation='none', cmap='viridis')
 
             # add half pixel to initial estimates to compensate for imshow plotting
-            plt.scatter(pixelLineInitialEstimates[ind][0]-windowXMin-.5,
-                        pixelLineInitialEstimates[ind][1]-windowYMin-.5,
-                        color='g', marker='+', s=50)
-            plt.scatter(pixelLineCenterFound[ind][0]-windowXMin-.5,
-                        pixelLineCenterFound[ind][1]-windowYMin-.5,
-                        color='r', marker='+', s=50)
+            # plt.scatter(pixelLineInitialEstimates[ind][0]-windowXMin-.5,
+            #             pixelLineInitialEstimates[ind][1]-windowYMin-.5,
+            #             color='g', marker='+', s=50)
+            # plt.scatter(pixelLineCenterFound[ind][0]-windowXMin-.5,
+            #             pixelLineCenterFound[ind][1]-windowYMin-.5,
+            #             color='r', marker='+', s=50)
             # plt.scatter(pixelLineCenterFound[ind][0]-windowXMin+.5,
                         # pixelLineCenterFound[ind][1]-windowYMin+.5,
                         # color='g', marker='+', s=30)
@@ -410,17 +414,8 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     ##################################################
     # Set Outputs
 
-    idOut = objectIDs
-    pixelLineBeaconOut = pixelLineCenterFound
-
-    if numBeaconsVisible == 0:
-        idOut = None
-        pixelLineBeaconOut = None
-
-    if numBeaconsVisible > 0:
-        idOut = beaconIDsFound
-        pixelLineBeaconOut = pixelLineBeaconFound
-
+    idOut = beaconIDsFound
+    pixelLineBeaconOut = pixelLineCenterBeaconFound
     sigmaOut = mrpQUEST
 
     return idOut, pixelLineBeaconOut, sigmaOut
