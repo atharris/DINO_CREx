@@ -1037,9 +1037,11 @@ class image:
 			for body in bodies: body.distFromSc = norm(body.state[0:3] - self.camera.scState[0:3])
 			#sort bodies by how far they are from the sc
 			#this needs to be done 
-			bodies.sort(key=lambda x:x.distFromSc, reverse=True)
 
-			for body in bodies:
+			sortedBodies = list(bodies)
+			sortedBodies.sort(key=lambda x:x.distFromSc, reverse=True)
+
+			for body in sortedBodies:
 				n+=1
 				if msg['rmOcc']:
 					occCheck = self.removeOccultations(body,n1,n2,n3)
