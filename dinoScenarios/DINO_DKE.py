@@ -272,20 +272,20 @@ class DynamicsClass():
         self.RW1 = self.rwFactory.create('Honeywell_HR16'
                                , [1, 0, 0]
                                , maxMomentum=50.
-                               , Omega=100.  # RPM
+                               , Omega=0.  # RPM
                                , RWModel=self.varRWModel
                                )
         self.RW2 = self.rwFactory.create('Honeywell_HR16'
                                , [0, 1, 0]
                                , maxMomentum=50.
-                               , Omega=200.  # RPM
+                               , Omega=0.  # RPM
                                , RWModel=self.varRWModel
                                )
 
         self.RW3 = self.rwFactory.create('Honeywell_HR16'
                                , [0, 0, 1]
                                , maxMomentum=50.
-                               , Omega=300.  # RPM
+                               , Omega=0.  # RPM
                                , rWB_B=[0.5, 0.5, 0.5]  # meters
                                , RWModel=self.varRWModel
                                )

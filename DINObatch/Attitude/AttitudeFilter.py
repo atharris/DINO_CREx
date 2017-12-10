@@ -79,7 +79,7 @@ class AttitudeFilter(simulationArchTypes.PythonModelClass):
 
         ##  Define noise variables
         self.stateNoise = np.identity(6)
-        self.stateNoise[0:3,0:3] = 0.0001**2*np.identity(3)
+        self.stateNoise[0:3,0:3] = 0.00001**2*np.identity(3)
         self.stateNoise[3:6,3:6] = 0.01**2*np.identity(3)
         self.measNoise = 0.001*np.identity(3)
 
