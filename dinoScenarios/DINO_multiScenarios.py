@@ -412,9 +412,9 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     #telling the camera when to take an image.
     takeImage = np.zeros(len(r_sc))
     takeImage[100] = 1
-    # takeImage[200] = 1
-    # takeImage[300] = 1
-    # takeImage[400] = 1
+    takeImage[200] = 1
+    takeImage[300] = 1
+    takeImage[400] = 1
 
     lastTakeImage = 0
     for i in range(0,len(r_sc)):
@@ -451,12 +451,13 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         #         np.deg2rad(191.93049537),
         #         np.deg2rad(59.68873246),
         #         np.deg2rad(0)]))
-        cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
+
+
+        # cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
         cam.takeImage = takeImage[i]
         cam.imgTime = r_sc[i][0]
         cam.updateState()
-        import pdb
-        pdb.set_trace()
+
     detectorArrays = []
     imgTimes = []
     imgPos = []
