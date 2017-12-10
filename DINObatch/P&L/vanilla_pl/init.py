@@ -233,7 +233,7 @@ def main():
     extras['line_direction'] = 1.
 
     # Are we using the real dynamics for the ref or the trueData
-    extras['realData'] = 'OFF'
+    extras['realData'] = 'ON'
 
     # Add anomaly detection parameters
     extras['anomaly']= False
@@ -247,7 +247,7 @@ def main():
     trueEphemeris, timeSpan = dg.generate_data(sc_ephem_file=DINO_kernel,
                                           planet_beacons = ['earth','mars barycenter'],
                                           beaconIDs=[],
-                                          n_observations=24,
+                                          n_observations=48,
                                           start_et=start_et,
                                           end_et=end_et,
                                           extras = extras,
@@ -285,12 +285,12 @@ def main():
     
     # a priori uncertainty for the referenceStates
     covBar = np.zeros((IC.shape[0], IC.shape[0]))
-    covBar[0, 0] = 10000**2
-    covBar[1, 1] = 10000**2
-    covBar[2, 2] = 10000**2
-    covBar[3, 3] = .1**2
-    covBar[4, 4] = .1**2
-    covBar[5, 5] = .1**2
+    covBar[0, 0] = 3000**2
+    covBar[1, 1] = 3000**2
+    covBar[2, 2] = 3000**2
+    covBar[3, 3] = .03**2
+    covBar[4, 4] = .03**2
+    covBar[5, 5] = .03**2
 
     # add uncertainty to the IC
     initialPositionError = 1000 * np.divide(IC[0:3], np.linalg.norm(IC[0:3]))
@@ -302,8 +302,8 @@ def main():
     # Takes the form of variance. Currently, the same value is used in both
     # the creation of the measurements as well as the weighting of the filter (W)
     observationUncertainty = np.identity(2)
-    observationUncertainty[0, 0] = 0.2 ** 2
-    observationUncertainty[1, 1] = 0.2 ** 2
+    observationUncertainty[0, 0] = 0.2
+    observationUncertainty[1, 1] = 0.2
 
     # the initial STM is an identity matrix
     phi0 = np.identity(IC.shape[0])
