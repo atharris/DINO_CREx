@@ -195,6 +195,10 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
     # find min and max ra dec values in field of view
     ra_min = min(radec_corners[0][0], radec_corners[1][0], radec_corners[2][0], radec_corners[3][0])
     ra_max = max(radec_corners[0][0], radec_corners[1][0], radec_corners[2][0], radec_corners[3][0])
+
+    # star catalog has negative DE values
+    # dec_min = min(-radec_corners[0][1], -radec_corners[1][1], -radec_corners[2][1], -radec_corners[3][1])
+    # dec_max = max(-radec_corners[0][1], -radec_corners[1][1], -radec_corners[2][1], -radec_corners[3][1])
     dec_min = min(radec_corners[0][1], radec_corners[1][1], radec_corners[2][1], radec_corners[3][1])
     dec_max = max(radec_corners[0][1], radec_corners[1][1], radec_corners[2][1], radec_corners[3][1])
 
@@ -218,7 +222,6 @@ def find_stars_in_FoV(radec_corners, fname_catalog):
         # check which pole the field of view covers
         # +k covered
         if abs(dec_min) < abs(dec_max): dec_max = 90
-
         # -k covered
         elif abs(dec_min) > abs(dec_max): dec_min = -90
 
@@ -320,7 +323,8 @@ def radec_to_pixelline(N_radec, BN_dcm_cam, cameraParameters):
 
 
     # for ind in range(len(pixel_line)):
-    #     print 'Check: ', N_radec[0][ind], N_radec[1][ind]
+    for ind in range(10):
+        print 'Ref RA, Dec: ', N_radec[0][ind], N_radec[1][ind]
     #     print 'Verify: ', oID.pixelline_to_radec(pixel_line[ind],
     #                                              BN_dcm_cam,
     #                                              cameraParameters)

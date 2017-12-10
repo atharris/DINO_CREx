@@ -54,6 +54,7 @@ if makeSearchCatalog:
                   (dec_min, dec_max, M_CUTOFF))
         rows = s.fetchall()
 
+        # set negative
         id = []
         RA = []
         DEC = []

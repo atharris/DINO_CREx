@@ -24,16 +24,19 @@ import imageProcessingExecutive as ip
 #            2 * math.degrees(math.atan2(cam_sensor_size[1] / 2., cam_focal_length)))
 
 # file_in = np.load('test_cases/testcase0.npz')
-file_in = np.load('../../../../../../Desktop/camera/output/testcase0_3.npz')
+file_in = np.load('../../../../../../Desktop/camera/output/testcase0.npz')
 
 ex_image = file_in['imageMap']
-
-print file_in['imageMap']
 
 ex_image = ex_image.reshape(512, 512)
 
 BN_dcm_cam = file_in['scDCM']
 # sigma_BN_est = dyn.dcm2mrp(BN_dcm_cam)
+
+print 'Camera Pointing Direction in Inertial Frame:'
+print np.matmul(BN_dcm_cam.T, np.array([1,0,0]))
+print BN_dcm_cam
+
 
 r_N_cam = file_in['scPos'][0:3]
 
@@ -65,7 +68,9 @@ print idsOutput
 print pixelLineOutput
 print sigma_BN_output
 
-print file_in['ids']
+imgIDs = file_in['ids']
+for currentID in imgIDs:
+    print imgIDs
 
 # -90 rot3 no issue
 
