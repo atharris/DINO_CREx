@@ -27,7 +27,7 @@ checkNumEntries2 = False
 M_CUTOFF = 6.25
 
 # Decimal places in dtheta entries in objectID catalog
-nDecimal = 7
+# nDecimal = 7
 
 # Maximum angular separation between stars for generated object ID reference catalog
 DTHETA_MAX = 12.
@@ -223,7 +223,7 @@ if makeObjectIDCatalog:
             #             ra1[ind_row], ra2[ind_row], dec1[ind_row], dec2[ind_row]))
             oID.execute("INSERT INTO tycho_objectID("
                         "id_objectID, id1, id2, dtheta) VALUES(?,?,?,?)",
-                       (id_objectID[ind_row], id1[ind_row], id2[ind_row], round(dtheta[ind_row],8)))
+                       (id_objectID[ind_row], id1[ind_row], id2[ind_row], dtheta[ind_row],8))
 
     objectID_catalog.close()
 

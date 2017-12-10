@@ -23,7 +23,8 @@ import imageProcessingExecutive as ip
 # cam_fov = (2 * math.degrees(math.atan2(cam_sensor_size[0] / 2., cam_focal_length)),
 #            2 * math.degrees(math.atan2(cam_sensor_size[1] / 2., cam_focal_length)))
 
-file_in = np.load('test_cases/testcase0_2.npz')
+file_in = np.load('test_cases/testcase2.npz')
+# file_in = np.load('../../../../../../Desktop/camera/output/testcase2.npz')
 
 ex_image = file_in['imageMap']
 
@@ -32,6 +33,7 @@ print file_in['imageMap']
 ex_image = ex_image.reshape(512, 512)
 
 BN_dcm_cam = file_in['scDCM']
+sigma_BN_est = dyn.dcm2mrp(BN_dcm_cam)
 
 r_N_cam = file_in['scPos'][0:3]
 
@@ -40,7 +42,6 @@ beaconIDs = ('Earth', 'Moon')
 beaconRadius = (6378.1, 1737.)
 r_N_beacons = (file_in['earthPos'][0:3],
                 file_in['moonPos'][0:3])
-
 
 cameraParam = {}
 cameraParam['resolution'] = file_in['resolution']
@@ -56,18 +57,19 @@ cameraParam['pixel size'] = file_in['pixelSize']
 
 # only include detected beacons and PL coordinates
 idsOutput, pixelLineOutput, sigma_BN_output = ip.imageProcessing(
-    ex_image, cameraParam, r_N_cam, BN_dcm_cam,
+    ex_image, cameraParam, r_N_cam, sigma_BN_est,
     r_N_beacons, beaconIDs, beaconRadius, makePlots=True, debugMode=True)
 
+print 'Image Processing Output: '
+print idsOutput
+print pixelLineOutput
+print sigma_BN_output
 
+# -90 rot3 no issue
 
-
-
-
-
-
-
-
+# ISSUES
+# Euler 3-2-1   =     85, 45, 0
+# Euler 3
 
 
 
