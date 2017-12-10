@@ -109,7 +109,7 @@ def pull_DynCelestialOutputs(TheDynSim, plots=True):
     BSKPlt.plot_spacecraft_orbit_0(dict_data_color, r_BN)
     if plots == True:
         BSKPlt.plot_multi_orbit_0(dict_data_color)
-        BSKPlt.plot_spacecraft_orbit_0(dict_data_color, r_sc)
+        BSKPlt.plot_spacecraft_orbit_0(dict_data_color, r_BN)
 
     sc_dict_data_color = {
         'moon': [r_moon, 'cyan'],
@@ -127,7 +127,6 @@ def pull_DynCelestialOutputs(TheDynSim, plots=True):
     }
     if plots == True:
         BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_BN)
-        BSKPlt.plot_spacecraft_orbit(sc_dict_data_color, r_sc)
     print "Please make this work."
     return r_sun, r_earth, r_moon, r_mars, r_beacons
 
