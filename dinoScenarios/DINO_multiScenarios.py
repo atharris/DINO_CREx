@@ -62,8 +62,11 @@ def log_aekfOutputs(TheBskSim, samplingTime):
 
 
 def log_FSWOutputs(TheBSKSim, samplingTime):
-    TheBSKSim.TotalSim.logThisMessage(TheBSKSim.FSWClass.trackingErrorData.outputDataName, samplingTime)
-    TheBSKSim.TotalSim.logThisMessage(TheBSKSim.FSWClass.mrpFeedbackData.outputDataName, samplingTime)
+    TheBSKSim.TotalSim.logThisMessage(TheBSKSim.FSWClass.attErrorConfig.outputDataName, samplingTime)
+    TheBSKSim.TotalSim.logThisMessage(TheBSKSim.FSWClass.mrpControlConfig.outputDataName, samplingTime)
+    TheBSKSim.TotalSim.logThisMessage(TheBSKSim.FSWClass.attGuideConfig.outputDataName, samplingTime)
+    TheBSKSim.TotalSim.logThisMessage(TheBSKSim.FSWClass.attGuideConfig.inputCelMessName, samplingTime)
+    TheBSKSim.TotalSim.logThisMessage(TheBSKSim.FSWClass.attGuideConfig.inputSecMessName, samplingTime)
     return
 
 
@@ -227,13 +230,18 @@ def pull_aekfOutputs(TheBSKSim, plots=True):
     return sigma_hat_BN, omega_hat_BN
 
 def pull_FSWOutputs(TheBSKSim, plots=True):
-    sigma_RN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.trackingErrorData.inputRefName + ".sigma_RN", range(3))
-    omega_RN_N = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.trackingErrorData.inputRefName + ".omega_RN_N",
+    sigma_RN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attGuideConfig.outputDataName + ".sigma_RN", range(3))
+    omega_RN_N = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attGuideConfig.outputDataName + ".omega_RN_N",
                                               range(3))
-    sigma_BR = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.trackingErrorData.outputDataName + ".sigma_BR", range(3))
-    omega_BR_B = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.trackingErrorData.outputDataName + ".omega_BR_B",
+
+    pos1 = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attGuideConfig.inputNavDataName + ".r_BN_N", range(3))
+    pos2 = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attGuideConfig.inputCelMessName + ".PositionVector", range(3))
+    pos3 = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attGuideConfig.inputSecMessName + ".PositionVector", range(3))
+
+    sigma_BR = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attErrorConfig.outputDataName + ".sigma_BR", range(3))
+    omega_BR_B = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attErrorConfig.outputDataName + ".omega_BR_B",
                                               range(3))
-    Lr = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.mrpFeedbackData.outputDataName + ".torqueRequestBody",
+    Lr = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.mrpControlConfig.outputDataName + ".torqueRequestBody",
                                       range(3))
 
     if plots == True:
@@ -315,10 +323,11 @@ def basicOrbit_dynScenario(TheDynSim):
     orbPeriod = period = 2 * np.pi * np.sqrt((oe.a ** 3.) / mu)
 
     # Log data for post-processing and plotting
-    simulationTime = mc.sec2nano(orbPeriod)
+    simulationTime = mc.sec2nano(0.01*orbPeriod)
     numDataPoints = int(orbPeriod)
     samplingTime = simulationTime / (numDataPoints - 1)
     log_DynOutputs(TheDynSim, samplingTime)
+    log_FSWOutputs(TheDynSim, samplingTime)
 
     # Initialize Spacecraft States within the state manager (after initialization)
     posRef = TheDynSim.DynClass.scObject.dynManager.getStateObject("hubPosition")
@@ -336,6 +345,7 @@ def basicOrbit_dynScenario(TheDynSim):
 
     # Pull data for post-processing and plotting
     pull_DynOutputs(TheDynSim)
+    pull_FSWOutputs(TheDynSim)
     plt.show()
 
 
@@ -572,9 +582,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     print beaconIDsNav
     print beaconPLNav
     print imgMRPNav
-
-    import pdb
-    pdb.set_trace()
 
     # Run the Navigation Module
 

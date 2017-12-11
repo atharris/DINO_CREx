@@ -106,8 +106,8 @@ class FSWClass():
     def SetAttGuidance(self, SimBase):
         self.attGuideConfig.outputDataName = "attGuideInertial"
         self.attGuideConfig.inputNavDataName = SimBase.DynClass.simpleNavObject.outputTransName
-        self.attGuideConfig.inputCelMessName = SimBase.DynClass.earthGravBody.outputMsgName
-        self.attGuideConfig.inputSecMessName = SimBase.DynClass.sunGravBody.outputMsgName
+        self.attGuideConfig.inputCelMessName = SimBase.DynClass.earthGravBody.bodyInMsgName
+        self.attGuideConfig.inputSecMessName = SimBase.DynClass.sunGravBody.bodyInMsgName
         self.attGuideConfig.singularityThresh = 1.0 * math.pi/180.0
         return
 
