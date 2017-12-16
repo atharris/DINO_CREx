@@ -2,6 +2,7 @@ import sys, os, inspect
 import matplotlib.pyplot as plt
 from numpy import linalg as la
 import numpy as np
+import math
 
 # filename = inspect.getframeinfo(inspect.currentframe()).filename
 # path = os.path.dirname(os.path.abspath(filename))
@@ -28,6 +29,7 @@ except ImportError:
     from Basilisk.fswAlgorithms import *
 
 import camera
+import imageProcessingExecutive as ip
 
 
 # ------------------------------------- DATA LOGGING ------------------------------------------------------ #
@@ -194,18 +196,19 @@ def pull_senseOutputs(TheBSKSim, plots=True):
 
 def pull_aekfOutputs(TheBSKSim, plots=True):
     # Pull Dyn OutputsTheBSKSim.DynClass.simpleNavObject.outputAttName + ".sigma_BN", range(3)
-    sigma_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName+ '.sigma_BN', range(3))
-    omega_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName+ '.omega_BN_B', range(3))
+    sigma_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName + '.sigma_BN', range(3))
+    omega_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName + '.omega_BN_B', range(3))
 
     # Pull true outputs in order to debug and plot fitler plots
     # Note that these are taken at a 5x higher sample rate. Can't figure out why...
     sigma_BN = TheBSKSim.pullMessageLogData(TheBSKSim.DynClass.simpleNavObject.outputAttName + ".sigma_BN", range(3))
-    omega_BN_B = TheBSKSim.pullMessageLogData(TheBSKSim.DynClass.simpleNavObject.outputAttName + ".omega_BN_B", range(3))
+    omega_BN_B = TheBSKSim.pullMessageLogData(TheBSKSim.DynClass.simpleNavObject.outputAttName + ".omega_BN_B",
+                                              range(3))
 
     # Pull filter msg data
-    covarLog1 = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.filterMsgName+ '.sigma_BN', range(3))
-    covarLog2 = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.filterMsgName+ '.vehSunPntBdy', range(3))
-    postFitLog = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.filterMsgName+ '.omega_BN_B', range(3))
+    covarLog1 = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.filterMsgName + '.sigma_BN', range(3))
+    covarLog2 = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.filterMsgName + '.vehSunPntBdy', range(3))
+    postFitLog = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.filterMsgName + '.omega_BN_B', range(3))
 
     # Print Dyn Outputs
     print '\n\n'
@@ -215,19 +218,20 @@ def pull_aekfOutputs(TheBSKSim, plots=True):
     testRBN, testVBN = define_dino_earthSOI()
 
     sigma_err = np.copy(sigma_hat_BN)
-    omega_err =  np.copy(omega_hat_BN)
-    sigma_err[:,1:4] = np.array(sigma_hat_BN)[:,1:4]-np.array(sigma_BN)[:-1,1:4]
-    omega_err[:,1:4] = np.array(omega_hat_BN)[:,1:4]-np.array(omega_BN_B)[:-1,1:4]
-    covarLog = np.zeros([np.shape(sigma_err)[0],7])
-    covarLog[:,0:4] = covarLog1
-    covarLog[:,4:7] = covarLog2[:,1:4]
+    omega_err = np.copy(omega_hat_BN)
+    sigma_err[:, 1:4] = np.array(sigma_hat_BN)[:, 1:4] - np.array(sigma_BN)[:-1, 1:4]
+    omega_err[:, 1:4] = np.array(omega_hat_BN)[:, 1:4] - np.array(omega_BN_B)[:-1, 1:4]
+    covarLog = np.zeros([np.shape(sigma_err)[0], 7])
+    covarLog[:, 0:4] = covarLog1
+    covarLog[:, 4:7] = covarLog2[:, 1:4]
     # Plot Relevant Dyn Outputs
     # BSKPlt.plot_orbit(r_BN)
     BSKPlt.plot_rotationalNav(sigma_hat_BN, omega_hat_BN)
     BSKPlt.plot_filterOut(sigma_err, omega_err, covarLog)
-    BSKPlt.plot_filterPostFits(postFitLog, 0.001*np.identity(3))
+    BSKPlt.plot_filterPostFits(postFitLog, 0.001 * np.identity(3))
 
     return sigma_hat_BN, omega_hat_BN
+
 
 def pull_FSWOutputs(TheBSKSim, plots=True):
     sigma_RN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attGuideConfig.outputDataName + ".sigma_RN", range(3))
@@ -235,8 +239,10 @@ def pull_FSWOutputs(TheBSKSim, plots=True):
                                               range(3))
 
     pos1 = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attGuideConfig.inputNavDataName + ".r_BN_N", range(3))
-    pos2 = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attGuideConfig.inputCelMessName + ".PositionVector", range(3))
-    pos3 = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attGuideConfig.inputSecMessName + ".PositionVector", range(3))
+    pos2 = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attGuideConfig.inputCelMessName + ".PositionVector",
+                                        range(3))
+    pos3 = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attGuideConfig.inputSecMessName + ".PositionVector",
+                                        range(3))
 
     sigma_BR = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attErrorConfig.outputDataName + ".sigma_BR", range(3))
     omega_BR_B = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attErrorConfig.outputDataName + ".omega_BR_B",
@@ -323,7 +329,7 @@ def basicOrbit_dynScenario(TheDynSim):
     orbPeriod = period = 2 * np.pi * np.sqrt((oe.a ** 3.) / mu)
 
     # Log data for post-processing and plotting
-    simulationTime = mc.sec2nano(0.01*orbPeriod)
+    simulationTime = mc.sec2nano(0.01 * orbPeriod)
     numDataPoints = int(orbPeriod)
     samplingTime = simulationTime / (numDataPoints - 1)
     log_DynOutputs(TheDynSim, samplingTime)
@@ -357,9 +363,9 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     """
     # Log data for post-processing and plotting
     #   Set length of simulation in nanoseconds from the simulation start.
-    simulationTime = mc.sec2nano(50.)
+    simulationTime = mc.sec2nano(10)
     #   Set the number of data points to be logged, and therefore the sampling frequency
-    numDataPoints = 50
+    numDataPoints = 100000
     samplingTime = simulationTime / (numDataPoints - 1)
     log_DynOutputs(TheDynSim, samplingTime)
     log_DynCelestialOutputs(TheDynSim, samplingTime)
@@ -461,86 +467,51 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     moon.albedo = .7
 
     beacons = [earth, mars, moon]
-    #need loop to define asteroids, too
+    # need loop to define asteroids, too
 
     cam, ipParam, navParam = defineParameters(
-            (512,512),   #camera resolution, width then height
-            0.05,        #focal length in m
-            (0.01,0.01), #detector dimensions in m, with then height
-            beacons,     #list of beacons
-            #transmission curve dict
-            np.load('../dinoModels/SimCode/opnavCamera/tc/20D.npz'),
-            #quantum efficiency curve dict
-            np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz'),
-            1,           #bin size for wavelength functions (in nm)
-            0.01**2,     #effective area (m^2)
-            100,         #dark current electrons/s/pixel
-            100,         #read noise STD (in electrons per pixel)
-            100,         #bin size
-            2**32,       #saturation depth
-            1,           #Standard deviation for PSF (in Pixels)
-            0.01         #simulation timestep
-        )
-
-    #this is spoofing the output of the nav exec
-    #telling the camera when to take an image.
-    takeImage = np.zeros(len(r_sc))
-    takeImage[100] = 1
-    takeImage[200] = 1
-    takeImage[300] = 1
-
-    cam = camera.camera(
-        0.01,  # detector_height
-        0.01,  # detector_width
-        0.05,  # focal_length
-        512,  # resolution_height
-        512,  # resolution_width
-        np.identity(3),  # body2cameraDCM
-        1000,  # maximum magnitude
-        -1000,  # minimum magnitude (for debugging)
-        qe,
-        tc,
-        1,
-        0.01 ** 2,  # effective area in m^2
-        100,  # dark current in electrons per second
-        100,  # std for read noise in electrons
-        1000,  # bin size
-        2 ** 32,  # max bin depth
-        1,
-        0.01,  # simulation timestep
-        scState,  # position state of s/c
-        scDCM,  # intertal 2 body DCM for s/c
-        beacons,  # bodies to track in images
-        takeImage,  # takeImage message
-        db='../dinoModels/SimCode/opnavCamera/db/tycho.db'  # stellar database
+        (512, 512),  # camera resolution, width then height
+        0.05,  # focal length in m
+        (0.01, 0.01),  # detector dimensions in m, with then height
+        beacons,  # list of beacons
+        # transmission curve dict
+        np.load('../dinoModels/SimCode/opnavCamera/tc/20D.npz'),
+        # quantum efficiency curve dict
+        np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz'),
+        1,  # bin size for wavelength functions (in nm)
+        0.01 ** 2,  # effective area (m^2)
+        100,  # dark current electrons/s/pixel
+        100,  # read noise STD (in electrons per pixel)
+        100,  # bin size
+        2 ** 32,  # saturation depth
+        1,  # Standard deviation for PSF (in Pixels)
+        0.01  # simulation timestep
     )
 
     # this is spoofing the output of the nav exec
     # telling the camera when to take an image.
     takeImage = np.zeros(len(r_BN))
-    takeImage[0] = 1
-    takeImage[20] = 1
-    takeImage[30] = 1
-    takeImage[40] = 1
-    takeImage[47] = 1
+    takeImage[100] = 1
+    takeImage[200] = 1
+    takeImage[300] = 1
 
     lastTakeImage = 0
-    for i in range(0,len(r_sc)):
-        cam.scState = r_sc[i][1:4]/1000
-        earth.state = r_earth[i][1:4]/1000
-        moon.state = r_moon[i][1:4]/1000
-        mars.state = r_mars[i][1:4]/1000
-        #also need a loop here for 
-        #updating beacon position once they're added
+    for i in range(0, len(r_BN)):
+        cam.scState = r_BN[i][1:4] / 1000
+        earth.state = r_earth[i][1:4] / 1000
+        moon.state = r_moon[i][1:4] / 1000
+        mars.state = r_mars[i][1:4] / 1000
+        # also need a loop here for
+        # updating beacon position once they're added
 
         from constants import au
         # cam.scState = np.array([au/1000,-1e6, 1e6])
         # earth.state = np.array([au/1000, 0, 0])
         cam.scDCM = np.array([
-            [ 0, 1, 0],
+            [0, 1, 0],
             [-1, 0, 0],
-            [ 0, 0, 1]
-            ])
+            [0, 0, 1]
+        ])
 
         if i == 100 or i == 101:
             sc2bdy = earth.state - cam.scState
@@ -548,12 +519,11 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
             sc2bdy = moon.state - cam.scState
         else:
             sc2bdy = mars.state - cam.scState
-        
-        sc2bdyNormed = sc2bdy/np.linalg.norm(sc2bdy)
-        RA = np.arctan2(sc2bdyNormed[1],sc2bdyNormed[0])
-        DE = np.arctan2(sc2bdyNormed[2],np.sqrt(sc2bdyNormed[0]**2 + sc2bdyNormed[1]**2))
-        cam.scDCM = rbk.euler3212C(np.array([RA,-DE,0]))
 
+        sc2bdyNormed = sc2bdy / np.linalg.norm(sc2bdy)
+        RA = np.arctan2(sc2bdyNormed[1], sc2bdyNormed[0])
+        DE = np.arctan2(sc2bdyNormed[2], np.sqrt(sc2bdyNormed[0] ** 2 + sc2bdyNormed[1] ** 2))
+        cam.scDCM = rbk.euler3212C(np.array([RA, -DE, 0]))
 
         # test that forces camera to point at cental star
         # in orion's belt
@@ -569,7 +539,19 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         cam.imgTime = r_BN[i][0]
         cam.updateState()
 
+    detectorArrays = []
+    imgTimes = []
+    imgPos = []
+    imgMRP = []
+    imgBeaconPos = []
+
     for i in range(0, len(cam.images)):
+        detectorArrays.append(cam.images[i].detectorArray)
+        imgTimes.append(cam.images[i].imgTime)
+        imgPos.append(cam.images[i].imgPos)
+        imgMRP.append(rbk.C2MRP(cam.images[i].imgDCM))
+        imgBeaconPos.append(cam.images[i].imgBeaconPos)
+
         plt.figure()
         plt.imshow(cam.images[i].detectorArray)
 
@@ -585,8 +567,8 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     imgTimesFound = []
     beaconIDsFound = []
     beaconPLFound = []
-    imgMRPFound = []                # will have 'None' entries when not able to detect enough objects
-    imgMRPFoundPassThrough = []     # identical attitude as input into the image processing module
+    imgMRPFound = []  # will have 'None' entries when not able to detect enough objects
+    imgMRPFoundPassThrough = []  # identical attitude as input into the image processing module
 
     print '\nBeacon ID Check:'
     print beaconIDs
@@ -625,7 +607,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         print 'Initial Estimate DCM: '
         print cam.images[i].imgDCM
 
-
     # Generate inputs for navigation modulec
     numNavInputs = len(imgTimesFound)
     imgTimesNav = np.reshape(imgTimesFound, (numNavInputs, 1))
@@ -639,7 +620,6 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     print imgMRPNav
 
     # Run the Navigation Module
-
 
 
 def attFilter_dynScenario(TheDynSim):
@@ -662,7 +642,7 @@ def attFilter_dynScenario(TheDynSim):
     TheDynSim.InitializeSimulationAndDiscover()
 
     # Set up the orbit using classical orbit elements
-    #oe = define_default_orbit()
+    # oe = define_default_orbit()
     mu = TheDynSim.DynClass.mu
     rN, vN = define_dino_postTMI()
     om.rv2elem(mu, rN, vN)
@@ -687,8 +667,9 @@ def attFilter_dynScenario(TheDynSim):
     pull_DynOutputs(TheDynSim)
     pull_senseOutputs(TheDynSim)
     pull_aekfOutputs(TheDynSim)
-    #pull_DynCelestialOutputs(TheDynSim)
+    # pull_DynCelestialOutputs(TheDynSim)
     plt.show()
+
 
 def opnavCamera_dynScenario(TheDynSim):
     """
@@ -738,21 +719,21 @@ def opnavCamera_dynScenario(TheDynSim):
 
 
 def defineParameters(
-    camResolution, 
-    camFocalLength, 
-    camSensorSize, 
-    beacons,
-    tc,
-    qe,
-    lambdaBinSize,
-    effectiveArea,
-    darkCurrent,
-    readSTD,
-    binSize,
-    maxBinDepth,
-    psfSTD,
-    simTimeStep
-    ):
+        camResolution,
+        camFocalLength,
+        camSensorSize,
+        beacons,
+        tc,
+        qe,
+        lambdaBinSize,
+        effectiveArea,
+        darkCurrent,
+        readSTD,
+        binSize,
+        maxBinDepth,
+        psfSTD,
+        simTimeStep
+):
     """
     Generates formatted inputs for camera, image processing, and navigation modules
     :params: camResolution      : (horizontal x vertical) camera resolution
@@ -781,43 +762,40 @@ def defineParameters(
         beaconIDs.append(each.id)
         beaconRadius.append(each.r_eq)
 
-
-    #init values for camera that will be set later.
+    # init values for camera that will be set later.
     scState = -1
     scDCM = -1
     takeImage = 0
 
-
     cam = camera.camera(
-        camSensorSize[0], #detector width in m
-        camSensorSize[1], #detector height in m
-        camFocalLength,     #focal lenght in m
-        camResolution[0], #detector resolution (width direction)
-        camResolution[1], #detector resolution (height direction)
-        np.identity(3),  #body2cameraDCM
-        1000,            #maximum magnitude (for debugging)
-        -1000,           #minimum magnitude (for debugging)
-        qe,              #quantum efficiency dictionary
-        tc,              #transmission curve dictionary
-        lambdaBinSize,   #lambda bin size
-        effectiveArea,   #effective area in m^2
-        darkCurrent,     #dark current in electrons per second
-        readSTD,         #std for read noise in electrons
-        binSize,         #bin size
-        maxBinDepth,     #max bin depth
-        psfSTD,          #std for psf
-        simTimeStep,     #simulation timestep
-        scState,         # position state of s/c
-        scDCM,           # intertal 2 body DCM for s/c
-        beacons,         # bodies to track in images
-        takeImage,       # takeImage message
-        debug =  {
-            'addStars': 0,'rmOcc': 1, 'addBod': 1, 'psf': 1, 
-            'raster': 1, 'photon': 1, 'dark': 1, 'read': 1, 
+        camSensorSize[0],  # detector width in m
+        camSensorSize[1],  # detector height in m
+        camFocalLength,  # focal lenght in m
+        camResolution[0],  # detector resolution (width direction)
+        camResolution[1],  # detector resolution (height direction)
+        np.identity(3),  # body2cameraDCM
+        1000,  # maximum magnitude (for debugging)
+        -1000,  # minimum magnitude (for debugging)
+        qe,  # quantum efficiency dictionary
+        tc,  # transmission curve dictionary
+        lambdaBinSize,  # lambda bin size
+        effectiveArea,  # effective area in m^2
+        darkCurrent,  # dark current in electrons per second
+        readSTD,  # std for read noise in electrons
+        binSize,  # bin size
+        maxBinDepth,  # max bin depth
+        psfSTD,  # std for psf
+        simTimeStep,  # simulation timestep
+        scState,  # position state of s/c
+        scDCM,  # intertal 2 body DCM for s/c
+        beacons,  # bodies to track in images
+        takeImage,  # takeImage message
+        debug={
+            'addStars': 0, 'rmOcc': 1, 'addBod': 1, 'psf': 1,
+            'raster': 1, 'photon': 1, 'dark': 1, 'read': 1,
             'verbose': 1},
         db='../dinoModels/SimCode/opnavCamera/db/tycho.db'  # stellar database
     )
-
 
     # Camera Module Parameter Creation
 
@@ -825,18 +803,16 @@ def defineParameters(
 
     # Image Processing Module Parameter Creation
     ipCamParam = {}
-    ipCamParam['resolution'] = (cam.resolutionWidth,cam.resolutionHeight)
+    ipCamParam['resolution'] = (cam.resolutionWidth, cam.resolutionHeight)
     ipCamParam['focal length'] = cam.focalLength
-    ipCamParam['sensor size'] = (cam.detectorWidth,cam.detectorHeight)
+    ipCamParam['sensor size'] = (cam.detectorWidth, cam.detectorHeight)
     ipCamParam['pixel size'] = (
-        cam.detectorWidth/cam.resolutionWidth, 
-        cam.detectorHeight/cam.resolutionHeight)
+        cam.detectorWidth / cam.resolutionWidth,
+        cam.detectorHeight / cam.resolutionHeight)
     ipCamParam['field of view'] = (
         cam.angularWidth,
         cam.angularHeight)
     ipInputs = [ipCamParam, beaconIDs, beaconRadius]
-
-
 
     # Nav Module Parameter Creation
 
@@ -845,50 +821,49 @@ def defineParameters(
     # SPICE Parameters
 
     # basic .bsp filename (generic, such as de430, etc)
-    navParams['basic_bsp']   = 'de430.bsp'
+    navParams['basic_bsp'] = 'de430.bsp'
     # .bsp filename for mission
     navParams['mission_bsp'] = 'DINO_kernel.bsp'
-    # .tls filename 
-    navParams['tls']         = 'naif0011.tls'
+    # .tls filename
+    navParams['tls'] = 'naif0011.tls'
     # abcorr for spkzer
     navParams['abcorr'] = 'NONE'
     # reference frame
     navParams['ref_frame'] = 'J2000'
 
     # Force Parameters
-    
+
     #   Gravity
     # body vector for primary and secondary gravitational bodies
-    navParams['bodies']    = ['SUN', '3', '399']
+    navParams['bodies'] = ['SUN', '3', '399']
     # specify primary and secondary indices
-    navParams['primary']   = 0
+    navParams['primary'] = 0
     navParams['secondary'] = [1, 2]
     # respective GP vector
-    navParams['mu']        = [1.32712428 * 10 ** 11, 3.986004415 * 10 ** 5, 4.305 * 10 ** 4]
+    navParams['mu'] = [1.32712428 * 10 ** 11, 3.986004415 * 10 ** 5, 4.305 * 10 ** 4]
     #   SRP
     # A/M ratio multiplied by solar pressure constant at 1 AU with adjustments
     # Turboprop document Eq (64)
-    navParams['SRP']       = 0.3**2/14. * 149597870.**2 * 1358. / 299792458. / 1000. 
+    navParams['SRP'] = 0.3 ** 2 / 14. * 149597870. ** 2 * 1358. / 299792458. / 1000.
     # coefficient of reflectivity
-    navParams['cR']        = 1.
+    navParams['cR'] = 1.
 
     # Camera/P&L Parameters
 
     # Focal Length (mm)
-    navParams['FoL']             = 100.
+    navParams['FoL'] = 100.
     # default inertial to camera transformation matrices
-    navParams['DCM_BI']          = np.eye(3)
-    navParams['DCM_TVB']         = np.eye(3)
+    navParams['DCM_BI'] = np.eye(3)
+    navParams['DCM_TVB'] = np.eye(3)
     # Camera resolution (pixels)
-    navParams['resolution']      = [1024., 1024.]
+    navParams['resolution'] = [1024., 1024.]
     # width and height of pixels in camera
-    navParams['pixel_width']     = 5.
-    navParams['pixel_height']    = 5.
+    navParams['pixel_width'] = 5.
+    navParams['pixel_height'] = 5.
     # direction coefficient of pixel and line axes
     navParams['pixel_direction'] = 1.
-    navParams['line_direction']  = 1.
+    navParams['line_direction'] = 1.
 
     navInputs = []
-
 
     return camInputs, ipInputs, navInputs
