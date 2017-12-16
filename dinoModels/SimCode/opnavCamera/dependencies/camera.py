@@ -749,7 +749,7 @@ class image:
 			DCM_0 = self.DCM[0]
 			DCM_0_inv = inv(DCM_0)
 			alpha_0 = arctan2(DCM_0[0,1],DCM_0[0,0])
-			beta_0 = arcsin(DCM_0[0,2])
+			beta_0 = -arcsin(DCM_0[0,2])
 			gamma_0 = arctan2(DCM_0[1,2],DCM_0[2,2])
 
 			#All of the other DCMs at this point are transformations from
@@ -1037,9 +1037,11 @@ class image:
 			for body in bodies: body.distFromSc = norm(body.state[0:3] - self.camera.scState[0:3])
 			#sort bodies by how far they are from the sc
 			#this needs to be done 
-			bodies.sort(key=lambda x:x.distFromSc, reverse=True)
 
-			for body in bodies:
+			sortedBodies = list(bodies)
+			sortedBodies.sort(key=lambda x:x.distFromSc, reverse=True)
+
+			for body in sortedBodies:
 				n+=1
 				if msg['rmOcc']:
 					occCheck = self.removeOccultations(body,n1,n2,n3)
