@@ -165,10 +165,7 @@ class camera:
 			msg = kwargs['debug']
 		except:
 			import bodies as bod
-			msg = { 'bodies': [
-			bod.earth,
-			bod.luna
-			], 
+			msg = {
 			'addStars': 1,'rmOcc': 1, 'addBod': 1, 'psf': 1, 
 			'raster': 1, 'photon': 1, 'dark': 1, 'read': 1, 
 			'verbose': 0}
