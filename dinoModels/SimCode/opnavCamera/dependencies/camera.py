@@ -461,23 +461,94 @@ class camera:
 
 	###############################################################################
 	#
-	# hotDark() is not yet implemented.
+	# calculateHotDark()
 	#
-	#	Inputs:
-	#		
-	#	Outputs:
+	#	Inputs: detector_array, resolution_height, resolution_width (self)
 	#
-	#	Notes: 
+	#	Outputs: Impure_Array (Normalized) - 1-D resolution array with corrupted pixel factors
+	#
+	#	Notes:
 	#
 	###############################################################################
 
-	# def calculateHotDark(self):
-	# 	resolutionHeight = self.resolutionHeight
-	# 	resolutionWidth = self.resolutionWidth
-	# 	currentHotDark = self.hotDark
-	# 	#do your thing here
-		
-	# 	self.hotDarkArr = hotDarkArray
+	def calculateHotDark(self, detectorArray, resolutionHeight, resolutionWidth):
+		# Module Imports
+		import random
+		import numpy as np
+		##################
+
+		# Gaussian Knob
+		mu = 0  		# Mean
+		sigma = 1e-6  	# Std Dev
+		knob = abs(np.random.normal(mu, sigma, 1))  # Initial Number of Corrupt Pixels
+
+		# Image Dimensions
+		numRows = resolution_width
+		numCols = resolution_height
+
+		imageRes = np.full((numRows, numCols), 125)		# 2D Array of Pixel Value
+		numPix = resolution_height * resolution_width	# Total Number of Pixels
+
+		# Completely Impure Image
+		impureRes = np.floor(np.random.rand(*imageRes.shape) * 255)
+
+		# Integration Time (days)
+		simulationTime = 10 	# Seconds (Basilisk User Input)
+		timeStep = 1  			# Time Step should be per day of Basilisk Time
+
+		# Integration Loop
+		while timeStep < simulationTime:
+
+			knob += knob + abs(np.random.normal(mu, sigma, 1))  # Knob
+			if knob >= 1:
+				knob = 1.0
+
+			numImp = int(np.ceil(abs(knob) * numPix))  # Impure Pixels
+			good = (numPix - numImp)  # Good Pixels
+
+			# Boolean Mask of Impure Elements
+			boolMask = np.array([0] * good + [1] * numImp).astype(np.bool)
+			np.random.shuffle(boolMask)  # Shuffle
+			np.random.shuffle(boolMask)  # Shuffle
+			np.random.shuffle(boolMask)  # Shuffle
+			mask = boolMask.reshape(resolution_width, resolution_height)  # Shuffled Mask
+
+			# Altered Resolution
+			imageRes[mask] = impureRes[mask]
+
+			# Pixel Threshold Values
+			avg 		= 125.
+			hotThresh 	= 225.
+			warmThresh 	= 200.
+			coldThresh 	= 50.
+			darkThresh 	= 25.
+
+			# Hot Pixels
+			hot = (imageRes >= hotThresh)
+			imageRes[hot] = random.randint(hotThresh, 255)
+			# Warm Pixels
+			warm = np.logical_and(imageRes < hotThresh, imageRes > avg)
+			imageRes[warm] = random.randint(warmThresh, hotThresh + 25)
+			# Average Pixels
+			nice = (imageRes == avg)
+			imageRes[nice] = avg
+			# Cold Pixels
+			cold = np.logical_and(imageRes < avg, imageRes > darkThresh)
+			imageRes[cold] = random.randint(darkThresh, coldThresh)
+			# Dark Pixels
+			dark = (imageRes <= darkThresh)
+			imageRes[dark] = random.randint(0, darkThresh)
+
+			# Integration Time Step
+			timeStep += 0 + timeStep
+
+
+		# Reshape 'imageRes' into 1-D Array
+		impureNorm = [x / avg for x in imageRes]
+
+		self.hotDarkArray = impureNorm
+
+		return self.hotDarkArray
 
 	###############################################################################
 	#
@@ -938,11 +1009,20 @@ class image:
 
 			#cut off pixels that are saturated
 			self.detectorArray[self.detectorArray > self.camera.dnDepthMax] = self.camera.dnDepthMax
-			# if self.camera.msg['hotDark']:
-			# 	self.detectorArray = self.detectorArray*self.camera.hotDark
-				# if 	self.camera.msg['raster'] + self.camera.msg['photon'] + \
-				# 	self.camera.msg['read']:
-				# 	self.detectorArray = detectorArray*hotDark
+
+	########################################################################################################################
+	########################################################################################################################
+			if self.camera.msg['hotDark']:
+				hd = self.camera.calculateHotDark(
+													self.camera.hotDarkArray,
+													self.camera.resolutionHeight,
+													self.camera.resolutionWidth
+													)
+				import numpy as np
+				hot_dark = np.asarray(hd).flatten()
+				self.camera.hotDarkArray = hotDark
+				self.detectorArray = self.detectorArray * hotDark
+
 
 			self.detectorArray = self.detectorArray.reshape(
 				self.camera.resolutionWidth,
