@@ -559,7 +559,7 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
         plt.figure()
         plt.imshow(cam.images[i].detectorArray)
 
-    plt.show()
+    #plt.show()
 
     # Run the Image Processing Module
 
@@ -657,8 +657,8 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     
     # Inverse of the observation weighting matrix (W)
     observationUncertainty = np.identity(2)
-    observationUncertainty[0, 0] = 1.5 ** 2
-    observationUncertainty[1, 1] = 1.5 ** 2
+    observationUncertainty[0, 0] = 2 ** 2
+    observationUncertainty[1, 1] = 2 ** 2
 
     # the initial STM is an identity matrix
     phi0 = np.identity(IC.shape[0])
@@ -684,7 +684,14 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     stateValues['stateDevBar']  = stateDevBar
     stateValues['initial time'] = r_BN[0,0]
 
+    # convert time from nanoseconds to seconds
     obsTimes      = np.squeeze(imgTimesNav/10**9)
+
+    # convert imgMRPNav from MRP to 3-2-1 euler
+    img321Nav = np.zeros( imgMRPNav.shape )
+    for ii in xrange( imgMRPNav.shape[0] ):
+      img321Nav[ii,:] = rbk.MRP2Euler321( imgMRPNav[ii,:] )
+
     pdb.set_trace()
     filterOutputs = initBatchFnc( stateValues, obsTimes, observationData,\
                                   imgMRPNav, navParam )

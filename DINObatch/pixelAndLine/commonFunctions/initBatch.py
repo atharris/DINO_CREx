@@ -168,9 +168,9 @@ def initBatchFnc( stateValues, timeSpan, filterObservations, angles, extras ):
     # THIS MATTER SHOULD BE INVESTIGATED FURTHER. 
 
     # prep pyswice for the extraction of initial data
-    pyswice.furnsh_c(bskSpicePath  + 'de430.bsp')
-    pyswice.furnsh_c(dinoSpicePath + 'naif0011.tls')
-    pyswice.furnsh_c(dinoSpicePath + 'DINO_kernel.bsp')
+    pyswice.furnsh_c(bskSpicePath  + extras['basic_bsp'])
+    pyswice.furnsh_c(dinoSpicePath + extras['tls'])
+    pyswice.furnsh_c(dinoSpicePath + extras['mission_bsp'])
 
     # time to first observation
     timeToObs       = np.append( np.array(initialTime), timeSpan[0] )
