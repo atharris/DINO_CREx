@@ -180,9 +180,15 @@ def writingText(itr, referenceState, estimatedState, trueEphemeris, extraData, i
 #                       M A I N     F U N C T I O N:
 ################################################################################
 
-def initBatchFnc():
+def initBatchFnc( stateValues, obsTimes, observationData,\
+                                  imgMRPNav, navParam ):
 
     ##################################################################################
+    stateValues['IC']           = IC
+    stateValues['phi0']         = phi0
+    stateValues['covBar']       = covBar
+    stateValues['stateDevBar']  = stateDevBar
+    stateValues['initial time'] = r_BN[0,0]
 
     print '------------------'
     print 'Filter Image Span : ' ,(timeSpan[-1] - timeSpan[0])/(60*60*24), 'days'

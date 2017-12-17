@@ -13,6 +13,9 @@ sys.path.append(bskPath + 'PythonModules')
 sys.path.append('../dinoModels/SimCode/opnavCamera/')
 sys.path.append('../dinoModels/SimCode/opnavCamera/dependencies')
 sys.path.append('../dinoModels/fswAlgorithms/imageProcessing/dependencies/')
+sys.path.append('../DINObatch/pixelAndLine/commonFunctions/')
+sys.path.append('../DINObatch/pixelAndLine/unmodeledAcc/')
+sys.path.append('../DINObatch/SPICE/')
 
 import BSK_plotting as BSKPlt
 
@@ -30,6 +33,7 @@ except ImportError:
 
 import camera
 import imageProcessingExecutive as ip
+from initBatch import initBatchFnc
 import pdb
 
 # ------------------------------------- DATA LOGGING ------------------------------------------------------ #
