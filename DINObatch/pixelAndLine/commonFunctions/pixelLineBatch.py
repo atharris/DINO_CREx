@@ -296,7 +296,7 @@ def fncH(input):
         if len( angles ) == 0:
           DCM_TVI = np.dot(extras['DCM_TVB'], extras['DCM_BI'])
         else:
-          DCM_TVI = I_to_TV( angles ) 
+          DCM_TVI = I_to_TV( angles[ii,:] ) 
 
         dA_TVdX = np.dot( DCM_TVI, dA_IdX )
         dA_TVdY = np.dot( DCM_TVI, dA_IdY )
@@ -368,7 +368,7 @@ def fncG(input):
         if len( angles ) == 0:
           DCM_TVI = np.dot(extras['DCM_TVB'], extras['DCM_BI'])
         else:
-          DCM_TVI = I_to_TV( angles ) 
+          DCM_TVI = I_to_TV( angles[ii,:] ) 
 
         # rotate inertial pointing vector to camera (TV) frame
         Ahat_TV = np.dot( DCM_TVI, Ahat_I )

@@ -657,8 +657,8 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     
     # Inverse of the observation weighting matrix (W)
     observationUncertainty = np.identity(2)
-    observationUncertainty[0, 0] = 0.2 ** 2
-    observationUncertainty[1, 1] = 0.2 ** 2
+    observationUncertainty[0, 0] = 1.5 ** 2
+    observationUncertainty[1, 1] = 1.5 ** 2
 
     # the initial STM is an identity matrix
     phi0 = np.identity(IC.shape[0])

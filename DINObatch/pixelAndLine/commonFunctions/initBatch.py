@@ -16,7 +16,6 @@ __date__ = '$Date$'[7:26]
 #                     I M P O R T     L I B R A R I E S
 ################################################################################
 
-
 import sys, os, inspect
 
 filename = inspect.getframeinfo(inspect.currentframe()).filename
@@ -39,14 +38,19 @@ try:
 except ImportError:
     from Basilisk import pyswice
     bskSpicePath = splitPath[0] + bskName + '/supportData/EphemerisData/'
+
 import numpy as np
-from batchFilter import run_batch as 
-import data_generation as dg
-from plotFilter import plotFunction as PF
-from beaconBinSPICE import getObs
+from batchFilter    import run_batch as runBatchVanilla
+from batchFilterAcc import run_batch as runBatchAcc
+
+from batchFilter    import runRef
+
+from plotIntegratedFilter import plotFunction as PF
+
 import pickle
 
 import pdb
+
 
 ## \defgroup init_batch_function initBatch - in-line callable batch filter
 ##   @{
@@ -121,44 +125,6 @@ import pdb
 ################################################################################
 
 # -------------------------------------------------------------------------------
-
-def writingText(itr, referenceState, estimatedState, trueEphemeris, extraData, initialPositionError , initialVelocityError):
-    # calculate the difference between the perturbed reference and true trajectories: reference state errors
-    err = referenceState[:, 0:6] - trueEphemeris['spacecraft'].T
-
-    # compare the estimated and true trajectories: estimated state errors
-    stateErrHat = estimatedState[:, 0:6] - trueEphemeris['spacecraft'].T
-
-    resultString = ''
-
-    resultString += '---------------------------------------------------' + '\n'
-    resultString += 'Iteration number '+ str(itr) + '\n'
-    resultString += '---------------------------------------------------'+ '\n'
-    resultString += '\n'
-    resultString += 'Estimated x_hat_0 = ' + str(extraData['stateDevHat'])+ '\n'
-    resultString += 'Actual Error = ' + str(initialPositionError) + str(initialVelocityError) + '\n'
-    resultString += '\n'
-
-    resultString += 'Ref X Pos err = ' + str(err[-1, 0]) + '\n'
-    resultString += 'Ref Y Pos err = ' + str(err[-1, 1]) + '\n'
-    resultString += 'Ref Z Pos err = ' + str(err[-1, 2]) + '\n'
-    resultString += 'Ref X Vel err = ' + str(err[-1, 3]) + '\n'
-    resultString += 'Ref Y Vel err = ' + str(err[-1, 4]) + '\n'
-    resultString += 'Ref Z Vel err = ' + str(err[-1, 5]) + '\n'
-    resultString += '\n'
-    resultString += 'Est X Pos err = ' + str(stateErrHat[-1, 0]) + '\n'
-    resultString += 'Est Y Pos err = ' + str(stateErrHat[-1, 1]) + '\n'
-    resultString += 'Est Z Pos err = ' + str(stateErrHat[-1, 2]) + '\n'
-    resultString += 'Est X Vel err = ' + str(stateErrHat[-1, 3]) + '\n'
-    resultString += 'Est Y Vel err = ' + str(stateErrHat[-1, 4]) + '\n'
-    resultString += 'Est Z Vel err = ' + str(stateErrHat[-1, 5]) + '\n'
-    resultString += '\n'
-
-    print resultString
-
-    text_file = open('Batch_Iteration' + str(itr) + "/Batch" + str(itr) + ".txt", "w")
-    text_file.write(resultString)
-    text_file.close()
 
 ################################################################################
 #                    E X P O R T E D     C L A S S E S:
@@ -303,7 +269,6 @@ def initBatchFnc( stateValues, timeSpan, filterObservations, angles, extras ):
         pklFile.close()
 
     return filterOutputs
-
 
 if __name__ == "__main__":
     main()
