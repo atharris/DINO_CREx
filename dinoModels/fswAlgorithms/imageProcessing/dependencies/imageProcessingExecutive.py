@@ -274,8 +274,6 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
         numObjectsFoundMatched = 0
 
 
-        numObjectsFoundMatched = len(objectIDsMatched)
-
     ##################################################
     ##################################################
     # Attitude Determination
