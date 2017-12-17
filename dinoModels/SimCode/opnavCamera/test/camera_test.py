@@ -218,7 +218,6 @@ def test_4_7_cameraUpdateState():
 	assert(len(noStarCam.images[0].scenes) == 3)
 	assert(len(noStarCam.images[1].scenes) == 2)
 
-pdb.set_trace()
 def test_4_8_findStarsInFOV():
 	msg = { 'bodies': [
 		bod.earth,
@@ -293,7 +292,7 @@ def test_4_8_findStarsInFOV():
 		)
 	UMiCam.scDCM = Euler321_2DCM(
 		np.deg2rad(187),
-		np.deg2rad(59),
+		np.deg2rad(-59),
 		np.deg2rad(0)
 		)
 
@@ -477,7 +476,7 @@ def test_4_9_imageRemoveOccultations():
 # set up image for tests 10-12
 tinyCam.scDCM = Euler321_2DCM(
 	np.deg2rad(1.12551889),
-	np.deg2rad(2.26739556),
+	np.deg2rad(-2.26739556),
 	np.deg2rad(0)
 	)
 tinyCam.takeImage = 1
