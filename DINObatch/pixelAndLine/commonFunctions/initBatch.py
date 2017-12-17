@@ -224,7 +224,7 @@ def initBatchFnc( stateValues, timeSpan, filterObservations, angles, extras ):
             print 'Anomaly Detected - Estimates are not to be trusted'
             print '**********************************************************'
             print anomaly_num, 'Residuals out of bounds'
-            return
+        #    return
 
         # save all outputs into the dictionary with a name associated with the iteration
         filterOutputs[str(itr)] = {}
@@ -244,13 +244,13 @@ def initBatchFnc( stateValues, timeSpan, filterObservations, angles, extras ):
         # Make directory for the iterations
         if not os.path.exists(dirIt):
             os.makedirs(dirIt)
-        pdb.set_trace()
+
         if extras['nav plots'] == 'ON':
           plotData = extraData
 
           plotData['postfit delta']   = extraData['postfit changes']
           plotData['states']          = estimatedState
-          plotData['beacon_list']     = dataObservations['beacons']
+          plotData['beacon_list']     = filterObservations['beaconIDs']
           plotData['timeSpan']        = timeSpan
           plotData['dirIt']           = dirIt
           plotData['obs_uncertainty'] = observationUncertainty

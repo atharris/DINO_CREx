@@ -692,9 +692,11 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     for ii in xrange( imgMRPNav.shape[0] ):
       img321Nav[ii,:] = rbk.MRP2Euler321( imgMRPNav[ii,:] )
 
-    pdb.set_trace()
+
     filterOutputs = initBatchFnc( stateValues, obsTimes, observationData,\
                                   imgMRPNav, navParam )
+
+    pdb.set_trace()
 
 def attFilter_dynScenario(TheDynSim):
     """
@@ -942,5 +944,8 @@ def defineParameters(
     navInputs['anomaly']= False
     navInputs['anomaly_num'] = 0
     navInputs['anomaly_threshold'] = 4
+
+    # plotting? 'ON' or 'OFF'
+    navInputs['nav plots'] = 'ON'
 
     return camInputs, ipInputs, navInputs
