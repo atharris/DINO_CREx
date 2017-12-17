@@ -40,7 +40,7 @@ except ImportError:
     from Basilisk import pyswice
     bskSpicePath = splitPath[0] + bskName + '/supportData/EphemerisData/'
 import numpy as np
-from batchFilter import run_batch
+from batchFilter import run_batch as 
 import data_generation as dg
 from plotFilter import plotFunction as PF
 from beaconBinSPICE import getObs
@@ -180,39 +180,43 @@ def writingText(itr, referenceState, estimatedState, trueEphemeris, extraData, i
 #                       M A I N     F U N C T I O N:
 ################################################################################
 
-def initBatchFnc( stateValues, obsTimes, observationData,\
-                                  imgMRPNav, navParam ):
+def initBatchFnc( stateValues, timeSpan, filterObservations, angles, extras ):
 
     ##################################################################################
-    stateValues['IC']           = IC
-    stateValues['phi0']         = phi0
-    stateValues['covBar']       = covBar
-    stateValues['stateDevBar']  = stateDevBar
-    stateValues['initial time'] = r_BN[0,0]
 
     print '------------------'
     print 'Filter Image Span : ' ,(timeSpan[-1] - timeSpan[0])/(60*60*24), 'days'
     print '------------------'
 
-    # copy the initial conditions as the first sun to SC referenceStates from the SPICE file
-    IC = np.copy(trueEphemeris['spacecraft'][:, 0])
+    # pull out relevant state values from the associated input dictionary
+    IC0         = stateValues['IC']
+    phi0        = stateValues['phi0']
+    covBar      = stateValues['covBar']
+    stateDevBar = stateValues['stateDevBar']
+    initialTime = stateValues['initial time']
+    observationUncertainty = filterObservations['observation uncertainty']
 
-    print 'IC', IC
+    print 'IC', IC0
+
+    # propagate the a priori state to the first observation time
+    # THIS MATTER SHOULD BE INVESTIGATED FURTHER. 
+
+    # prep pyswice for the extraction of initial data
+    pyswice.furnsh_c(bskSpicePath  + 'de430.bsp')
+    pyswice.furnsh_c(dinoSpicePath + 'naif0011.tls')
+    pyswice.furnsh_c(dinoSpicePath + 'DINO_kernel.bsp')
+
+    # time to first observation
+    timeToObs       = np.append( np.array(initialTime), timeSpan[0] )
+    propagatorInput = ( IC0[0:6], phi0[0:6,0:6], timeToObs, extras ) 
+
+    # execute propagation
+    IC_posVel  = runRef( propagatorInput )
+
+    IC = np.append( IC_posVel[-1,:6], IC0[6:] )
 
     # initiate a filter output dictionary
     filterOutputs = {}
-
-    ##################################################################################
-    #
-    # Get the noisy observations
-    #
-    ##################################################################################
-
-    # create dictionary for observation data to be inputs in filter. This is a more limited
-    # dictionary than dataObservations and serves as the most "real" input
-    filterObservations = {}
-    filterObservations['measurements'] = dataObservations['measurements']
-    filterObservations['beaconIDs']    = dataObservations['beacons']
 
     ##################################################################################
     #
@@ -236,7 +240,14 @@ def initBatchFnc( stateValues, obsTimes, observationData,\
         filterInputs = (IC, phi0, timeSpan, filterObservations,\
                          covBar, observationUncertainty, stateDevBar, angles, extras)
         # run filter function
-        referenceState, estimatedState, extraData = run_batch(filterInputs)
+        if extras['acc_est'] == 'OFF':
+          referenceState, estimatedState, extraData = runBatchVanilla(filterInputs)
+        elif extras['acc_est'] == 'ON':
+          referenceState, estimatedState, extraData = runBatchAcc(filterInputs)
+        else :
+          print 'Acceleration estimation was not specified. Running Vanilla...'
+          referenceState, estimatedState, extraData = runBatchVanilla(filterInputs)
+
         extras['oldPost'] = extraData['postfit residuals']
 
         # Check for anomaly:
@@ -262,39 +273,25 @@ def initBatchFnc( stateValues, obsTimes, observationData,\
         ##################################################################################
 
         # Iteration Directory
-        dirIt = 'Batch_Iteration' + str(itr+1)
+        dirIt = '../Batch_Iteration' + str(itr+1)
 
         # Make directory for the iterations
         if not os.path.exists(dirIt):
             os.makedirs(dirIt)
+        pdb.set_trace()
+        if extras['nav plots'] == 'ON':
+          plotData = extraData
 
-        # File to write data
-        writingText( itr+1, referenceState, estimatedState, trueEphemeris, extraData,\
-                     initialPositionError , initialVelocityError)
-
-        # calculate the difference between the perturbed reference and 
-        # true trajectories: reference state errors
-        stateError = referenceState[:, 0:6] - trueEphemeris['spacecraft'].T
-
-        # compare the estimated and true trajectories: estimated state errors
-        stateErrorHat = estimatedState[:, 0:6] - trueEphemeris['spacecraft'].T
-
-        plotData = extraData
-
-        plotData['postfit delta']   = extraData['postfit changes']
-        plotData['states']          = estimatedState
-        plotData['truth']           = dataObservations['truth']
-        plotData['beacon_list']     = dataObservations['beacons']
-        plotData['timeSpan']        = timeSpan
-        plotData['dirIt']           = dirIt
-        plotData['err']             = stateError
-        plotData['stateErrorHat']   = stateErrorHat
-        plotData['obs_uncertainty'] = observationUncertainty
-        plotData['referenceState']  = referenceState
-        plotData['trueEphemeris']   = trueEphemeris
-        plotData['extras']          = extras
-        plotData['acc_est']         = extras['acc_est']
-        PF( plotData )
+          plotData['postfit delta']   = extraData['postfit changes']
+          plotData['states']          = estimatedState
+          plotData['beacon_list']     = dataObservations['beacons']
+          plotData['timeSpan']        = timeSpan
+          plotData['dirIt']           = dirIt
+          plotData['obs_uncertainty'] = observationUncertainty
+          plotData['referenceState']  = referenceState
+          plotData['extras']          = extras
+          plotData['acc_est']         = extras['acc_est']
+          PF( plotData )
 
         #  Write the output to the pickle file
         fileTag = 'nominal'
