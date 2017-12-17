@@ -68,7 +68,7 @@ bodies = [bod.earth,bod.luna]
 msg = {
 	'addStars': 0,'rmOcc': 0, 'addBod': 0, 'psf': 1, 
 	'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 
-	'dt': 0.01, 'verbose': 1}
+	'dt': 0.01, 'hotDark': 0, 'verbose': 1}
 takeImage = 0
 
 #create camera with no stars in it for tests that don't need them
@@ -349,12 +349,10 @@ def test_4_7_cameraUpdateState():
 	assert(len(noStarCam.images[1].scenes) == 2)
 
 def test_4_8_findStarsInFOV():
-	msg = { 'bodies': [
-		bod.earth,
-		bod.luna
-		], 
+	msg = { 
 		'addStars': 1,'rmOcc': 0, 'addBod': 0, 'psf': 1, 
-		'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 'verbose': 1}
+		'raster': 1, 'photon': 0, 'dark': 0, 
+		'hotDark': 0,'read': 0, 'verbose': 1}
 
 	OriCam = camera.camera(
 		1.5,				#detectorHeight
@@ -667,26 +665,118 @@ def test_4_13_rasterize():
 	# 3,2 3=3
 	assert( np.array_equal(offlineRasterize,rasterize) )
 
+# Create Sample Image
+detector_array = np.ones( (50, 262144) ) #initial detector array
+img = 150*detector_array
+mu_0 = 150 	# The Expected Mean == 150
+sig_0 = 0	# The Exptd Std Dev == 0
+
+# Define Means and Std Devs
+sigma1 = 0.1
+sigma2 = 0.2
+
+###############################################################################
+##  ##  PROPERTIES OF GAUSSIAN
+###############################################################################
+#
+# - Mean == Median (== Mode) {Symmetry}
+# - Std_deviation(Image) == sqrt(Variance(Image))
+# - Variance(Image_with_noise) =~= Mean(Image_with_noise)
+#
+###############################################################################
+##  ##  ##  ##
+###############################################################################
 
 
-def test_4_14_photon_energy():
-	#need to take an image so we can access image.photonEnergy()
-	tinyCam.takeImage = 1
-	tinyCam.updateState()
-	tinyCam.takeImage = 0
-	tinyCam.updateState()
+def test_4_13_add_read_noise():
+	rows = 50		# Taking 50 Samples
+	average1 = []
+	median1 = []
+	variance1 = []
+	stdev1 = []
+	average3 = []
+	median3 = []
+	variance3 = []
+	stdev3 = []
+	for i in range(rows):
+		read_1 = starCam.images[0].addReadNoise(img[i, :], sigma1)	# Sigma = 0.1
+		# read_1 = add_read_noise(img, sigma1) - img 	# Sigma = 0.1
+		read_3 = starCam.images[0].addReadNoise(img[i, :], sigma2)	# Sigma = 0.2
+		mu1 = np.mean(read_1)					# Mean    1
+		med1 = np.median(read_1)				# Median  1
+		std1 = np.std(read_1)					# Std Dev 1
+		var1 = np.var(read_1)					# Var 	  1
+		mu3 = np.mean(read_3)					# Mean 	  3
+		med3 = np.median(read_3)				# Median  3
+		std3 = np.std(read_3)					# Std Dev 3
+		var3 = np.var(read_3)					# Var     3
 
-	from constants import h, c
-	testValues = np.array(
-		[ 5960.,  6032.,  8337.,  8759.,  1998.,  
-		9567.,   633.,  3347., 5504.,  5353.])
+		average1.append(mu1)
+		median1.append(med1)
+		variance1.append(var1)
+		stdev1.append(std1)
 
-	runTimeValues = tinyCam.images[0].photonEnergy(testValues)
+		average3.append(mu3)
+		median3.append(med3)
+		variance3.append(var3)
+		stdev3.append(std3)
 
-	energiesComputedOffline = np.array(
-		[  3.33296279e-29,   3.29317942e-29,   2.38268661e-29, 2.26789111e-29, 9.94217129e-29,   
-		2.07635186e-29, 3.13814506e-28,   5.93500396e-29,   3.60909488e-29, 3.71090197e-29])
-	assert (sum(abs(energiesComputedOffline - runTimeValues)) < 1e12)
+
+	# Mean of two different image arrays should be roughly the same (150)
+	assert ( abs( np.mean(average3) - np.mean(average1) )  <= 1e-3 )
+
+	# By property of Gaussian, the mean should equal the median
+	assert ( abs( np.mean(average1) - np.mean(median1) ) <= 1e-3 )
+	assert ( abs( np.mean(average3) - np.mean(median3) ) <= 1e-3 )
+
+	# By property of Gaussian, the variance should equal the standard dev squared
+	assert ( abs( np.mean(variance1) - np.mean(stdev1)**2 ) <= 1e-3 )
+	assert ( abs( np.mean(variance3) - np.mean(stdev3)**2 ) <= 1e-3 )
+
+# Create Sample Image
+init_hot_dark = np.ones( (75, 262144) )  # Initial detector array
+img = 150*init_hot_dark                 # Sample Image Array
+mu_0 = 150 	                            # The Expected Mean == 150
+sig_0 = 0	                            # The Exptd Std Dev == 0
+
+###############################################################################
+##  ##  PROPERTIES OF POISSON
+###############################################################################
+#
+# - Mean(Image) =~= Mean(Image_with_noise)
+# - Std_deviation(Image) == sqrt(Variance(Image))
+# - Variance(Image_with_noise) =~= Mean(Image_with_noise)
+#
+###############################################################################
+##  ##  ##  ##
+###############################################################################
+
+def test_4_14_add_poisson_noise():
+	from scipy.stats import chisquare
+	rows = 75
+	mew = []
+	dev = []
+	sig = []
+	for i in range(rows):
+		fish = starCam.images[0].addPoissonNoise(img[i,:]) - img[0,:]
+		muFish 	= np.mean(fish)
+		varFish = np.var(fish)
+		stdFish = np.std(fish)
+		muImg   = np.mean(img)
+		varImg  = np.var(img)
+		mew.append(muFish)
+		dev.append(stdFish)
+		sig.append(varFish)
+		chi = chisquare(np.array(fish))[1]
+
+	# Chi-Squared Test (p-value must be >= than 0.05 for good Poisson Fit)
+	assert ( chi >= 0.05 )
+	# Mean of Samples == Mean of Normal Image
+	assert ( abs(np.mean(mew) - muImg) <= 0.01 )
+	# Avg of Sample Std Dev == sqrt [ Avg of Sample Variances ]
+	assert ( abs(np.mean(dev) - np.sqrt(np.mean(sig))) <= 1e-3 )
+	# Avg of Sample Variance == Avg of Sample Mean
+	assert ( abs(np.mean(sig) - np.mean(mew)) <= 0.1 )
 
 def test_4_16_pixelLineConversion():
 	#find distance between center of FOV and each star in p/l coords.
@@ -745,6 +835,26 @@ def test_4_18_PlanckEqTSI():
 	bbCurve = planck(T_sun,lambdaSet)
 	TSI = sum(pi*r_sun**2/au**2*bbCurve)
 	assert( abs((TSI - 1367)/1367) <0.001 )
+
+def test_4_19_photon_energy():
+	#need to take an image so we can access image.photonEnergy()
+	tinyCam.takeImage = 1
+	tinyCam.updateState()
+	tinyCam.takeImage = 0
+	tinyCam.updateState()
+
+	from constants import h, c
+	testValues = np.array(
+		[ 5960.,  6032.,  8337.,  8759.,  1998.,  
+		9567.,   633.,  3347., 5504.,  5353.])
+
+	runTimeValues = tinyCam.images[0].photonEnergy(testValues)
+
+	energiesComputedOffline = np.array(
+		[  3.33296279e-29,   3.29317942e-29,   2.38268661e-29, 2.26789111e-29, 9.94217129e-29,   
+		2.07635186e-29, 3.13814506e-28,   5.93500396e-29,   3.60909488e-29, 3.71090197e-29])
+	assert (sum(abs(energiesComputedOffline - runTimeValues)) < 1e12)
+
 
 def test_4_20_checkFOV():
 	#remove moon from bodies message
