@@ -30,7 +30,7 @@ except ImportError:
 
 import camera
 import imageProcessingExecutive as ip
-
+import pdb
 
 # ------------------------------------- DATA LOGGING ------------------------------------------------------ #
 
@@ -621,6 +621,69 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     # Run the Navigation Module
 
+    # Run the Navigation Module
+    observationData = {}
+    stateValues     = {}
+
+    # pull the initial state
+    IC = np.append( r_BN[0,1:4], v_BN[0,1:4] ) / 1000.
+
+    # estimating accelerations - ON or OFF
+    navParam['acc_est']    = 'OFF'
+
+    # number of batch iterations per data package
+    navParam['iterations'] = 3
+
+    # a priori uncertainty for the referenceStates
+    covBar = np.zeros((9,9))
+    covBar[0, 0] = 10000.**2
+    covBar[1, 1] = 10000.**2
+    covBar[2, 2] = 10000.**2
+    covBar[3, 3] = .1**2
+    covBar[4, 4] = .1**2
+    covBar[5, 5] = .1**2
+    covBar[6, 6] = (10.**(-8))**2
+    covBar[7, 7] = (10.**(-8))**2
+    covBar[8, 8] = (10.**(-8))**2
+
+    if navParam['acc_est'] == 'OFF':
+      covBar = covBar[0:6,0:6]
+    else:
+      IC = np.append(np.zeros( (3,) ))  
+    
+    # Inverse of the observation weighting matrix (W)
+    observationUncertainty = np.identity(2)
+    observationUncertainty[0, 0] = 0.2 ** 2
+    observationUncertainty[1, 1] = 0.2 ** 2
+
+    # the initial STM is an identity matrix
+    phi0 = np.identity(IC.shape[0])
+
+    # initiate a priori deviation
+    stateDevBar = np.zeros(IC.shape)
+
+    observationData['measurements']            = beaconPLNav
+    observationData['beaconIDs']               = np.squeeze(beaconIDsNav).tolist()
+    for nn, ii in enumerate(observationData['beaconIDs']):
+     # if ii == 'Earth':
+     #   observationData['beaconIDs'][nn] = '399'
+     # if ii == 'Moon':
+     #   observationData['beaconIDs'][nn] = '301'
+      if ii == 'Mars':
+        observationData['beaconIDs'][nn] = '4'
+
+    observationData['observation uncertainty'] = observationUncertainty
+
+    stateValues['IC']           = IC
+    stateValues['phi0']         = phi0
+    stateValues['covBar']       = covBar
+    stateValues['stateDevBar']  = stateDevBar
+    stateValues['initial time'] = r_BN[0,0]
+
+    obsTimes      = np.squeeze(imgTimesNav/10**9)
+    pdb.set_trace()
+    filterOutputs = initBatchFnc( stateValues, obsTimes, observationData,\
+                                  imgMRPNav, navParam )
 
 def attFilter_dynScenario(TheDynSim):
     """

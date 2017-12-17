@@ -299,14 +299,7 @@ def initBatchFnc():
 
         pklFile.close()
 
-    [anomaly_bool , anomaly_num] = extraData['anomaly_detected']
-    if anomaly_bool == True:
-        print '**********************************************************'
-        print 'Anomaly Detected - Estimates are not to be trusted'
-        print '**********************************************************'
-        print anomaly_num, 'Residuals out of bounds'
-
-    return
+    return filterOutputs
 
 
 if __name__ == "__main__":
