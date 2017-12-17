@@ -174,25 +174,155 @@ def test_4_1_loadAllStars():
 	assert(sum(starCam.VT) == test_4_1_support_dict['VTsum'])
 	assert(sum(starCam.BVT) == test_4_1_support_dict['BVTsum'])
 
-# # # def test_4_2_calculate_FOV():
-# # # 	cam1 = camera.camera(
-# # # 		1,2,2)
-# # # 	cam2= camera.camera(
-# # # 		3,4,5)
-# # # 	cam3 = camera.camera(
-# # # 		6,4,2)
 
-# # # 	assert(cam1.angularHeight == 15)
-# # # 	assert(cam1.angularWidth == 16)
-# # # 	assert(cam1.angularDiagonal == 18)
+########################################################################
+# Set up cameras for lambda function tests
+########################################################################
+qe1 = {
+    'throughput': np.array([0.5,1.0,1.5]),
+    'lam': np.array([1,2,3]) 
+}
+tc1 = {
+    'throughput': np.array([0.3,0.4,0.5,0.3]),
+    'lam': np.array([1.5,3,4.5,6]) 
+}
 
-# # # 	assert(cam2.angularHeight == 54)
-# # # 	assert(cam2.angularWidth == 45)
-# # # 	assert(cam2.angularDiagonal == 25)
+qe2 = {
+	'throughput': np.array([3,4,5]),
+	'lam': np.array([5,6,7]) 
+}
+tc2 = {
+	'throughput': np.array([0.5,1.0,1.5]),
+	'lam': np.array([3,5,7]) 
+}
 
-# # # 	assert(cam2.angularHeight == 13)
-# # # 	assert(cam2.angularWidth == 17)
-# # # 	assert(cam2.angularDiagonal == 18)
+qe3 = {
+	'throughput': np.array([1,2,3]),
+	'lam': np.array([5.5,6.,6.5])
+}
+tc3 = {
+	'throughput': np.array([2,3,4]),
+	'lam': np.array([6.,6.5,7])	
+}
+
+cam1 = camera.camera(
+	2,
+	2,
+	5.0,
+	512,
+	512,
+	np.identity(3),
+	1000,
+	-1000,
+	qe1,
+	tc1,
+	0.5,
+	0.01**2,
+	2**32, 	
+	1,		
+	0.01, 	
+	100,
+	100,
+	100, 
+	scState,
+	scDCM,
+	bodies,
+	takeImage,
+	debug=msg,
+    db='../db/tycho.db'
+    )
+
+cam2 = camera.camera(
+	3,
+	4,
+	7.0,
+	512,
+	512,
+	np.identity(3),
+	1000,
+	-1000,
+	qe2,
+	tc2,
+	1,
+	0.01**2,
+	2**32, 	
+	1,		
+	0.01, 	
+	100,
+	100,
+	100, 
+	scState,
+	scDCM,
+	bodies,
+	takeImage,
+	debug=msg,
+    db='../db/tycho.db'
+    )
+
+cam3 = camera.camera(
+	6,
+	5,
+	7.0,
+	512,
+	512,
+	np.identity(3),
+	1000,
+	-1000,
+	qe3,
+	tc3,
+	0.1,
+	0.01**2,
+	2**32, 	
+	1,		
+	0.01, 	
+	100,
+	100,
+	100, 
+	scState,
+	scDCM,
+	bodies,
+	takeImage,
+	debug=msg,
+    db='../db/tycho.db'
+    )
+
+def test_4_2_calculate_FOV():
+ 	print(abs(cam1.angularHeight - 22.619864948040430) < 1e-14)
+ 	print(abs(cam1.angularWidth - 22.619864948040430) < 1e-14)
+ 	print(abs(cam1.angularDiagonal - 31.586338096527925) < 1e-14)
+ 	
+ 	print(abs(cam2.angularHeight - 24.189514154024202) < 1e-14)
+ 	print(abs(cam2.angularWidth - 31.890791801845708) < 1e-14)
+ 	print(abs(cam2.angularDiagonal - 39.307648116106620) < 1e-14)
+
+ 	print(abs(cam3.angularHeight - 46.397181027296369) < 1e-14)
+ 	print(abs(cam3.angularWidth - 39.30764811610662) < 1e-14)
+ 	print(abs(cam3.angularDiagonal - 58.31210889845746) < 1e-14)
+
+
+def test_4_3_find_lambda_set():
+	assert(np.array_equal(cam1.lambdaSet, np.array([1.5,2.,2.5,3.])))
+	assert(np.array_equal(cam2.lambdaSet, np.array([5.,6.,7.])))
+	assert(abs(sum(cam3.lambdaSet - np.array([ 6.1,  6.2,  6.3,  6.4,  6.5]))) < 1e-12)
+
+def test_4_4_interpolate_lambda_dependent():
+	assert(np.array_equal(cam1.qe['throughput'], np.array([0.5,0.75,1.,1.25,1.5,0.,0.,0.,0.,0.,0.])))
+	assert(np.array_equal(cam1.qe['lam'], np.array([1.,1.5,2.,2.5,3.,3.5,4.,4.5,5.,5.5,6.])))
+	assert(np.array_equal(cam1.tc['lam'], np.array([1.,1.5,2.,2.5,3.,3.5,4.,4.5,5.,5.5,6.])))
+	assert(np.array_equal(cam2.qe['throughput'], np.array([0,0,3,4,5])))
+	assert(np.array_equal(cam2.qe['lam'], np.array([3,4,5,6,7])))
+	assert(np.array_equal(cam2.tc['throughput'], np.array([0.5,0.75,1.,1.25,1.5])))
+	assert(np.array_equal(cam2.tc['lam'], np.array([3,4,5,6,7])))
+	assert(abs(sum(cam3.qe['throughput'] - np.array([1.,1.2,1.4,1.6,1.8,1.8,2.2,2.4,2.6,2.8,2.8,0.,0.,0.,0.,0.]))) < 1e-12)
+	assert(abs(sum(cam3.qe['lam'] - np.array([5.5,5.6,5.7,5.8,5.9,6.,6.1,6.2,6.3,6.4,6.5,6.6,6.7,6.8,6.9,7.]))) < 1e-12)
+	assert(abs(sum(cam3.tc['throughput'] - np.array([0.,0.,0.,0.,0.,0.,2.2,2.4,2.6,2.8,2.8,3.2,3.4,3.6,3.8,3.8]))) < 1e-12)
+	assert(abs(sum(cam3.tc['lam'] - np.array([5.5,5.6,5.7,5.8,5.9,6.,6.1,6.2,6.3,6.4,6.5,6.6,6.7,6.8,6.9,7.]))) < 1e-12)
+
+def test_4_5_integrated_qe_tc():	
+	assert(abs(sum(cam1.sensitivityCurve - np.array([0.225,1/3.,11/24.,0.6]))) < 1e-12)
+	assert(np.array_equal(cam2.sensitivityCurve, np.array([3,5,7.5])))
+	assert(abs(sum(cam3.sensitivityCurve - np.array([ 4.84,  5.76,  6.76,  7.84,  7.84]))) < 1e-12)
+
 
 def test_4_7_cameraUpdateState():
 	assert(len(noStarCam.images) == 0)
@@ -745,16 +875,6 @@ def test_4_23_lumos():
 	assert ( abs(earthLumos[2]*len(earthLumos[1]) - 2*np.pi*bod.earth.r_eq**2) < 10e-7 )
 
 
-# def test_4_23_lumos():
-# 	earthLumos = lightSimFunctions.lumos(
-# 		np.array([au,0,0]),
-# 		np.array([0,0,0]),
-# 		bod.earth.albedo,
-# 		bod.earth.r_eq,
-# 		100,
-# 		100)
-# 	assert ( abs(earthLumos[2]*len(earthLumos[1]) - 2*np.pi*bod.earth.r_eq**2) < 10e-7 )
-
 def test_4_24_facetAreaCamview_eq_pi_r_sq():
 	earthLightSim = lightSimFunctions.lightSim(
 		np.identity(3),
@@ -773,19 +893,4 @@ def test_4_24_facetAreaCamview_eq_pi_r_sq():
 		)
 
 
-# def test_4_x_lightSim():
-# 	from lightSimFunctionsOld import lightSim
-# 	earthLightSim = lightSim(
-# 		np.identity(3),
-# 		np.array([0,0,0]),
-# 		np.array([au,0,0]),
-# 		(20,20),
-# 		100,
-# 		100,
-# 		True,
-# 		bod.earth.albedo,
-# 		bod.earth.r_eq,
-# 		'Earth'
-# 		)
-# 	pdb.set_trace()	
-# 	assert( 1 == 1 )
+
