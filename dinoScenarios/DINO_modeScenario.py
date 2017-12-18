@@ -1,20 +1,25 @@
+
+##  Standard Python library imports
 import sys, os, inspect
 import matplotlib.pyplot as plt
 from numpy import linalg as la
 import numpy as np
+import math
+import datetime
 
-# filename = inspect.getframeinfo(inspect.currentframe()).filename
-# path = os.path.dirname(os.path.abspath(filename))
+##  Set path for BSK/DINO imports; assumes BSK path is in same root folder as DINO
 bskName = 'Basilisk'
 bskPath = '../..' + '/' + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
 sys.path.append('../dinoModels/SimCode/opnavCamera/')
+sys.path.append('../dinoModels/SimCode/opnavCamera/dependencies')
 sys.path.append('../dinoModels/fswAlgorithms/imageProcessing/dependencies/')
+sys.path.append('../DINObatch/pixelAndLine/commonFunctions/')
+sys.path.append('../DINObatch/pixelAndLine/unmodeledAcc/')
+sys.path.append('../DINObatch/SPICE/')
 
-
-import BSK_plotting as BSKPlt
-
+##  BSK imports
 try:
     import macros as mc
     import unitTestSupport as sp
@@ -27,14 +32,29 @@ except ImportError:
     import Basilisk.utilities.RigidBodyKinematics as rbk
     from Basilisk.fswAlgorithms import *
 
-#import opnavCamera
-#import imageProcessingExecutive
+##  Import DINO modules
+import camera
+import imageProcessingExecutive as ip
+from initBatch import initBatchFnc
+
+##  Import relevant DINO scenario support modules
 import DINO_main
+import BSK_plotting as BSKPlt
 from DINO_multiScenarios import *
-import datetime
+from DINO_logAndPlot import *
+from DINO_scenarioUtils import *
+
 
 def runSimSegment(TheDynSim, simTime, initialState, initialAtt, timeStr):
+    '''
 
+    :param TheDynSim:
+    :param simTime:
+    :param initialState:
+    :param initialAtt:
+    :param timeStr:
+    :return:
+    '''
     simTime = mc.sec2nano(simTime)
     samplingTime = mc.sec2nano(min([TheDynSim.fswUpdateRate, TheDynSim.dynUpdateRate]))
     numDataPoints = simTime / samplingTime
@@ -60,11 +80,10 @@ def runSimSegment(TheDynSim, simTime, initialState, initialAtt, timeStr):
     return TheDynSim
 
 def propAndObs_Scenario():
-    """
-    Executes a default scenario for stand-alone dynamic simulations
-    :params: None
-    :return: None
-    """
+    '''
+
+    :return:
+    '''
 
     propSim = DINO_main.DINO_DynSim(10000., 100.)
     obsSim = DINO_main.DINO_DynSim(0.01, 0.01)
