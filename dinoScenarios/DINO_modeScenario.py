@@ -177,8 +177,8 @@ def propAndObs_Scenario(useNavOutputs, genPlots):
             execTime = propDurations[propInd]
             runSimSegment(propSim, propDurations[propInd], np.hstack([r_BN[-1, 1:4], v_BN[-1, 1:4]]).tolist(), np.hstack([sigma_BN[-1, 1:4],omega_BN_B[-1, 1:4]]).tolist() , timeStr)
             r_BN_temp, v_BN_temp, sigma_BN_temp, omega_BN_B_temp = pull_DynOutputs(propSim,plots=False)
-            sigma_tilde_BN_temp, omega_tilde_BN_temp = pull_senseOutputs(propSim,plots=False)
-            sigma_hat_BN_temp, omega_hat_BN_temp = pull_aekfOutputs(propSim,plots=False)
+            #sigma_tilde_BN_temp, omega_tilde_BN_temp = pull_senseOutputs(propSim,plots=False)
+            #sigma_hat_BN_temp, omega_hat_BN_temp = pull_aekfOutputs(propSim,plots=False)
 
             r_sun_temp, r_earth_temp, r_moon_temp, r_mars_temp, r_beacons_temp = pull_DynCelestialOutputs(propSim, plots=False)
 
