@@ -892,4 +892,4 @@ def defineParameters(
 
     navInputs = []
 
-    return camInputs, ipInputs, navInputs
+    return camInputs, ipInputs, navParams
