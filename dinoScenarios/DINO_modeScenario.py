@@ -9,7 +9,9 @@ bskName = 'Basilisk'
 bskPath = '../..' + '/' + bskName + '/'
 sys.path.append(bskPath + 'modules')
 sys.path.append(bskPath + 'PythonModules')
+sys.path.append('../DINObatch/P&L/common_functions/')
 sys.path.append('../dinoModels/SimCode/opnavCamera/')
+sys.path.append('../dinoModels/SimCode/opnavCamera/dependencies')
 sys.path.append('../dinoModels/fswAlgorithms/imageProcessing/dependencies/')
 
 
@@ -32,6 +34,9 @@ except ImportError:
 import DINO_main
 from DINO_multiScenarios import *
 import datetime
+import camera
+import imageProcessingExecutive as ip
+import batchFilter as bf
 
 def runSimSegment(TheDynSim, simTime, initialState, initialAtt, timeStr):
 
@@ -71,6 +76,45 @@ def propAndObs_Scenario():
 
     propSim.InitializeSimulation()
     obsSim.InitializeSimulation()
+
+    earth = camera.beacon()
+    earth.r_eq = 6378.137
+    earth.id = 'Earth'
+    earth.albedo = 0.434
+    # earth.albedo = 1e30
+
+    mars = camera.beacon()
+    mars.r_eq = 3396.2
+    mars.id = 'Mars'
+    mars.albedo = 0.17
+
+    moon = camera.beacon()
+    moon.r_eq = 1738.1
+    moon.id = 'Moon'
+    # moon.albedo = 0.12
+    moon.albedo = .7
+
+    beacons = [earth, mars, moon]
+    # need loop to define asteroids, too
+
+    cam, ipParam, navParam = defineParameters(
+        (512, 512),  # camera resolution, width then height
+        0.05,  # focal length in m
+        (0.01, 0.01),  # detector dimensions in m, with then height
+        beacons,  # list of beacons
+        # transmission curve dict
+        np.load('../dinoModels/SimCode/opnavCamera/tc/20D.npz'),
+        # quantum efficiency curve dict
+        np.load('../dinoModels/SimCode/opnavCamera/qe/ACS.npz'),
+        1,  # bin size for wavelength functions (in nm)
+        0.01 ** 2,  # effective area (m^2)
+        100,  # dark current electrons/s/pixel
+        100,  # read noise STD (in electrons per pixel)
+        100,  # bin size
+        2 ** 32,  # saturation depth
+        1,  # Standard deviation for PSF (in Pixels)
+        0.01  # simulation timestep
+    )
 
     ##   Define Mode Sequence Parameters.
 
@@ -117,11 +161,8 @@ def propAndObs_Scenario():
             r_BN_temp, v_BN_temp, sigma_BN_temp, omega_BN_B_temp = pull_DynOutputs(propSim,plots=False)
             sigma_tilde_BN_temp, omega_tilde_BN_temp = pull_senseOutputs(propSim,plots=False)
             sigma_hat_BN_temp, omega_hat_BN_temp = pull_aekfOutputs(propSim,plots=False)
-            #Lr = pull_FSWOutputs(propSim)
 
             r_sun_temp, r_earth_temp, r_moon_temp, r_mars_temp, r_beacons_temp = pull_DynCelestialOutputs(propSim, plots=False)
-
-            propInd = propInd+1
 
         else:
             ##  Run the observation sim
@@ -135,7 +176,24 @@ def propAndObs_Scenario():
             sigma_hat_BN_temp, omega_hat_BN_temp = pull_aekfOutputs(obsSim,plots=False)
             #Lr = pull_FSWOutputs(obsSim)
             r_sun_temp, r_earth_temp, r_moon_temp, r_mars_temp, r_beacons_temp = pull_DynCelestialOutputs(obsSim,plots=False)
+            takeImage = np.ones([1,len(r_BN_temp)])
 
+            r_BN_pred = bf.runRef(refPropInputs)
+            detectorArrays, imgTimes, imgPos, imgMRP, imgBeaconPos = genCamImages(cam, beacons, r_BN, r_earth, r_moon,
+                                                                                  r_mars, takeImage)
+            # Run the Image Processing Module
+
+
+            beaconPLNav, beaconIDsNav, imgMRPNav, imgTimesNav, numNavInputs = genImgProc(detectorArrays, imgPos, imgMRP,
+                                                                                         imgBeaconPos, imgTimes,
+                                                                                         ipParam)
+
+            print "*******Image Processing Outputs*******"
+            print "Beacon PL:"
+            print beaconPLNav
+            print "beaconIDs:"
+            print beaconIDsNav
+            propInd = propInd + 1
             obsInd = obsInd+1
 
         utcObj = utcObj + datetime.timedelta(seconds=execTime)
