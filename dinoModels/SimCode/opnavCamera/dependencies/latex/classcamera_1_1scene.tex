@@ -1,0 +1,66 @@
+\hypertarget{classcamera_1_1scene}{}\section{camera.\+scene Class Reference}
+\label{classcamera_1_1scene}\index{camera.\+scene@{camera.\+scene}}
+
+
+scene is a class for collecting each integration step during an exposure.  
+
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classcamera_1_1scene_a327acdbc55c06cc821763062bc1b495d}\label{classcamera_1_1scene_a327acdbc55c06cc821763062bc1b495d}} 
+def {\bfseries \+\_\+\+\_\+init\+\_\+\+\_\+} (self, RA, DE, n1, n2, n3, c1, c2, c3, I, pixel, line, star\+I\+Ds, kwargs)
+\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classcamera_1_1scene_abeb83faaa973183ae26ac8aba936fd21}\label{classcamera_1_1scene_abeb83faaa973183ae26ac8aba936fd21}} 
+{\bfseries RA}
+\item 
+\mbox{\Hypertarget{classcamera_1_1scene_a5e255eade6609109ec1cab284cd7ce73}\label{classcamera_1_1scene_a5e255eade6609109ec1cab284cd7ce73}} 
+{\bfseries DE}
+\item 
+\mbox{\Hypertarget{classcamera_1_1scene_a1293c48de85c9fd64ecf62146718bf71}\label{classcamera_1_1scene_a1293c48de85c9fd64ecf62146718bf71}} 
+{\bfseries n1}
+\item 
+\mbox{\Hypertarget{classcamera_1_1scene_a00c58ab7dfd26cf6d3659790dbf1aa06}\label{classcamera_1_1scene_a00c58ab7dfd26cf6d3659790dbf1aa06}} 
+{\bfseries n2}
+\item 
+\mbox{\Hypertarget{classcamera_1_1scene_a2e4c3f8336eed860b9393b4e90d9f811}\label{classcamera_1_1scene_a2e4c3f8336eed860b9393b4e90d9f811}} 
+{\bfseries n3}
+\item 
+\mbox{\Hypertarget{classcamera_1_1scene_af2d090b0566dfdab1fb8dbb62fac291a}\label{classcamera_1_1scene_af2d090b0566dfdab1fb8dbb62fac291a}} 
+{\bfseries c1}
+\item 
+\mbox{\Hypertarget{classcamera_1_1scene_a314ec243f37d07a2618823a17d0972cb}\label{classcamera_1_1scene_a314ec243f37d07a2618823a17d0972cb}} 
+{\bfseries c2}
+\item 
+\mbox{\Hypertarget{classcamera_1_1scene_ab57b9b18eaa692e0b74b5913b6f49850}\label{classcamera_1_1scene_ab57b9b18eaa692e0b74b5913b6f49850}} 
+{\bfseries c3}
+\item 
+\mbox{\Hypertarget{classcamera_1_1scene_aa7c9812119f48d4e7752f751f61f5e19}\label{classcamera_1_1scene_aa7c9812119f48d4e7752f751f61f5e19}} 
+{\bfseries I}
+\item 
+\mbox{\Hypertarget{classcamera_1_1scene_a006a497234c9a86b8faab8c269fdd98a}\label{classcamera_1_1scene_a006a497234c9a86b8faab8c269fdd98a}} 
+{\bfseries pixel}
+\item 
+\mbox{\Hypertarget{classcamera_1_1scene_a149c9c7fa2c1267cd9de74e1016f92f3}\label{classcamera_1_1scene_a149c9c7fa2c1267cd9de74e1016f92f3}} 
+{\bfseries line}
+\item 
+\mbox{\Hypertarget{classcamera_1_1scene_a4984b83b9d152838889581d27e9db6f7}\label{classcamera_1_1scene_a4984b83b9d152838889581d27e9db6f7}} 
+{\bfseries star\+I\+Ds}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+scene is a class for collecting each integration step during an exposure. 
+
+These will then be summed to make frames, which are the physically relevant unit of an image. frames are then summed to create the full images.
+
+User Variables\+: None. All variables in the image object are added dynamically
+
+Computed Variables\+: star\+I\+Ds\+: Similar to the star\+ID varable that is held in the camera object, but with only stars/facets that are in the F\+OC of this scene. RA\+: Similar to the RA varable that is held in the camera object, but with only stars/facets that are in the F\+OC of this scene. DE\+: Similar to the DE varable that is held in the camera object, but with only stars/facets that are in the F\+OC of this scene. n1\+: Similar to the n1 varable that is held in the camera object, but with only stars/facets that are in the F\+OC of this scene. n2\+: Similar to the n2 varable that is held in the camera object, but with only stars/facets that are in the F\+OC of this scene. n3\+: Similar to the n3 varable that is held in the camera object, but with only stars/facets that are in the F\+OC of this scene. VT\+: Similar to the VT varable that is held in the camera object, but with only stars/facets that are in the F\+OC of this scene. B\+VT\+: Similar to the B\+VT varable that is held in the camera object, but with only stars/facets that are in the F\+OC of this scene. c1\+: Similar to the c1 varable that is held in the image object, but with only stars/facets that are in the F\+OC of this scene. c2\+: Similar to the c2 varable that is held in the image object, but with only stars/facets that are in the F\+OC of this scene. c3\+: Similar to the c3 varable that is held in the image object, but with only stars/facets that are in the F\+OC of this scene. I\+: Similar to the I varable that is held in the image object, but with only stars/facets that are in the F\+OC of this scene. pixel\+: Similar to the pixel varable that is held in the image object, but with only stars/facets that are in the F\+OC of this scene. line\+: Similar to the line varable that is held in the image object, but with only stars/facets that are in the F\+OC of this scene. detector\+Array\+: array of summed intensities on each pixel during the integration timestep of this scene. Does not include noise. Added by \hyperlink{classcamera_1_1image_ad5fcc766f1a0be37d8437f46d0fe720d}{image.\+update\+State()} 
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+camera.\+py\end{DoxyCompactItemize}

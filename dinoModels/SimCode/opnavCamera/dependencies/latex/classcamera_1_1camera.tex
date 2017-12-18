@@ -1,0 +1,316 @@
+\hypertarget{classcamera_1_1camera}{}\section{camera.\+camera Class Reference}
+\label{classcamera_1_1camera}\index{camera.\+camera@{camera.\+camera}}
+
+
+Camera is a class for the simulation of a spacecraft camera.  
+
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_af2e47484e5413e0aa427418cfdd6b679}\label{classcamera_1_1camera_af2e47484e5413e0aa427418cfdd6b679}} 
+def {\bfseries \+\_\+\+\_\+init\+\_\+\+\_\+} (self, detector\+Height, detector\+Width, focal\+Length, resolution\+Height, resolution\+Width, body2camera\+D\+CM, max\+Mag, min\+Mag, qe, tc, lambda\+Bin\+Size, effective\+Area, dark\+Current, read\+Sigma, dn\+Bin\+Size, dn\+Depth\+Max, psf\+Sigma, dt, sc\+State, sc\+D\+CM, bodies, take\+Image, kwargs)
+\item 
+def \hyperlink{classcamera_1_1camera_a19a245a417b72f0ae753b5200b1615ff}{load\+All\+Stars} (self, db, max\+Mag, min\+Mag)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1camera_a19a245a417b72f0ae753b5200b1615ff}{load\+All\+Stars()} is used to load stellar data from a database (nominally db/tycho.\+db into a camera instance). \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1camera_ad4494bee9257f3d3456b93d26ba9a5a0}{calculate\+F\+OV} (self, focal\+Length, detector\+Height, detector\+Width, kwargs)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1camera_ad4494bee9257f3d3456b93d26ba9a5a0}{calculate\+F\+O\+V()} finds the angular size of a camera F\+OV using freshman-\/level optics. \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1camera_aeec423a87b32526d88ca5db5c662a462}{find\+Lambda\+Set} (self, qe, tc, lambda\+Bin\+Size)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1camera_aeec423a87b32526d88ca5db5c662a462}{find\+Lambda\+Set()} Caclculates a set of wavelengths at which the QE and transmission curves will be interpolated and the planck function will be evaluated. \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1camera_af238bceaf20ae4b7480fe8fb798a0d96}{interpolate\+Lambda\+Dependent} (self, ex, lambda\+Set)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1camera_af238bceaf20ae4b7480fe8fb798a0d96}{interpolate\+Lambda\+Dependent()} this function creates unified tc and qe curves that can be multiplied simply to create a full sensitivity curve Notes\+: I moved the actual funciton to util within the python framework because it was useful elsewhere, too. \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1camera_ad4aee85257a01b49869bf21a4ce6f7f8}{calculate\+Hot\+Dark} (self, detector\+Array, resolution\+Height, resolution\+Width)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1camera_ad4aee85257a01b49869bf21a4ce6f7f8}{calculate\+Hot\+Dark()} \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1camera_afd4c4aea63d44aa43d53ccd4110be3a8}{update\+State} (self)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1camera_afd4c4aea63d44aa43d53ccd4110be3a8}{update\+State()} is the master function of the camera object. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a61776d8f8dbe09543ef8af4b0cb5d4d8}\label{classcamera_1_1camera_a61776d8f8dbe09543ef8af4b0cb5d4d8}} 
+\hyperlink{classcamera_1_1camera_a61776d8f8dbe09543ef8af4b0cb5d4d8}{RA}
+\begin{DoxyCompactList}\small\item\em Numpy array of right ascensions of all stars loaded into camera. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a3f95d3f1971bbca8905f9f3447d4a43e}\label{classcamera_1_1camera_a3f95d3f1971bbca8905f9f3447d4a43e}} 
+\hyperlink{classcamera_1_1camera_a3f95d3f1971bbca8905f9f3447d4a43e}{DE}
+\begin{DoxyCompactList}\small\item\em Numpy array of declinations of all stars loaded into camera. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a6b8ba44bd26a27b6314105f165bfae10}\label{classcamera_1_1camera_a6b8ba44bd26a27b6314105f165bfae10}} 
+\hyperlink{classcamera_1_1camera_a6b8ba44bd26a27b6314105f165bfae10}{n1}
+\begin{DoxyCompactList}\small\item\em Numpy array of 1st inertial unit vector coordinate of all stars loaded into camera. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a37eeb7ae4484dcee190dbffb3389b2ec}\label{classcamera_1_1camera_a37eeb7ae4484dcee190dbffb3389b2ec}} 
+\hyperlink{classcamera_1_1camera_a37eeb7ae4484dcee190dbffb3389b2ec}{n2}
+\begin{DoxyCompactList}\small\item\em Numpy array of 2nd inertial unit vector coordinate of all stars loaded into camera. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a76bbd2634750375987f0db012e3b238b}\label{classcamera_1_1camera_a76bbd2634750375987f0db012e3b238b}} 
+\hyperlink{classcamera_1_1camera_a76bbd2634750375987f0db012e3b238b}{n3}
+\begin{DoxyCompactList}\small\item\em Numpy array of 3rd inertial unit vector coordinate of all stars loaded into camera. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcamera_1_1camera_ad86d285acdbdb42eadefd09edb7b809d}\label{classcamera_1_1camera_ad86d285acdbdb42eadefd09edb7b809d}} 
+\hyperlink{classcamera_1_1camera_ad86d285acdbdb42eadefd09edb7b809d}{VT}
+\begin{DoxyCompactList}\small\item\em Numpy array of Tycho visual magnitude of all stars loaded into camera. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcamera_1_1camera_aee78a40a55af27c034acd3391bc9daa0}\label{classcamera_1_1camera_aee78a40a55af27c034acd3391bc9daa0}} 
+\hyperlink{classcamera_1_1camera_aee78a40a55af27c034acd3391bc9daa0}{B\+VT}
+\begin{DoxyCompactList}\small\item\em Numpy array of Tycho color index of all stars loaded into camera. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcamera_1_1camera_ad3765c578f014ad94a30b1a25038464a}\label{classcamera_1_1camera_ad3765c578f014ad94a30b1a25038464a}} 
+\hyperlink{classcamera_1_1camera_ad3765c578f014ad94a30b1a25038464a}{star\+ID}
+\begin{DoxyCompactList}\small\item\em Numpy array of D\+I\+NO db star id of all stars loaded into camera. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a0699ada0f62c01c7d2e595bb6eb189f9}\label{classcamera_1_1camera_a0699ada0f62c01c7d2e595bb6eb189f9}} 
+\hyperlink{classcamera_1_1camera_a0699ada0f62c01c7d2e595bb6eb189f9}{T}
+\begin{DoxyCompactList}\small\item\em Numpy array of computed temperatures of all stars loaded into camera. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcamera_1_1camera_ac88a64236a0cf2e01f23ae64081ad2d0}\label{classcamera_1_1camera_ac88a64236a0cf2e01f23ae64081ad2d0}} 
+\hyperlink{classcamera_1_1camera_ac88a64236a0cf2e01f23ae64081ad2d0}{solid\+Angle\+Subtended}
+\begin{DoxyCompactList}\small\item\em Numpy array of solid angle subtended of all stars loaded into camera. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcamera_1_1camera_ab98b2a4012762c8cb79033b97abcae77}\label{classcamera_1_1camera_ab98b2a4012762c8cb79033b97abcae77}} 
+\hyperlink{classcamera_1_1camera_ab98b2a4012762c8cb79033b97abcae77}{solar\+BB}
+\begin{DoxyCompactList}\small\item\em Numpy array solar flux values (W/m$^\wedge$2/sr) evaluated at each wavelength in lambda\+Set. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classcamera_1_1camera_ab894e50c809164311213c47008b1ea4b}\label{classcamera_1_1camera_ab894e50c809164311213c47008b1ea4b}} 
+{\bfseries lambda\+Set}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a00e6953eb53479aab5465d262918e3c3}\label{classcamera_1_1camera_a00e6953eb53479aab5465d262918e3c3}} 
+{\bfseries sensitivity\+Curve}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a3ebdd1a5df3595720f29ee9213c6008c}\label{classcamera_1_1camera_a3ebdd1a5df3595720f29ee9213c6008c}} 
+{\bfseries qe}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_ae852aaa1a3d02cf4cdb52235efc3a1aa}\label{classcamera_1_1camera_ae852aaa1a3d02cf4cdb52235efc3a1aa}} 
+{\bfseries tc}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_afca677188148d6517b2f6eb63cee1b00}\label{classcamera_1_1camera_afca677188148d6517b2f6eb63cee1b00}} 
+{\bfseries lambda\+Bin\+Size}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a21c903dc4b9dc968d31ac6a30e223854}\label{classcamera_1_1camera_a21c903dc4b9dc968d31ac6a30e223854}} 
+{\bfseries resolution\+Height}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a0c4fc89c6a380cbf95304974ff694fa5}\label{classcamera_1_1camera_a0c4fc89c6a380cbf95304974ff694fa5}} 
+{\bfseries resolution\+Width}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a0673f6da3f62fcffe90b5b006c210676}\label{classcamera_1_1camera_a0673f6da3f62fcffe90b5b006c210676}} 
+{\bfseries body2camera\+D\+CM}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a0396d22ae352c1c8e851ed69aa69d2de}\label{classcamera_1_1camera_a0396d22ae352c1c8e851ed69aa69d2de}} 
+{\bfseries max\+Mag}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a8717d2f182ba4868f2e58ec7a4833865}\label{classcamera_1_1camera_a8717d2f182ba4868f2e58ec7a4833865}} 
+{\bfseries min\+Mag}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_abb3447aee1f7d4ecf5a6650cf0c13200}\label{classcamera_1_1camera_abb3447aee1f7d4ecf5a6650cf0c13200}} 
+{\bfseries angular\+Height}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a94320048e1e86fcbf7665c898bcbc74c}\label{classcamera_1_1camera_a94320048e1e86fcbf7665c898bcbc74c}} 
+{\bfseries angular\+Width}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a64f8661206b6efdab6c956aa0b21a808}\label{classcamera_1_1camera_a64f8661206b6efdab6c956aa0b21a808}} 
+{\bfseries angular\+Diagonal}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a0b2c39ff86f5f4a5d082f68bfd865d95}\label{classcamera_1_1camera_a0b2c39ff86f5f4a5d082f68bfd865d95}} 
+{\bfseries detector\+Height}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_ae5d8a667d672d905e932e0f8a9dd9ab2}\label{classcamera_1_1camera_ae5d8a667d672d905e932e0f8a9dd9ab2}} 
+{\bfseries detector\+Width}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_ae8ed84b003f7dcb6e55c1ac25a19de32}\label{classcamera_1_1camera_ae8ed84b003f7dcb6e55c1ac25a19de32}} 
+{\bfseries focal\+Length}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_aa04c5148bc515043ac8fa07c3faa7467}\label{classcamera_1_1camera_aa04c5148bc515043ac8fa07c3faa7467}} 
+{\bfseries read\+Sigma}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a8bfa8535b16715bf052a4c0bfd914b6a}\label{classcamera_1_1camera_a8bfa8535b16715bf052a4c0bfd914b6a}} 
+{\bfseries effective\+Area}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a85c79896d4e0a35f2029a7adab2aa24a}\label{classcamera_1_1camera_a85c79896d4e0a35f2029a7adab2aa24a}} 
+{\bfseries dark\+Current}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a578c2facfdce75479a4fa6e6393ae490}\label{classcamera_1_1camera_a578c2facfdce75479a4fa6e6393ae490}} 
+{\bfseries images}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a87e4add5d4c1c5d7f13e78c5f19b55b9}\label{classcamera_1_1camera_a87e4add5d4c1c5d7f13e78c5f19b55b9}} 
+{\bfseries msg}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a5daf640fd733b4afe518467880abe62a}\label{classcamera_1_1camera_a5daf640fd733b4afe518467880abe62a}} 
+{\bfseries dn\+Bin\+Size}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a2997be45d55a494df5536eb746e13f33}\label{classcamera_1_1camera_a2997be45d55a494df5536eb746e13f33}} 
+{\bfseries dn\+Depth\+Max}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a73bf72ebd48f21558fea1481501ffa28}\label{classcamera_1_1camera_a73bf72ebd48f21558fea1481501ffa28}} 
+{\bfseries psf\+Sigma}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a59cf567d49e85cc679f2bb7ed0f7b4a5}\label{classcamera_1_1camera_a59cf567d49e85cc679f2bb7ed0f7b4a5}} 
+{\bfseries dt}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a22ef11ead56538d782a086465971d170}\label{classcamera_1_1camera_a22ef11ead56538d782a086465971d170}} 
+{\bfseries bodies}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a8f16d39f3c02ff44cf0f6f74161ce6f5}\label{classcamera_1_1camera_a8f16d39f3c02ff44cf0f6f74161ce6f5}} 
+{\bfseries sc\+State}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a8ab645683dde206807299b62eae8d2ba}\label{classcamera_1_1camera_a8ab645683dde206807299b62eae8d2ba}} 
+{\bfseries sc\+D\+CM}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_ac5777e158c9f3fdb3e444ebcfb3e7415}\label{classcamera_1_1camera_ac5777e158c9f3fdb3e444ebcfb3e7415}} 
+{\bfseries take\+Image}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_a425f1508e751313e6cd5423cffc6a933}\label{classcamera_1_1camera_a425f1508e751313e6cd5423cffc6a933}} 
+{\bfseries img\+Time}
+\item 
+\mbox{\Hypertarget{classcamera_1_1camera_acda11b2fb0bbd65ded9693daf1849060}\label{classcamera_1_1camera_acda11b2fb0bbd65ded9693daf1849060}} 
+{\bfseries hot\+Dark\+Array}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Camera is a class for the simulation of a spacecraft camera. 
+
+It holds all physical characteristics of the camera and all stars. The Camera object controls when image objects are opened and closed based on the take\+Image message read in from the navigation executive.
+
+Methods\+: \hyperlink{classcamera_1_1camera_a19a245a417b72f0ae753b5200b1615ff}{load\+All\+Stars()} \hyperlink{classcamera_1_1camera_ad4494bee9257f3d3456b93d26ba9a5a0}{calculate\+F\+O\+V()} \hyperlink{classcamera_1_1camera_aeec423a87b32526d88ca5db5c662a462}{find\+Lambda\+Set()} interpolate\+Lambda() \hyperlink{classcamera_1_1camera_ad4aee85257a01b49869bf21a4ce6f7f8}{calculate\+Hot\+Dark()} \hyperlink{classcamera_1_1camera_afd4c4aea63d44aa43d53ccd4110be3a8}{update\+State()}
+
+User Variables\+: detector\+Height\+: Physical height of detector Can be any dimension so long as it matches detector\+Width and focal\+Length detector\+Width\+: Physical width of detector Can be any dimension so long as it matches detector\+Height and focal\+Length focal\+Length\+: Physical distance between lens and focal point Can be any dimension so long as it matches detector\+Width and detector\+Width resolution\+Height\+: \# of pixels in same dimension as detector\+Height resolution\+Width\+: \# of pixels in same dimension as detector\+Width body2camera\+D\+CM\+: D\+CM describing orientation of camera relative to sc max\+Mag\+: Maximum magnitude star visible to this camera. max\+Mag\+: Minimum magnitude star visible to this camera (not physically realistic, but useful for debugging). qe\+: Quantum Effeciency Curve as a dict of two numpy arrays. One must be called \textquotesingle{}lam\textquotesingle{}, and the other must be called must be called \textquotesingle{}throughput\textquotesingle{}. qe\mbox{[}\textquotesingle{}lam\textquotesingle{}\mbox{]} must be an array of wavelength bins, and qe\mbox{[}\textquotesingle{}throughput\textquotesingle{}\mbox{]} must be an array of percentages detected at the given \textquotesingle{}lam\textquotesingle{}. qe\mbox{[}\textquotesingle{}lam\textquotesingle{}\mbox{]} must be in nm, and qe\mbox{[}\textquotesingle{}throughput\textquotesingle{}\mbox{]} should be a number between 0 and
+\begin{DoxyEnumerate}
+\item qe\mbox{[}\textquotesingle{}lam\textquotesingle{}\mbox{]} and tc\mbox{[}\textquotesingle{}lam\textquotesingle{}\mbox{]} do not necessarily need to match as interpolate\+Lambda will interpolate qe\mbox{[}\textquotesingle{}throughput\textquotesingle{}\mbox{]} so that they do. tc\+: Transmission Curve as a dict of two numpy arrays. One must be called \textquotesingle{}lam\textquotesingle{}, and the other must be called must be called \textquotesingle{}throughput\textquotesingle{}. tc\mbox{[}\textquotesingle{}lam\textquotesingle{}\mbox{]} must be an array of wavelength bins, and tc\mbox{[}\textquotesingle{}throughput\textquotesingle{}\mbox{]} must be an array of percentages transmitted at the given \textquotesingle{}lam\textquotesingle{}. tc\mbox{[}\textquotesingle{}lam\textquotesingle{}\mbox{]} must be in nm, and tc\mbox{[}\textquotesingle{}throughput\textquotesingle{}\mbox{]} should be a number between 0 and
+\end{DoxyEnumerate}
+\begin{DoxyEnumerate}
+\item qe\mbox{[}\textquotesingle{}lam\textquotesingle{}\mbox{]} and tc\mbox{[}\textquotesingle{}lam\textquotesingle{}\mbox{]} do not necessarily need to match as interpolate\+Lambda will interpolate tc\mbox{[}\textquotesingle{}throughput\textquotesingle{}\mbox{]} so that they do. lambda\+Bin\+Size\+: the width of bins in wavelength space to be returned from interpolate\+Lambda(). effective\+Area\+: effective area of camera in m$^\wedge$2 dark\+Current\+: signal due to dark current in electron/s. Added to every pixel in image, plus poisson photon noise read\+Sigma\+: standard deviation for gaussian read noise dn\+Bin\+Size\+: number of photons per intensity bin dn\+Depth\+Max\+: saturation level of detector sc\+: Spacecraft object this camera is attached to msg\+: debug message used to turn features of camera on or off hot\+Dark\+: N\+OT Y\+ET I\+M\+P\+L\+E\+M\+E\+N\+T\+E\+D!
+\end{DoxyEnumerate}
+
+Computed Variables\+: angular\+Height\+: Size of detector field of view on the sky. angular\+Width\+: RA\+: Right ascension of all stars loaded from db DE\+: Declination of all stars loaded from db n1\+: First unit vector component in inertial space of all stars loaded from db via \hyperlink{classcamera_1_1camera_a19a245a417b72f0ae753b5200b1615ff}{load\+All\+Stars()} n2\+: Second unit vector component in inertial space of all stars loaded from db via \hyperlink{classcamera_1_1camera_a19a245a417b72f0ae753b5200b1615ff}{load\+All\+Stars()} n3\+: Third unit vector component in inertial space of all stars loaded from db via \hyperlink{classcamera_1_1camera_a19a245a417b72f0ae753b5200b1615ff}{load\+All\+Stars()} VT\+: Tycho Visual band magnitude of all stars loaded from db B\+VT\+: Tycho (B-\/V) color index of all stars loaded from db star\+ID\+: D\+I\+NO C-\/\+R\+Ex catalog number loaded from db T\+: Estimated stellar temperature loaded from db solid\+Angle\+Subtended\+: estimated solid angle subtended by each star. loaded from db. angular\+Height\+: Angular height of the detector field of view. Calculated using \hyperlink{classcamera_1_1camera_ad4494bee9257f3d3456b93d26ba9a5a0}{calculate\+F\+O\+V()} angular\+Width\+: Angular width of the detector field of view. Calculated using \hyperlink{classcamera_1_1camera_ad4494bee9257f3d3456b93d26ba9a5a0}{calculate\+F\+O\+V()} angular\+Diagonal\+: Angular size of maximum dimension of detector (the diagonal since it\textquotesingle{}s a rectangular detector) solar\+BB\+: Blackbody intensity of the sun measured at the wavelengths in lambda\+Set. Used by \hyperlink{classcamera_1_1image_ad5fcc766f1a0be37d8437f46d0fe720d}{image.\+update\+State()} to calculate beacon intenisty incident on detector lambda\+Set\+: unified set of wavelength values for blackbody, transmission, and quantum efficiency curves qe\+: qe curve interpolated at wavelengths of lambda\+Set tc\+: transmission curve interpolated at wavelengths of lambda\+Set sensitivity\+Curve\+: Full throughput curve (qe$\ast$tc) images\+: dictionary to hold images
+
+Keyword Arguments\+: db\+: File path to a stellar database file. If not provided, db/tycho\+\_\+small.\+db is used. 
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classcamera_1_1camera_ad4494bee9257f3d3456b93d26ba9a5a0}\label{classcamera_1_1camera_ad4494bee9257f3d3456b93d26ba9a5a0}} 
+\index{camera\+::camera@{camera\+::camera}!calculate\+F\+OV@{calculate\+F\+OV}}
+\index{calculate\+F\+OV@{calculate\+F\+OV}!camera\+::camera@{camera\+::camera}}
+\subsubsection{\texorpdfstring{calculate\+F\+O\+V()}{calculateFOV()}}
+{\footnotesize\ttfamily def camera.\+camera.\+calculate\+F\+OV (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{focal\+Length,  }\item[{}]{detector\+Height,  }\item[{}]{detector\+Width,  }\item[{}]{kwargs }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1camera_ad4494bee9257f3d3456b93d26ba9a5a0}{calculate\+F\+O\+V()} finds the angular size of a camera F\+OV using freshman-\/level optics. 
+
+The method uses a thin lens approximation.
+
+Notes\+: Assumes lens is thin. Units for detector dimensions and focal length can be anything, but they must all match. 
+\begin{DoxyParams}{Parameters}
+{\em focal\+Length} & Focal length of modeled lens \\
+\hline
+{\em detector\+Height} & y-\/direction dimension of the lens \\
+\hline
+{\em detector\+Width} & x-\/direction dimension of the lens \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+A dict with the following entries\+: 
+
+alhpa\+: angular size of F\+OV along y-\/direction (height) 
+
+beta\+: angular size of F\+OV along x-\/direction (width) 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1camera_ad4aee85257a01b49869bf21a4ce6f7f8}\label{classcamera_1_1camera_ad4aee85257a01b49869bf21a4ce6f7f8}} 
+\index{camera\+::camera@{camera\+::camera}!calculate\+Hot\+Dark@{calculate\+Hot\+Dark}}
+\index{calculate\+Hot\+Dark@{calculate\+Hot\+Dark}!camera\+::camera@{camera\+::camera}}
+\subsubsection{\texorpdfstring{calculate\+Hot\+Dark()}{calculateHotDark()}}
+{\footnotesize\ttfamily def camera.\+camera.\+calculate\+Hot\+Dark (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{detector\+Array,  }\item[{}]{resolution\+Height,  }\item[{}]{resolution\+Width }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1camera_ad4aee85257a01b49869bf21a4ce6f7f8}{calculate\+Hot\+Dark()} 
+
+
+\begin{DoxyParams}{Parameters}
+{\em detector\+\_\+array} & \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classcamera_1_1camera_aeec423a87b32526d88ca5db5c662a462}\label{classcamera_1_1camera_aeec423a87b32526d88ca5db5c662a462}} 
+\index{camera\+::camera@{camera\+::camera}!find\+Lambda\+Set@{find\+Lambda\+Set}}
+\index{find\+Lambda\+Set@{find\+Lambda\+Set}!camera\+::camera@{camera\+::camera}}
+\subsubsection{\texorpdfstring{find\+Lambda\+Set()}{findLambdaSet()}}
+{\footnotesize\ttfamily def camera.\+camera.\+find\+Lambda\+Set (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{qe,  }\item[{}]{tc,  }\item[{}]{lambda\+Bin\+Size }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1camera_aeec423a87b32526d88ca5db5c662a462}{find\+Lambda\+Set()} Caclculates a set of wavelengths at which the QE and transmission curves will be interpolated and the planck function will be evaluated. 
+
+It takes the smallest and largest wavelength values between qe and tc and calculates a numpy arange between them with a spacing of lambda\+Bin\+Size 
+\begin{DoxyParams}{Parameters}
+{\em qe} & qe dictionary input into camera object by user \\
+\hline
+{\em tc} & tc dictionary input into camera object by user \\
+\hline
+{\em lambda\+Bin\+Size} & lambda\+Bin\+Size input into camera object by user \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+lambda\+Set\+: unified set of wavelengths for tc/qe/planck 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1camera_af238bceaf20ae4b7480fe8fb798a0d96}\label{classcamera_1_1camera_af238bceaf20ae4b7480fe8fb798a0d96}} 
+\index{camera\+::camera@{camera\+::camera}!interpolate\+Lambda\+Dependent@{interpolate\+Lambda\+Dependent}}
+\index{interpolate\+Lambda\+Dependent@{interpolate\+Lambda\+Dependent}!camera\+::camera@{camera\+::camera}}
+\subsubsection{\texorpdfstring{interpolate\+Lambda\+Dependent()}{interpolateLambdaDependent()}}
+{\footnotesize\ttfamily def camera.\+camera.\+interpolate\+Lambda\+Dependent (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{ex,  }\item[{}]{lambda\+Set }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1camera_af238bceaf20ae4b7480fe8fb798a0d96}{interpolate\+Lambda\+Dependent()} this function creates unified tc and qe curves that can be multiplied simply to create a full sensitivity curve Notes\+: I moved the actual funciton to util within the python framework because it was useful elsewhere, too. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em ex} & tc or qe dictionary input into camera object by user \\
+\hline
+{\em lambda\+Set} & unified lambda set (output of camera.\+find\+Lambda\+Set) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+interpolated\+Set\+: qe or tc dictionary evaluated at wavelength values of lambd\+Set 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1camera_a19a245a417b72f0ae753b5200b1615ff}\label{classcamera_1_1camera_a19a245a417b72f0ae753b5200b1615ff}} 
+\index{camera\+::camera@{camera\+::camera}!load\+All\+Stars@{load\+All\+Stars}}
+\index{load\+All\+Stars@{load\+All\+Stars}!camera\+::camera@{camera\+::camera}}
+\subsubsection{\texorpdfstring{load\+All\+Stars()}{loadAllStars()}}
+{\footnotesize\ttfamily def camera.\+camera.\+load\+All\+Stars (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{db,  }\item[{}]{max\+Mag,  }\item[{}]{min\+Mag }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1camera_a19a245a417b72f0ae753b5200b1615ff}{load\+All\+Stars()} is used to load stellar data from a database (nominally db/tycho.\+db into a camera instance). 
+
+
+\begin{DoxyParams}{Parameters}
+{\em db} & database to load stars from. If camera object is initialized nominally, this will be db/tycho.\+db. db can be changed by initializing camera with the db kwarg. \\
+\hline
+{\em max\+Mag} & maximum magnitude to load into camera. Can be used when modeling a noisy camera. Images are created more quickly when fewer stars are present, so cutting out dimmer stars may be desirable \\
+\hline
+{\em min\+Mag} & minum magnitude to load into camera. W\+A\+R\+N\+I\+NG\+: Setting this value to anything greater than -\/2 is physically unrealistic as it will remove all of the brightest stars! Parameter is included for debugging purposes \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+RA\+: Right ascension of all stars in db within magnitude bounds 
+
+DE\+: Declination of all stars in db within magnitude bounds 
+
+VT\+: Tycho visual magnitude of all stars in db within magnitude bounds 
+
+B\+VT\+: Tycho color index of all stars in db within magnitude bounds 
+
+n1\+: 1st coordinate of intertial unit vector of all stars in db within magnitude bounds 
+
+n2\+: 2nd coordinate of intertial unit vector of all stars in db within magnitude bounds 
+
+n3\+: 3rd coordinate of intertial unit vector of all stars in db within magnitude bounds 
+
+star\+ID\+: Right ascension of all stars in db within magnitude bounds 
+
+solid\+Angle\+Subtended\+: Right ascension of all stars in db within magnitude bounds 
+
+T\+: Right ascension of all stars in db within magnitude bounds 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1camera_afd4c4aea63d44aa43d53ccd4110be3a8}\label{classcamera_1_1camera_afd4c4aea63d44aa43d53ccd4110be3a8}} 
+\index{camera\+::camera@{camera\+::camera}!update\+State@{update\+State}}
+\index{update\+State@{update\+State}!camera\+::camera@{camera\+::camera}}
+\subsubsection{\texorpdfstring{update\+State()}{updateState()}}
+{\footnotesize\ttfamily def camera.\+camera.\+update\+State (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1camera_afd4c4aea63d44aa43d53ccd4110be3a8}{update\+State()} is the master function of the camera object. 
+
+It reads take\+Image from the B\+SK messaging system and opens, closes, or updates images appropraitely 
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+camera.\+py\end{DoxyCompactItemize}
