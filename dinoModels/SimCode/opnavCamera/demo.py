@@ -163,7 +163,7 @@ starCam = camera.camera(
 #
 ###############################################################################
 
-if 1 or makeAll:
+if 0 or makeAll:
 	print('##################### Image 1 ####################')
 
 	cam.scState = np.array([au/1000,-1e6, 0, 0, 0, 0])
@@ -343,7 +343,7 @@ if 0 or makeAll:
 #
 ###############################################################################
 
-if 1 or makeAll:
+if 0 or makeAll:
 	print('##################### Image 7 ####################')
 	msg['addBod'] = 0
 	msg['rmOcc'] = 0
@@ -367,6 +367,40 @@ if 1 or makeAll:
 	plt.imshow(starCam.images[len(starCam.images)-1].detectorArray)
 	plt.title('Image 7 (Simple Slew)')
 
+###############################################################################
+#
+#		Image 8 (simple slew with bodies)
+#
+###############################################################################
+
+if 1 or makeAll:
+	print('##################### Image 8 ####################')
+	earth.state = np.array([au,0,0,0,0,0])
+	moon.state = earth.state +  250000*np.array([0,1,0,0,0,0])
+	cam.scState = earth.state - 500000*np.array([1,0,0,0,0,0])
+
+	msg['addBod'] = 1
+	msg['rmOcc'] = 1
+
+	cam.takeImage = 1
+
+	for i in range(0,10):
+		alpha = i*0.1
+		beta = alpha
+		gamma = alpha
+		cam.scDCM = Euler321_2DCM(
+			np.deg2rad(alpha),
+			np.deg2rad(beta),
+			np.deg2rad(gamma)
+			)
+		cam.updateState()
+
+	cam.takeImage = 0
+	cam.updateState()
+
+	plt.figure()
+	plt.imshow(cam.images[len(cam.images)-1].detectorArray)
+	plt.title('Image 8 (Simple Slew with Bodies)')
 pdb.set_trace()
 
 
