@@ -41,7 +41,7 @@ except ImportError:
 
 import numpy as np
 from batchFilter    import run_batch as runBatchVanilla
-from batchFilterAcc import run_batch as runBatchAcc
+#from batchFilterAcc import run_batch as runBatchAcc
 
 from batchFilter    import runRef
 
