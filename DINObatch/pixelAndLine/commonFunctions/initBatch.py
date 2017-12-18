@@ -25,7 +25,7 @@ bskName = 'Basilisk'
 dinoName = 'DINO_CREx'
 splitPath = path.split(dinoName)
 dinoSpicePath = splitPath[0] + dinoName + '/DINObatch/SPICE/'
-dinoCommonPath = splitPath[0] + dinoName + '/DINObatch/P&L/common_functions/'
+dinoCommonPath = splitPath[0] + dinoName + '/DINObatch/pixelAndLine/commonFunctions/'
 bskSpicePath = splitPath[0] + bskName + '/External/EphemerisData/'
 bskPath = splitPath[0] + bskName + '/'
 sys.path.append(bskPath + 'modules')
