@@ -13,6 +13,9 @@ sys.path.append(bskPath + 'PythonModules')
 sys.path.append('../dinoModels/SimCode/opnavCamera/')
 sys.path.append('../dinoModels/SimCode/opnavCamera/dependencies')
 sys.path.append('../dinoModels/fswAlgorithms/imageProcessing/dependencies/')
+sys.path.append('../DINObatch/pixelAndLine/commonFunctions/')
+sys.path.append('../DINObatch/pixelAndLine/unmodeledAcc/')
+sys.path.append('../DINObatch/SPICE/')
 
 import BSK_plotting as BSKPlt
 
@@ -30,7 +33,8 @@ except ImportError:
 
 import camera
 import imageProcessingExecutive as ip
-
+from initBatch import initBatchFnc
+import pdb
 
 # ------------------------------------- DATA LOGGING ------------------------------------------------------ #
 
@@ -512,6 +516,80 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     # Run the Navigation Module
 
+    # Run the Navigation Module
+    observationData = {}
+    stateValues     = {}
+
+    # pull the initial state
+    IC = np.append( r_BN[0,1:4], v_BN[0,1:4] ) / 1000.
+
+    # estimating accelerations - ON or OFF
+    navParam['acc_est']    = 'OFF'
+
+    # number of batch iterations per data package
+    navParam['iterations'] = 3
+
+    # a priori uncertainty for the referenceStates
+    covBar = np.zeros((9,9))
+    covBar[0, 0] = 10000.**2
+    covBar[1, 1] = 10000.**2
+    covBar[2, 2] = 10000.**2
+    covBar[3, 3] = .1**2
+    covBar[4, 4] = .1**2
+    covBar[5, 5] = .1**2
+    covBar[6, 6] = (10.**(-8))**2
+    covBar[7, 7] = (10.**(-8))**2
+    covBar[8, 8] = (10.**(-8))**2
+
+    if navParam['acc_est'] == 'OFF':
+      covBar = covBar[0:6,0:6]
+    else:
+      IC = np.append(np.zeros( (3,) ))  
+    
+    # Inverse of the observation weighting matrix (W)
+    observationUncertainty = np.identity(2)
+    observationUncertainty[0, 0] = 2 ** 2
+    observationUncertainty[1, 1] = 2 ** 2
+
+    # the initial STM is an identity matrix
+    phi0 = np.identity(IC.shape[0])
+
+    # initiate a priori deviation
+    stateDevBar = np.zeros(IC.shape)
+
+    observationData['measurements']            = beaconPLNav
+    observationData['beaconIDs']               = np.squeeze(beaconIDsNav).tolist()
+    for nn, ii in enumerate(observationData['beaconIDs']):
+     # if ii == 'Earth':
+     #   observationData['beaconIDs'][nn] = '399'
+     # if ii == 'Moon':
+     #   observationData['beaconIDs'][nn] = '301'
+      if ii == 'Mars':
+        observationData['beaconIDs'][nn] = '4'
+
+    observationData['observation uncertainty'] = observationUncertainty
+
+    stateValues['IC']           = IC
+    stateValues['phi0']         = phi0
+    stateValues['covBar']       = covBar
+    stateValues['stateDevBar']  = stateDevBar
+    stateValues['initial time'] = r_BN[0,0]
+
+    # convert time from nanoseconds to seconds
+    obsTimes      = np.squeeze(imgTimesNav/10**9)
+
+    # convert imgMRPNav from MRP to 3-2-1 euler
+    img321Nav = np.zeros( imgMRPNav.shape )
+    for ii in xrange( imgMRPNav.shape[0] ):
+      img321Nav[ii,:] = rbk.MRP2Euler321( imgMRPNav[ii,:] )
+
+
+    filterOutputs = initBatchFnc( stateValues, obsTimes, observationData,\
+                                  imgMRPNav, navParam )
+    # output of the estimated state for the input times after number of desired iterations
+    # (N,d) in shape. Numpy array of floats
+    estimatedState = filterOutputs[str(navParam['iterations']-1)]['estimatedState']
+    print 'Filtering Complete'
 
 def attFilter_dynScenario(TheDynSim):
     """
@@ -842,54 +920,60 @@ def defineParameters(
 
     # Nav Module Parameter Creation
 
-    navParams = {}
+    navInputs = {}
 
     # SPICE Parameters
 
     # basic .bsp filename (generic, such as de430, etc)
-    navParams['basic_bsp'] = 'de430.bsp'
+    navInputs['basic_bsp']   = 'de430.bsp'
     # .bsp filename for mission
-    navParams['mission_bsp'] = 'DINO_kernel.bsp'
-    # .tls filename
-    navParams['tls'] = 'naif0011.tls'
+    navInputs['mission_bsp'] = 'DINO_kernel.bsp'
+    # .tls filename 
+    navInputs['tls']         = 'naif0011.tls'
     # abcorr for spkzer
-    navParams['abcorr'] = 'NONE'
+    navInputs['abcorr']      = 'NONE'
     # reference frame
-    navParams['ref_frame'] = 'J2000'
+    navInputs['ref_frame']   = 'J2000'
 
     # Force Parameters
-
+    
     #   Gravity
     # body vector for primary and secondary gravitational bodies
-    navParams['bodies'] = ['SUN', '3', '399']
+    navInputs['bodies']    = ['SUN', '3', '399']
     # specify primary and secondary indices
-    navParams['primary'] = 0
-    navParams['secondary'] = [1, 2]
+    navInputs['primary']   = 0
+    navInputs['secondary'] = [1, 2]
     # respective GP vector
-    navParams['mu'] = [1.32712428 * 10 ** 11, 3.986004415 * 10 ** 5, 4.305 * 10 ** 4]
+    navInputs['mu']        = [1.32712428 * 10 ** 11, 3.986004415 * 10 ** 5, 4.305 * 10 ** 4]
     #   SRP
     # A/M ratio multiplied by solar pressure constant at 1 AU with adjustments
     # Turboprop document Eq (64)
-    navParams['SRP'] = 0.3 ** 2 / 14. * 149597870. ** 2 * 1358. / 299792458. / 1000.
+    navInputs['SRP']       = 0.3**2/14. * 149597870.**2 * 1358. / 299792458. / 1000. 
     # coefficient of reflectivity
-    navParams['cR'] = 1.
+    navInputs['cR']        = 1.
 
     # Camera/P&L Parameters
 
     # Focal Length (mm)
-    navParams['FoL'] = 100.
+    navInputs['FoL']             = ipCamParam['focal length']
     # default inertial to camera transformation matrices
-    navParams['DCM_BI'] = np.eye(3)
-    navParams['DCM_TVB'] = np.eye(3)
+    navInputs['DCM_BI']          = np.eye(3)
+    navInputs['DCM_TVB']         = np.eye(3)
     # Camera resolution (pixels)
-    navParams['resolution'] = [1024., 1024.]
-    # width and height of pixels in camera
-    navParams['pixel_width'] = 5.
-    navParams['pixel_height'] = 5.
+    navInputs['resolution']      = [cam.resolutionWidth, cam.resolutionHeight]
+    # width and height of pixels in camera. convert from meters to mm
+    navInputs['pixel_width']     = ipCamParam['pixel size'][0]*10**3
+    navInputs['pixel_height']    = ipCamParam['pixel size'][1]*10**3
     # direction coefficient of pixel and line axes
-    navParams['pixel_direction'] = 1.
-    navParams['line_direction'] = 1.
+    navInputs['pixel_direction'] = 1.
+    navInputs['line_direction']  = 1.
 
-    navInputs = []
+    # Add anomaly detection parameters
+    navInputs['anomaly']= False
+    navInputs['anomaly_num'] = 0
+    navInputs['anomaly_threshold'] = 4
+
+    # plotting? 'ON' or 'OFF'
+    navInputs['nav plots'] = 'ON'
 
     return camInputs, ipInputs, navInputs
