@@ -182,15 +182,6 @@ def propAndObs_Scenario(useNavOutputs, genPlots):
 
             r_sun_temp, r_earth_temp, r_moon_temp, r_mars_temp, r_beacons_temp = pull_DynCelestialOutputs(propSim, plots=False)
 
-            batchIC = np.hstack([r_BN_batch[-1, 1:], v_BN_batch[-1, 1:]])
-            phi0 = np.eye(6)
-            timeSpan = r_BN_temp[:,0] * mc.NANO2SEC
-            propagatorInput = (batchIC, phi0, timeSpan, navParam)
-
-            outState = bf.runRef(propagatorInput)
-            r_BN_batch_temp = outState[0:3, :]
-            v_BN_batch_temp = outState[3:, :]
-
         else:
             ##  Run the observation sim
             print "*****************************"
