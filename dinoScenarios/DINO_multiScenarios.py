@@ -695,8 +695,10 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
 
     filterOutputs = initBatchFnc( stateValues, obsTimes, observationData,\
                                   imgMRPNav, navParam )
-
-    pdb.set_trace()
+    # output of the estimated state for the input times after number of desired iterations
+    # (N,d) in shape. Numpy array of floats
+    estimatedState = filterOutputs[str(navParam['iterations']-1)]['estimatedState']
+    print 'Filtering Complete'
 
 def attFilter_dynScenario(TheDynSim):
     """
@@ -933,9 +935,9 @@ def defineParameters(
     navInputs['DCM_TVB']         = np.eye(3)
     # Camera resolution (pixels)
     navInputs['resolution']      = [cam.resolutionWidth, cam.resolutionHeight]
-    # width and height of pixels in camera
-    navInputs['pixel_width']     = ipCamParam['pixel size'][0]
-    navInputs['pixel_height']    = ipCamParam['pixel size'][1]
+    # width and height of pixels in camera. convert from meters to mm
+    navInputs['pixel_width']     = ipCamParam['pixel size'][0]*10**3
+    navInputs['pixel_height']    = ipCamParam['pixel size'][1]*10**3
     # direction coefficient of pixel and line axes
     navInputs['pixel_direction'] = 1.
     navInputs['line_direction']  = 1.
