@@ -495,129 +495,20 @@ def multiOrbitBeacons_dynScenario(TheDynSim):
     takeImage[200] = 1
     takeImage[300] = 1
 
-    lastTakeImage = 0
-    for i in range(0, len(r_BN)):
-        cam.scState = r_BN[i][1:4] / 1000
-        earth.state = r_earth[i][1:4] / 1000
-        moon.state = r_moon[i][1:4] / 1000
-        mars.state = r_mars[i][1:4] / 1000
-        # also need a loop here for
-        # updating beacon position once they're added
+            #cam, beaconList, r_BN, r_earth, r_moon, r_mars
 
-        from constants import au
-        # cam.scState = np.array([au/1000,-1e6, 1e6])
-        # earth.state = np.array([au/1000, 0, 0])
-        cam.scDCM = np.array([
-            [0, 1, 0],
-            [-1, 0, 0],
-            [0, 0, 1]
-        ])
-
-        if i == 100 or i == 101:
-            sc2bdy = earth.state - cam.scState
-        elif i == 200 or i == 201:
-            sc2bdy = moon.state - cam.scState
-        else:
-            sc2bdy = mars.state - cam.scState
-
-        sc2bdyNormed = sc2bdy / np.linalg.norm(sc2bdy)
-        RA = np.arctan2(sc2bdyNormed[1], sc2bdyNormed[0])
-        DE = np.arctan2(sc2bdyNormed[2], np.sqrt(sc2bdyNormed[0] ** 2 + sc2bdyNormed[1] ** 2))
-        cam.scDCM = rbk.euler3212C(np.array([RA, -DE, 0]))
-
-        # test that forces camera to point at cental star
-        # in orion's belt
-        # cam.scDCM = rbk.euler3212C(
-        #     np.array([
-        #         np.deg2rad(191.93049537),
-        #         np.deg2rad(59.68873246),
-        #         np.deg2rad(0)]))
-
-
-        # cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
-        cam.takeImage = takeImage[i]
-        cam.imgTime = r_BN[i][0]
-        cam.updateState()
-
-    detectorArrays = []
-    imgTimes = []
-    imgPos = []
-    imgMRP = []
-    imgBeaconPos = []
-
-    for i in range(0, len(cam.images)):
-        detectorArrays.append(cam.images[i].detectorArray)
-        imgTimes.append(cam.images[i].imgTime)
-        imgPos.append(cam.images[i].imgPos)
-        imgMRP.append(rbk.C2MRP(cam.images[i].imgDCM))
-        imgBeaconPos.append(cam.images[i].imgBeaconPos)
-
-        plt.figure()
-        plt.imshow(cam.images[i].detectorArray)
-
-    plt.show()
-
+    detectorArrays, imgTimes, imgPos, imgMRP, imgBeaconPos = genCamImages(cam, beacons, r_BN, r_earth, r_moon, r_mars, takeImage)
     # Run the Image Processing Module
 
-    # required parameters from defineParameters function
-    camParamIP = ipParam[0]
-    beaconIDs = ipParam[1]
-    beaconRadius = ipParam[2]
 
-    imgTimesFound = []
-    beaconIDsFound = []
-    beaconPLFound = []
-    imgMRPFound = []  # will have 'None' entries when not able to detect enough objects
-    imgMRPFoundPassThrough = []  # identical attitude as input into the image processing module
+    beaconPLNav, beaconIDsNav, imgMRPNav, imgTimesNav, numNavInputs = genImgProc(detectorArrays, imgPos, imgMRP, imgBeaconPos, imgTimes, ipParam)
 
-    print '\nBeacon ID Check:'
-    print beaconIDs
-
-    for indList in range(len(imgTimes)):
-        currentBeaconIDs, currentPL, currentMRP = ip.imageProcessing(detectorArrays[indList],
-                                                                     camParamIP,
-                                                                     imgPos[indList],
-                                                                     imgMRP[indList],
-                                                                     imgBeaconPos[indList],
-                                                                     beaconIDs,
-                                                                     beaconRadius,
-                                                                     makePlots=False,
-                                                                     debugMode=True)
-
-        for indBeacon in range(len(currentBeaconIDs)):
-            imgTimesFound.append(imgTimes[indList])
-            beaconIDsFound.append(currentBeaconIDs[indBeacon])
-            beaconPLFound.append(currentPL[indBeacon])
-
-            # pass through attitude estimate for navigation module
-            imgMRPFoundPassThrough.append(imgMRP[indList])
-
-            # attitude output of image processing logged for informational purposes only
-            # (nav module to use sim attitude filter output)
-
-            if currentMRP is not None:
-                imgMRPFound.append(currentMRP)
-
-        print '\nImage Processing Output: '
-        print 'Image#: ', indList
-
-        print '\nFound Beacon IDs, P/L, MRP'
-        print currentBeaconIDs, currentPL, currentMRP
-        print '\nInitial Estimate MRP: ', imgMRP[indList]
-        print 'Initial Estimate DCM: '
-        print cam.images[i].imgDCM
-
-    # Generate inputs for navigation modulec
-    numNavInputs = len(imgTimesFound)
-    imgTimesNav = np.reshape(imgTimesFound, (numNavInputs, 1))
-    beaconIDsNav = np.reshape(beaconIDsFound, (numNavInputs, 1))
-    beaconPLNav = np.reshape(beaconPLFound, (numNavInputs, 2))
-    print 'imgMRPFOundPassThrough: ', imgMRPFoundPassThrough
-    imgMRPNav = np.reshape(imgMRPFoundPassThrough, (numNavInputs, 3))
-
-    print beaconIDsNav
+    print "*******Image Processing Outputs*******"
+    print "Beacon PL:"
     print beaconPLNav
-    print imgMRPNav
+    print "beaconIDs:"
+    print beaconIDsNav
+
 
     # Run the Navigation Module
 
@@ -716,6 +607,141 @@ def opnavCamera_dynScenario(TheDynSim):
     pull_senseOutputs(TheDynSim)
     # pull_DynCelestialOutputs(TheDynSim)
     plt.show()
+
+def genCamImages(cam, beaconList, r_BN, r_earth, r_moon, r_mars, takeImage):
+    """
+    Generates camera images given spacecraft and celestial body positions. Intended to return all necessary/relevant
+    information for genImgProc().
+    :params: cam                : Camera object
+    :params: beaconList         : List of nav beacon objects ordered from Earth
+    :params: r_BN      : spacecraft inertial position vector over observation window
+    :params: r_earth           : earth inertial position vector over observation window
+    :params: r_moon                 : moon inertial position vector over observation window
+    :params: r_mars                 : mars inertial position vector over observation window
+    :params: takeImage     : vector of camera control arguments; 1 is take image, 0 is don't
+
+    :return: detectorArrays          : list of image objects
+    :return: imgTimes          : list of image times
+    :return: imgPos          : list of sc positions during images (passed-through)
+    :return: imgMRP          :   sc attitude MRP (passed-through)
+    :return: imgBeaconPos    :   beacon inertial positions (passed-through)
+    """
+
+    earth = beaconList[0]
+    mars = beaconList[1]
+    moon = beaconList[2]
+
+
+    lastTakeImage = 0
+
+    #   Iterate over sampled spacecraft positions
+    for i in range(0, len(r_BN)):
+        #   Convert from meters to km
+        cam.scState = r_BN[i][1:4] / 1000
+        earth.state = r_earth[i][1:4] / 1000
+        moon.state = r_moon[i][1:4] / 1000
+        mars.state = r_mars[i][1:4] / 1000
+
+        #   Set internal dcm to something random for now I guess
+        cam.scDCM = np.array([
+            [0, 1, 0],
+            [-1, 0, 0],
+            [0, 0, 1]
+        ])
+
+        if i == 100 or i == 101:
+            sc2bdy = earth.state - cam.scState
+        elif i == 200 or i == 201:
+            sc2bdy = moon.state - cam.scState
+        else:
+            sc2bdy = mars.state - cam.scState
+
+        sc2bdyNormed = sc2bdy / np.linalg.norm(sc2bdy)
+        RA = np.arctan2(sc2bdyNormed[1], sc2bdyNormed[0])
+        DE = np.arctan2(sc2bdyNormed[2], np.sqrt(sc2bdyNormed[0] ** 2 + sc2bdyNormed[1] ** 2))
+        cam.scDCM = rbk.euler3212C(np.array([RA, -DE, 0]))
+
+        # test that forces camera to point at cental star
+        # in orion's belt
+        # cam.scDCM = rbk.euler3212C(
+        #     np.array([
+        #         np.deg2rad(191.93049537),
+        #         np.deg2rad(59.68873246),
+        #         np.deg2rad(0)]))
+
+
+        # cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
+        cam.takeImage = takeImage[i]
+        cam.imgTime = r_BN[i][0]
+        cam.updateState()
+
+    detectorArrays = []
+    imgTimes = []
+    imgPos = []
+    imgMRP = []
+    imgBeaconPos = []
+
+    for i in range(0, len(cam.images)):
+        detectorArrays.append(cam.images[i].detectorArray)
+        imgTimes.append(cam.images[i].imgTime)
+        imgPos.append(cam.images[i].imgPos)
+        imgMRP.append(rbk.C2MRP(cam.images[i].imgDCM))
+        imgBeaconPos.append(cam.images[i].imgBeaconPos)
+
+        plt.figure()
+        plt.imshow(cam.images[i].detectorArray)
+
+    return detectorArrays, imgTimes, imgPos, imgMRP, imgBeaconPos
+
+def genImgProc(detectorArrays, imgPos, imgMRP, imgBeaconPos, imgTimes, ipParam):
+    # required parameters from defineParameters function
+    camParamIP = ipParam[0]
+    beaconIDs = ipParam[1]
+    beaconRadius = ipParam[2]
+
+    imgTimesFound = []
+    beaconIDsFound = []
+    beaconPLFound = []
+    imgMRPFound = []  # will have 'None' entries when not able to detect enough objects
+    imgMRPFoundPassThrough = []  # identical attitude as input into the image processing module
+
+    print '\nBeacon ID Check:'
+    print beaconIDs
+
+    for indList in range(len(imgTimes)):
+        currentBeaconIDs, currentPL, currentMRP = ip.imageProcessing(detectorArrays[indList],
+                                                                     camParamIP,
+                                                                     imgPos[indList],
+                                                                     imgMRP[indList],
+                                                                     imgBeaconPos[indList],
+                                                                     beaconIDs,
+                                                                     beaconRadius,
+                                                                     makePlots=False,
+                                                                     debugMode=True)
+
+        for indBeacon in range(len(currentBeaconIDs)):
+            imgTimesFound.append(imgTimes[indList])
+            beaconIDsFound.append(currentBeaconIDs[indBeacon])
+            beaconPLFound.append(currentPL[indBeacon])
+
+            # pass through attitude estimate for navigation module
+            imgMRPFoundPassThrough.append(imgMRP[indList])
+
+            # attitude output of image processing logged for informational purposes only
+            # (nav module to use sim attitude filter output)
+
+            if currentMRP is not None:
+                imgMRPFound.append(currentMRP)
+
+
+    # Generate inputs for navigation modulec
+    numNavInputs = len(imgTimesFound)
+    imgTimesNav = np.reshape(imgTimesFound, (numNavInputs, 1))
+    beaconIDsNav = np.reshape(beaconIDsFound, (numNavInputs, 1))
+    beaconPLNav = np.reshape(beaconPLFound, (numNavInputs, 2))
+    imgMRPNav = np.reshape(imgMRPFoundPassThrough, (numNavInputs, 3))
+
+    return beaconPLNav, beaconIDsNav, imgMRPNav, imgTimesNav, numNavInputs
 
 
 def defineParameters(

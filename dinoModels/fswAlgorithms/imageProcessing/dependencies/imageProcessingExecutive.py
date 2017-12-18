@@ -245,7 +245,7 @@ def imageProcessing(imageMap, cameraParameters, r_N_cam, sigma_BN_est,
     ##################################################
     ##################################################
     # Conduct Object ID for Stars
-
+    objectIDsMatched = []
     # if numBeaconsResolved == 0:
     if numStarsFound > 3:
         objectIDs = idfunc.objectIDStars(pixelLineCenterStars, imageProcessingParam, cameraParameters)
