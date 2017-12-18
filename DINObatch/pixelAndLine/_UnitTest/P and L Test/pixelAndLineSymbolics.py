@@ -14,6 +14,81 @@ import sys, os, inspect
 import sympy as sym 
 import numpy as np
 import pdb
+
+## \defgroup pixel_and_line_symbolic  pixelAndLineSymbolics - symbolic function for testPL_GH.py
+##   @{
+## The symbolic method used in the `pixelLineBatch.py` unit test.
+#
+# Overview {#overview}
+# ====
+#
+# Purpose
+# -----
+# The function within this script contains a symbolic method of computing measurements (G) and the observation-state mapping matrix (H). 
+#
+# Contents
+# -----
+# The `pixelAndLineSymbolics.py` script contains a single exportable function and three internal symbolic rotation matrices:
+#
+# - `main`
+# - `rot1`
+# - `rot2`
+# - `rot3`
+#
+# This exportable function is called by \ref test_PL script and compared to the functions found within \ref pixel_and_line. 
+#
+# The Code
+# =====
+#
+# `main`
+# -----
+#
+# This code contains the symbolic math needed to calculate a counterpoint to the `fncG()` and `fncH()` functions found within \ref pixel_and_line module.
+#
+# The section of code defines spacecraft and object (beacon) symbols as well as parameters such as the twise angle and the width of the pixels:
+# ~~~~~~~~~~~~~~~~{.py}
+#   # twist
+#   twist = sym.Symbol('twist')
+#   # the x dimension conversion of a pixel
+#   Kx   = sym.Symbol('Kx')
+# ~~~~~~~~~~~~~~~~
+#
+# These states and parameters and then used to symbolicly compute the pixel and line measurement data as well as derivatives of pixel and line with respect to the filter quantities of interest (spacecraft position and velocity). Here, we provide the pixel and line equations as well as the derivative of pixel with respect to x position, as examples:
+# ~~~~~~~~~~~~~~~~{.py}
+#    # pixel conversion
+#    p = Kx * Dx * FoL / A_hat_TV[2] * A_hat_TV[0] + p0
+#    # line conversion
+#    l = Ky * Dy * FoL / A_hat_TV[2] * A_hat_TV[1] + l0
+#
+#    # differentiate pixel and line wrt to spacecraft position 
+#    p_deriv_x = sym.diff( p, x_sc )
+# ~~~~~~~~~~~~~~~~
+#
+# Using the `sympy` package, the function `sympy.lambdify()`is used to create callable functions using the symbolic equations previously discussed. Again, the x derivative of the pixel equation is used as an example:
+# ~~~~~~~~~~~~~~~~{.py}
+#    # turn symbolics into functions
+#    p_deriv_x_function = sym.lambdify( ( x_sc, y_sc, z_sc, x_ob, y_ob,\
+#      z_ob, FoL, RA, dec, twist, Kx, Ky, Dx, Dy, p0, l0 ), p_deriv_x )
+# ~~~~~~~~~~~~~~~~
+#
+# After the creation of these `sympy.lambdify()` functions, the previously symbolic variables of state and parameter are given numeric values (floats). 
+# ~~~~~~~~~~~~~~~~{.py}
+#    diffG = G - np.array(symbolic_results[0:2])
+#
+#    diffH = H[:,0:3] - np.array([symbolic_results[2:5],symbolic_results[5:8]])
+#
+#    if np.any( np.greater( np.abs( diffG ), 10**(-10) ) ):
+#       print 'P&L G Function did not pass unit test :('
+#    else:
+#       print 'P&L G Function passed unit test!'
+#
+#    if np.any( np.greater( np.abs( diffH ), 10**(-10) ) ):
+#       print 'P&L H Function did not pass unit test :('
+#    else:
+#       print 'P&L H Function passed unit test!'
+# ~~~~~~~~~~~~~~~~ 
+#
+## @}
 ################################################################################
 #                  S E C O N D A R Y     F U N C T I O N S:
 ################################################################################
