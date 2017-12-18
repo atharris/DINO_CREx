@@ -80,13 +80,14 @@ def runSimSegment(TheDynSim, simTime, initialState, initialAtt, timeStr):
 
     return TheDynSim
 
-def propAndObs_Scenario():
-    '''
+def propAndObs_Scenario(useNavOutputs, genPlots):
+    """
+    Executes a default scenario for stand-alone dynamic simulations
+    :params: None
+    :return: None
+    """
 
-    :return:
-    '''
-
-    propSim = DINO_main.DINO_DynSim(10000., 100.)
+    propSim = DINO_main.DINO_DynSim(100., 100.)
     obsSim = DINO_main.DINO_DynSim(0.01, 0.01)
 
     propSim.InitializeSimulation()
@@ -133,8 +134,8 @@ def propAndObs_Scenario():
 
     ##   Define Mode Sequence Parameters.
 
-    propDurations = [139643.532, 10*139643.532]
-    obsDurations = [1000.0]
+    propDurations = [1000, 10*139643.532]
+    obsDurations = [100.0]
 
     modeSeq = [0, 1, 0]
 
@@ -153,6 +154,10 @@ def propAndObs_Scenario():
     v_BN = np.zeros([1,4])
     r_BN[0,1:4], v_BN[0,1:4] = define_dino_earthSOI()#om.elem2rv(mu, oe)
 
+    r_BN_batch = np.zeros([1,4])
+    v_BN_batch = np.zeros([1,4])
+    r_BN_batch[0,1:4], v_BN_batch[0,1:4] = define_dino_earthSOI()
+
     sigma_BN = np.array([[0, 0.1, 0.2, 0.3]])
     omega_BN_B = np.array([[0, 0.001, 0.002, 0.003]])
 
@@ -160,8 +165,6 @@ def propAndObs_Scenario():
     r_earth = np.zeros([1,4])
     r_moon = np.zeros([1,4])
     r_mars = np.zeros([1,4])
-    r_beacons = np.zeros([obsSim.DynClass.numBeacons,4])
-
 
     for mode in modeSeq:
         timeStr = utcObj.strftime("%d %b %Y %H:%M:%S.%f")
@@ -174,10 +177,19 @@ def propAndObs_Scenario():
             execTime = propDurations[propInd]
             runSimSegment(propSim, propDurations[propInd], np.hstack([r_BN[-1, 1:4], v_BN[-1, 1:4]]).tolist(), np.hstack([sigma_BN[-1, 1:4],omega_BN_B[-1, 1:4]]).tolist() , timeStr)
             r_BN_temp, v_BN_temp, sigma_BN_temp, omega_BN_B_temp = pull_DynOutputs(propSim,plots=False)
-            sigma_tilde_BN_temp, omega_tilde_BN_temp = pull_senseOutputs(propSim,plots=False)
-            sigma_hat_BN_temp, omega_hat_BN_temp = pull_aekfOutputs(propSim,plots=False)
+            #sigma_tilde_BN_temp, omega_tilde_BN_temp = pull_senseOutputs(propSim,plots=False)
+            #sigma_hat_BN_temp, omega_hat_BN_temp = pull_aekfOutputs(propSim,plots=False)
 
             r_sun_temp, r_earth_temp, r_moon_temp, r_mars_temp, r_beacons_temp = pull_DynCelestialOutputs(propSim, plots=False)
+
+            batchIC = np.hstack([r_BN_batch[-1, 1:], v_BN_batch[-1, 1:]])
+            phi0 = np.eye(6)
+            timeSpan = r_BN_temp[:,0] * mc.NANO2SEC
+            propagatorInput = (batchIC, phi0, timeSpan, navParam)
+
+            outState = bf.runRef(propagatorInput)
+            r_BN_batch_temp = outState[0:3, :]
+            v_BN_batch_temp = outState[3:, :]
 
         else:
             ##  Run the observation sim
@@ -193,8 +205,21 @@ def propAndObs_Scenario():
             r_sun_temp, r_earth_temp, r_moon_temp, r_mars_temp, r_beacons_temp = pull_DynCelestialOutputs(obsSim,plots=False)
             takeImage = np.ones([1,len(r_BN_temp)])
 
-            r_BN_pred = bf.runRef(refPropInputs)
-            detectorArrays, imgTimes, imgPos, imgMRP, imgBeaconPos = genCamImages(cam, beacons, r_BN, r_earth, r_moon,
+            batchIC = np.hstack([r_BN_batch[-1,1:],v_BN_batch[-1,1:]])
+            phi0 = np.eye(6)
+            timeSpan = r_BN_temp[0,:] * mc.NANO2SEC
+            propagatorInput = (batchIC, phi0, timeSpan, navParam)
+
+            outState = bf.runRef(propagatorInput)
+            r_BN_batch_temp = outState[0:3,:]
+            v_BN_batch_temp = outState[3:,:]
+
+            if useNavOutputs:
+                camInputPos = r_BN_batch_temp
+            else:
+                camInputPos = r_BN_temp
+
+            detectorArrays, imgTimes, imgPos, imgMRP, imgBeaconPos = genCamImages(cam, beacons, camInputPos, r_earth, r_moon,
                                                                                   r_mars, takeImage)
             # Run the Image Processing Module
 
@@ -210,6 +235,8 @@ def propAndObs_Scenario():
             print beaconIDsNav
             propInd = propInd + 1
             obsInd = obsInd+1
+
+
 
         utcObj = utcObj + datetime.timedelta(seconds=execTime)
 
@@ -227,6 +254,10 @@ def propAndObs_Scenario():
         sigma_BN = np.concatenate((sigma_BN, sigma_BN_temp))
         omega_BN_B = np.concatenate((omega_BN_B, omega_BN_B_temp))
 
+        #   Update fsw dynaic params
+        r_BN_batch = np.concatenate((r_BN_batch, r_BN_batch_temp))
+        v_BN_batch = np.concatenate((v_BN_batch, v_BN_batch_temp))
+
     ##  Plotting of results
     celes_data_dict = {
         'moon': [r_moon, 'cyan'],
@@ -240,4 +271,4 @@ def propAndObs_Scenario():
 
 
 if __name__ == "__main__":
-    propAndObs_Scenario()
+    propAndObs_Scenario(False, False)
