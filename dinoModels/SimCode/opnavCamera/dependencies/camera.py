@@ -1096,8 +1096,8 @@ class image:
 							self.camera.angularHeight,
 							self.camera.angularWidth
 							),
-						200,
-						200,
+						100,
+						100,
 						False,
 						body.albedo,
 						body.r_eq,
