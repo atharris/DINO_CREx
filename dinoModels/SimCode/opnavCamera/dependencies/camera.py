@@ -151,7 +151,7 @@ class camera:
 		):
 
 		from em import planck
-		from numpy import pi, array
+		from numpy import pi, array, ones
 
 		try: 
 			db = kwargs['db']
@@ -248,6 +248,7 @@ class camera:
 		self.scDCM = scDCM
 		self.takeImage = takeImage
 		self.imgTime = []
+		self.hotDarkArray = ones(resolutionWidth*resolutionHeight)
 
 	###########################################################################
 	#	loadAllStars() is used to load stellar data from a database (nominally
@@ -451,8 +452,8 @@ class camera:
 	def calculateHotDark(self, detectorArray, resolutionHeight, resolutionWidth):
 		"""!
 		@param detector_array, 
-		@param resolution_height, 
-		@param resolution_width
+		@param resolutionHeight, 
+		@param resolutionWidth
 		@return Impure_Array (Normalized) - 1-D resolution array with corrupted pixel factors
 		"""
 		# Module Imports
@@ -462,15 +463,19 @@ class camera:
 
 		# Gaussian Knob
 		mu = 0  		# Mean
-		sigma = 1e-6  	# Std Dev
+		try:
+			sigma = self.hotDarkSigma
+		except:
+			sigma = 1e-6  	    # Std Dev
+			
 		knob = abs(np.random.normal(mu, sigma, 1))  # Initial Number of Corrupt Pixels
 
 		# Image Dimensions
-		numRows = resolution_width
-		numCols = resolution_height
+		numRows = resolutionWidth
+		numCols = resolutionHeight
 
 		imageRes = np.full((numRows, numCols), 125)		# 2D Array of Pixel Value
-		numPix = resolution_height * resolution_width	# Total Number of Pixels
+		numPix = resolutionHeight * resolutionWidth	# Total Number of Pixels
 
 		# Completely Impure Image
 		impureRes = np.floor(np.random.rand(*imageRes.shape) * 255)
@@ -494,7 +499,7 @@ class camera:
 			np.random.shuffle(boolMask)  # Shuffle
 			np.random.shuffle(boolMask)  # Shuffle
 			np.random.shuffle(boolMask)  # Shuffle
-			mask = boolMask.reshape(resolution_width, resolution_height)  # Shuffled Mask
+			mask = boolMask.reshape(resolutionWidth, resolutionHeight)  # Shuffled Mask
 
 			# Altered Resolution
 			imageRes[mask] = impureRes[mask]
@@ -943,12 +948,17 @@ class image:
 							)*self.camera.dt
 
 					if self.camera.msg['dark']:
-						eachScene.detectorArray = \
-							eachScene.detectorArray + \
-							self.addPoissonNoise(
-								zeros(len(eachScene.detectorArray)) + \
+						if self.camera.msg['photon']:
+							eachScene.detectorArray = \
+								eachScene.detectorArray + \
+								self.addPoissonNoise(
+									zeros(len(eachScene.detectorArray)) + \
+									self.camera.darkCurrent
+									)
+						else:
+							eachScene.detectorArray = \
+								eachScene.detectorArray + \
 								self.camera.darkCurrent
-								)
 
 			self.detectorArray = 0
 			for eachScene in self.scenes:
@@ -977,7 +987,7 @@ class image:
 													self.camera.resolutionWidth
 													)
 				import numpy as np
-				hot_dark = np.asarray(hd).flatten()
+				hotDark = np.asarray(hd).flatten()
 				self.camera.hotDarkArray = hotDark
 				self.detectorArray = self.detectorArray * hotDark
 

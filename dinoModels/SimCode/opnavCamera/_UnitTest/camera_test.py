@@ -67,8 +67,8 @@ scDCM = np.identity(3)
 bodies = [bod.earth,bod.luna]
 msg = {
 	'addStars': 0,'rmOcc': 0, 'addBod': 0, 'psf': 1, 
-	'raster': 1, 'photon': 0, 'dark': 1, 'read': 0, 
-	'dt': 0.01, 'hotDark': 0, 'verbose': 1}
+	'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 
+	'hotDark': 0, 'verbose': 1}
 takeImage = 0
 
 #create camera with no stars in it for tests that don't need them
@@ -780,220 +780,223 @@ def test_4_14_add_poisson_noise():
 
 
 
-# def test_4_15_calculate_hot_dark():
-# 	init_hot_dark = np.ones( (1, 262144) )
+def test_4_15_calculate_hot_dark():
+	msg = {
+	'addStars': 0,'rmOcc': 0, 'addBod': 0, 'psf': 1, 
+	'raster': 1, 'photon': 0, 'dark': 1, 'read': 0, 
+	'hotDark': 1, 'verbose': 1}
 
-# 	########################################
-# 	## 	Initialize Cameras
-# 	########################################
-# 	cam1 = camera.camera(
-# 		2.0,            # detector_height
-# 		2.0,            # detector_width
-# 		5.0,            # focal_length
-# 		512,            # resolution_height
-# 		512,            # resolution_width
-# 		np.identity(3), # body2cameraDCM
-# 		1000,           # maximum magnitude
-# 		-1000,          # minimum magnitude (for debugging)
-# 		qe,
-# 		tc,
-# 		1,
-# 		0.01**2, 		# effective area in m^2
-# 		100,
-# 		100,
-# 		100, 
-# 		2**32,
-# 		1,
-# 		0.01,
-# 		scState,
-# 		scDCM,
-# 		bodies,
-# 		takeImage,
-# 		# init_hot_dark,	# hot_dark_cam1
-# 		debug = msg,
-# 		db='../db/tycho.db'
-# 		)
+	init_hot_dark = np.ones( (1, 262144) )
 
-# 	cam2= camera.camera(
-# 		3.0,
-# 		4.0,
-# 		7.0,
-# 		512,
-# 		512,
-# 		np.identity(3),
-# 		1000,
-# 		-1000,
-# 		qe,
-# 		tc,
-# 		1,
-# 		0.01**2, 		# effective area in m^2
-# 		100,
-# 		100,
-# 		100, 
-# 		2**32,
-# 		1,
-# 		0.01,
-# 		scState,
-# 		scDCM,
-# 		bodies,
-# 		takeImage,
-# 		# init_hot_dark,	# hot_dark_cam1
-# 		debug = msg,
-# 		db='../db/tycho.db'
-# 		)
+	########################################
+	## 	Initialize Cameras
+	########################################
+	cam1 = camera.camera(
+		2.0,            # detector_height
+		2.0,            # detector_width
+		5.0,            # focal_length
+		512,            # resolution_height
+		512,            # resolution_width
+		np.identity(3), # body2cameraDCM
+		1000,           # maximum magnitude
+		-1000,          # minimum magnitude (for debugging)
+		qe,
+		tc,
+		1,
+		0.01**2, 		# effective area in m^2
+		100,
+		100,
+		1, 
+		2**32,
+		1,
+		0.01,
+		scState,
+		scDCM,
+		bodies,
+		takeImage,
+		# init_hot_dark,	# hot_dark_cam1
+		debug = msg,
+		db='../db/tycho.db'
+		)
 
-# 	cam3 = camera.camera(
-# 		6.0,
-# 		4.0,
-# 		7.0,
-# 		512,
-# 		512,
-# 		np.identity(3),
-# 		1000,
-# 		-1000,
-# 		qe,
-# 		tc,
-# 		1,
-# 		0.01**2, 		# effective area in m^2
-# 		100,
-# 		100,
-# 		100, 
-# 		2**32,
-# 		1,
-# 		0.01,
-# 		scState,
-# 		scDCM,
-# 		bodies,
-# 		takeImage,
-# 		# init_hot_dark,	# hot_dark_cam1
-# 		debug = msg,
-# 		db='../db/tycho.db'
-# 		)
-# 	cam1.hotDarkArray = np.ones( (1, 262144) )
-# 	cam2.hotDarkArray = np.ones( (1, 262144) )
-# 	cam2.hotDarkArray = np.ones( (1, 262144) )
+	cam2= camera.camera(
+		3.0,
+		4.0,
+		7.0,
+		512,
+		512,
+		np.identity(3),
+		1000,
+		-1000,
+		qe,
+		tc,
+		1,
+		0.01**2, 		# effective area in m^2
+		100,
+		100,
+		1, 
+		2**32,
+		1,
+		0.01,
+		scState,
+		scDCM,
+		bodies,
+		takeImage,
+		# init_hot_dark,	# hot_dark_cam1
+		debug = msg,
+		db='../db/tycho.db'
+		)
 
+	cam3 = camera.camera(
+		6.0,
+		4.0,
+		7.0,
+		512,
+		512,
+		np.identity(3),
+		1000,
+		-1000,
+		qe,
+		tc,
+		1,
+		0.01**2, 		# effective area in m^2
+		100,
+		100,
+		1, 
+		2**32,
+		1,
+		0.01,
+		scState,
+		scDCM,
+		bodies,
+		takeImage,
+		# init_hot_dark,	# hot_dark_cam1
+		debug = msg,
+		db='../db/tycho.db'
+		)
+	
+	cam1.hotDarkSigma = 1
+	cam2.hotDarkSigma = 1
+	cam3.hotDarkSigma = 1
+
+########################################
+## 	Take Two Images without Hot_dark
+########################################
+	msg['hotDark'] = 0
+# 	First Image
+	cam1.takeImage = 1
+	cam2.takeImage = 1
+	cam3.takeImage = 1
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
+	cam1.takeImage = 0
+	cam2.takeImage = 0
+	cam3.takeImage = 0
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
+
+# 	Second Image
+	cam1.takeImage = 1
+	cam2.takeImage = 1
+	cam3.takeImage = 1
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
+	cam1.takeImage = 0
+	cam2.takeImage = 0
+	cam3.takeImage = 0
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
 # ########################################
-# ## 	Take Two Images without Hot_dark
+# ## 	Take Two Images with Hot_Dark
 # ########################################
-# 	msg['hot_dark'] = 0
-# # 	First Image
-# 	cam1.takeImage = 1
-# 	cam2.takeImage = 1
-# 	cam3.takeImage = 1
-# 	cam1.updateState()
-# 	cam2.updateState()
-# 	cam3.updateState()
-# 	cam1.takeImage = 0
-# 	cam2.takeImage = 0
-# 	cam3.takeImage = 0
-# 	cam1.updateState()
-# 	cam2.updateState()
-# 	cam3.updateState()
+	msg['hotDark'] = 1
+# 	Image Three (+ Hot_Dark)
+	cam1.takeImage = 1
+	cam2.takeImage = 1
+	cam3.takeImage = 1
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
+	cam1.takeImage = 0
+	cam2.takeImage = 0
+	cam3.takeImage = 0
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
+# 	Image Four (+ Hot_Dark)
+	cam1.takeImage = 1
+	cam2.takeImage = 1
+	cam3.takeImage = 1
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
+	cam1.takeImage = 0
+	cam2.takeImage = 0
+	cam3.takeImage = 0
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
 
-# # 	Second Image
-# 	cam1.takeImage = 1
-# 	cam2.takeImage = 1
-# 	cam3.takeImage = 1
-# 	cam1.updateState()
-# 	cam2.updateState()
-# 	cam3.updateState()
-# 	cam1.takeImage = 0
-# 	cam2.takeImage = 0
-# 	cam3.takeImage = 0
-# 	cam1.updateState()
-# 	cam2.updateState()
-# 	cam3.updateState()
-# # ########################################
-# # ## 	Take Two Images with Hot_Dark
-# # ########################################
-# 	msg['hot_dark'] = 1
-# # 	Image Three (+ Hot_Dark)
-# 	cam1.takeImage = 1
-# 	cam2.takeImage = 1
-# 	cam3.takeImage = 1
-# 	cam1.updateState()
-# 	cam2.updateState()
-# 	cam3.updateState()
-# 	cam1.takeImage = 0
-# 	cam2.takeImage = 0
-# 	cam3.takeImage = 0
-# 	cam1.updateState()
-# 	cam2.updateState()
-# 	cam3.updateState()
-# # 	Image Four (+ Hot_Dark)
-# 	cam1.takeImage = 1
-# 	cam2.takeImage = 1
-# 	cam3.takeImage = 1
-# 	cam1.updateState()
-# 	cam2.updateState()
-# 	cam3.updateState()
-# 	cam1.takeImage = 0
-# 	cam2.takeImage = 0
-# 	cam3.takeImage = 0
-# 	cam1.updateState()
-# 	cam2.updateState()
-# 	cam3.updateState()
+########################################
+## 	Camera 1 Properties
+########################################
+	# Image 1
+	cam1_img1 = cam1.images[0].detectorArray
+	cam11_mean = np.mean(cam1_img1)
+	cam11_var  = np.var(cam1_img1)
+	# Image 2
+	cam1_img2 = cam1.images[1].detectorArray
+	cam12_mean = np.mean(cam1_img2)
+	cam12_var  = np.var(cam1_img2)
+	# Image 3
+	cam1_img3 = cam1.images[2].detectorArray
+	cam13_mean = np.mean(cam1_img3)
+	cam13_var = np.var(cam1_img3)
+	# Image 4
+	cam1_img4 = cam1.images[3].detectorArray
+	cam14_mean = np.mean(cam1_img4)
+	cam14_var = np.var(cam1_img4)
 
-# ########################################
-# ## 	Camera 1 Properties
-# ########################################
-# 	# Image 1
-# 	cam1_img1 = cam1.images[0].detectorArray
-# 	cam11_mean = np.mean(cam1_img1)
-# 	cam11_var  = np.var(cam1_img1)
-# 	# Image 2
-# 	cam1_img2 = cam1.images[1].detectorArray
-# 	cam12_mean = np.mean(cam1_img2)
-# 	cam12_var  = np.var(cam1_img2)
-# 	# Image 3
-# 	cam1_img3 = cam1.images[2].detectorArray
-# 	cam13_mean = np.mean(cam1_img3)
-# 	cam13_var = np.var(cam1_img3)
-# 	# Image 4
-# 	cam1_img4 = cam1.images[3].detectorArray
-# 	cam14_mean = np.mean(cam1_img4)
-# 	cam14_var = np.var(cam1_img4)
-# 	import pdb
-# 	pdb.set_trace()
-
-# 	# Images without Hot_Dark should be different from those with Hot_dark
-# 	assert ( cam1.images[0].detectorArray.any != cam1.images[2].detectorArray.any )
-# 	assert ( cam1.images[1].detectorArray.any != cam1.images[3].detectorArray.any )
-
-# 	assert ( cam2.images[0].detectorArray.any != cam2.images[2].detectorArray.any )
-# 	assert ( cam2.images[1].detectorArray.any != cam2.images[3].detectorArray.any )
-
-# 	assert ( cam3.images[0].detectorArray.any != cam3.images[2].detectorArray.any )
-# 	assert ( cam3.images[1].detectorArray.any != cam3.images[3].detectorArray.any )
+	# Images without Hot_Dark should be different from those with Hot_dark
+	assert ( cam1.images[0].detectorArray.any != cam1.images[2].detectorArray.any )
+	assert ( cam1.images[1].detectorArray.any != cam1.images[3].detectorArray.any )
+	assert ( cam2.images[0].detectorArray.any != cam2.images[2].detectorArray.any )
+	assert ( cam2.images[1].detectorArray.any != cam2.images[3].detectorArray.any )
+	assert ( cam3.images[0].detectorArray.any != cam3.images[2].detectorArray.any )
+	assert ( cam3.images[1].detectorArray.any != cam3.images[3].detectorArray.any )
 
 
-# # 	# First Two Images from each camera should have the same MEAN & VARIANCE since NO Hot-Dark Pixels added
-	# assert ( abs(np.mean(cam1.images[0].detectorArray) - np.mean(cam1.images[1].detectorArray) ) <= 1e-12 )
-	# assert ( abs(np.mean(cam2.images[0].detectorArray) - np.mean(cam2.images[1].detectorArray) ) <= 1e-12 )
-	# assert ( abs(np.mean(cam3.images[0].detectorArray) - np.mean(cam3.images[1].detectorArray) ) <= 1e-12 )
+ 	# First Two Images from each camera should have the same MEAN & VARIANCE since NO Hot-Dark Pixels added
+	assert ( abs(np.mean(cam1.images[0].detectorArray) - np.mean(cam1.images[1].detectorArray) ) <= 1e-12 )
+	assert ( abs(np.mean(cam2.images[0].detectorArray) - np.mean(cam2.images[1].detectorArray) ) <= 1e-12 )
+	assert ( abs(np.mean(cam3.images[0].detectorArray) - np.mean(cam3.images[1].detectorArray) ) <= 1e-12 )
 
-# 	assert ( abs(np.std(cam1.images[0].detectorArray) - np.std(cam1.images[1].detectorArray) ) <= 1e-12 )
-# 	assert ( abs(np.std(cam2.images[0].detectorArray) - np.std(cam2.images[1].detectorArray) ) <= 1e-12 )
-# 	assert ( abs(np.std(cam3.images[0].detectorArray) - np.std(cam3.images[1].detectorArray) ) <= 1e-12 )
-# 	# Third Image MEAN & VARIANCE should be different from First Image MEAN & VARIANCE
-	# assert ( abs(np.mean(cam1.images[2].detectorArray) - np.mean(cam1.images[0].detectorArray) ) >= 0.1 )
-# 	assert ( abs(np.mean(cam2.images[2].detectorArray) - np.mean(cam2.images[0].detectorArray) ) >= 0.1 )
-# 	assert ( abs(np.mean(cam3.images[2].detectorArray) - np.mean(cam3.images[0].detectorArray) ) >= 0.1 )
+	assert ( abs(np.std(cam1.images[0].detectorArray) - np.std(cam1.images[1].detectorArray) ) <= 1e-12 )
+	assert ( abs(np.std(cam2.images[0].detectorArray) - np.std(cam2.images[1].detectorArray) ) <= 1e-12 )
+	assert ( abs(np.std(cam3.images[0].detectorArray) - np.std(cam3.images[1].detectorArray) ) <= 1e-12 )
 
-# 	assert ( abs(np.std(cam1.images[2].detectorArray) - np.std(cam1.images[0].detectorArray) ) >= 0.1 )
-# 	assert ( abs(np.std(cam2.images[2].detectorArray) - np.std(cam2.images[0].detectorArray) ) >= 0.1 )
-# 	assert ( abs(np.std(cam3.images[2].detectorArray) - np.std(cam3.images[0].detectorArray) ) >= 0.1 )
+	# Third Image MEAN & VARIANCE should be different from First Image MEAN & VARIANCE
+	assert ( abs(np.mean(cam1.images[2].detectorArray) - np.mean(cam1.images[0].detectorArray) ) >= 0.1 )
+	assert ( abs(np.mean(cam2.images[2].detectorArray) - np.mean(cam2.images[0].detectorArray) ) >= 0.1 )
+	assert ( abs(np.mean(cam3.images[2].detectorArray) - np.mean(cam3.images[0].detectorArray) ) >= 0.1 )
+
+	assert ( abs(np.std(cam1.images[2].detectorArray) - np.std(cam1.images[0].detectorArray) ) >= 0.1 )
+	assert ( abs(np.std(cam2.images[2].detectorArray) - np.std(cam2.images[0].detectorArray) ) >= 0.1 )
+	assert ( abs(np.std(cam3.images[2].detectorArray) - np.std(cam3.images[0].detectorArray) ) >= 0.1 )
 
 
-# 	# Fourth Image MEAN & VARIANCE should be different from SECOND Image MEAN & VARIANCE
-	# assert ( abs(np.mean(cam1.images[3].detectorArray) - np.mean(cam1.images[1].detectorArray) ) >= 0.1 )
-	# assert ( abs(np.mean(cam2.images[3].detectorArray) - np.mean(cam2.images[1].detectorArray) ) >= 0.1 )
-	# assert ( abs(np.mean(cam3.images[3].detectorArray) - np.mean(cam3.images[1].detectorArray) ) >= 0.1 )
+	# # Fourth Image MEAN & VARIANCE should be different from SECOND Image MEAN & VARIANCE
+	assert ( abs(np.mean(cam1.images[3].detectorArray) - np.mean(cam1.images[1].detectorArray) ) >= 0.1 )
+	assert ( abs(np.mean(cam2.images[3].detectorArray) - np.mean(cam2.images[1].detectorArray) ) >= 0.1 )
+	assert ( abs(np.mean(cam3.images[3].detectorArray) - np.mean(cam3.images[1].detectorArray) ) >= 0.1 )
 
-	# assert ( abs(np.std(cam1.images[3].detectorArray) - np.std(cam1.images[1].detectorArray) ) >= 0.1 )
-	# assert ( abs(np.std(cam2.images[3].detectorArray) - np.std(cam2.images[1].detectorArray) ) >= 0.1 )
-	# assert ( abs(np.std(cam3.images[3].detectorArray) - np.std(cam3.images[1].detectorArray) ) >= 0.1 )
+	assert ( abs(np.std(cam1.images[3].detectorArray) - np.std(cam1.images[1].detectorArray) ) >= 0.1 )
+	assert ( abs(np.std(cam2.images[3].detectorArray) - np.std(cam2.images[1].detectorArray) ) >= 0.1 )
+	assert ( abs(np.std(cam3.images[3].detectorArray) - np.std(cam3.images[1].detectorArray) ) >= 0.1 )
 
 def test_4_16_pixelLineConversion():
 	#find distance between center of FOV and each star in p/l coords.
