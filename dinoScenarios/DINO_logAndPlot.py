@@ -39,22 +39,25 @@ from initBatch import initBatchFnc
 # ------------------------------------- DATA LOGGING ------------------------------------------------------ #
 
 def log_DynCelestialOutputs(TheDynSim, samplingTime):
+    """
+    Convenience function to log all celestial body outputs.
+    :param TheDynSim:
+    :param samplingTime:
+    :return:
+    """
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.scObject.scStateOutMsgName, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.earthGravBody.bodyInMsgName, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.marsGravBody.bodyInMsgName, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.sunGravBody.bodyInMsgName, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.moonGravBody.bodyInMsgName, samplingTime)
-    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.gyroModel.OutputDataMsg, samplingTime)
-    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.starTracker.outputStateMessage, samplingTime)
-    #    for ind in range(0,len(TheDynSim.DynClass.beaconList)):
-    #        TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.beaconList[ind].scStateOutMsgName, samplingTime)
-
     return
 
 
 def log_DynOutputs(TheBSKSim, samplingTime):
     TheBSKSim.TotalSim.logThisMessage(TheBSKSim.DynClass.scObject.scStateOutMsgName, samplingTime)
     TheBSKSim.TotalSim.logThisMessage(TheBSKSim.DynClass.simpleNavObject.outputAttName, samplingTime)
+    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.gyroModel.OutputDataMsg, samplingTime)
+    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.starTracker.outputStateMessage, samplingTime)
     return
 
 
@@ -199,6 +202,12 @@ def pull_senseOutputs(TheBSKSim, plots=True):
 
 
 def pull_aekfOutputs(TheBSKSim, plots=True):
+    """
+    :param TheBSKSim:
+    :param plots:
+    :return: sigma_hat_BN: estimated body-to-inertial MRPs
+    :return: omega_hat_BN: estimated body-to-inertial angular rates
+    """
     # Pull Dyn OutputsTheBSKSim.DynClass.simpleNavObject.outputAttName + ".sigma_BN", range(3)
     sigma_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName + '.sigma_BN', range(3))
     omega_hat_BN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attFilter.outputMsgName + '.omega_BN_B', range(3))
@@ -238,6 +247,15 @@ def pull_aekfOutputs(TheBSKSim, plots=True):
 
 
 def pull_FSWOutputs(TheBSKSim, plots=True):
+    """
+    :param TheBSKSim: An instantiation of DINO_DynSim
+    :param plots: A bool; if True plots are made and outputs are printed.
+    :return: Lr:    Commanded torque output over sim
+    :return: sigma_RN:  Guidance reference-to-inertial MRPs over sim
+    :return: omega_RN_N:    Guidance reference-to-inertial angular rates over sim
+    :return: sigma_BR:      Body-to-Inertial MRPs over sim
+    :return: omega_BR_B:    Body-to-Inertial angular rates over sim
+    """
     sigma_RN = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attGuideConfig.outputDataName + ".sigma_RN", range(3))
     omega_RN_N = TheBSKSim.pullMessageLogData(TheBSKSim.FSWClass.attGuideConfig.outputDataName + ".omega_RN_N",
                                               range(3))
@@ -265,7 +283,7 @@ def pull_FSWOutputs(TheBSKSim, plots=True):
         BSKPlt.plot_attitudeGuidance(sigma_RN, omega_RN_N)
         BSKPlt.plot_controlTorque(Lr)
 
-    return Lr
+    return Lr, sigma_RN, omega_RN_N, sigma_BR, omega_BR_B
 
 
 # ------------------------------------- DATA HANDLING ------------------------------------------------------ #
