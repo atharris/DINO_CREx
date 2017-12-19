@@ -123,9 +123,6 @@
 # 
 ###############################################################################
 class camera:
-	"""!
-	@param asdfasdf asdfasdf
-	"""
 	def __init__(
 		self, 
 		detectorHeight, 
@@ -154,7 +151,7 @@ class camera:
 		):
 
 		from em import planck
-		from numpy import pi, array
+		from numpy import pi, array, ones
 
 		try: 
 			db = kwargs['db']
@@ -165,10 +162,7 @@ class camera:
 			msg = kwargs['debug']
 		except:
 			import bodies as bod
-			msg = { 'bodies': [
-			bod.earth,
-			bod.luna
-			], 
+			msg = {
 			'addStars': 1,'rmOcc': 1, 'addBod': 1, 'psf': 1, 
 			'raster': 1, 'photon': 1, 'dark': 1, 'read': 1, 
 			'verbose': 0}
@@ -254,6 +248,7 @@ class camera:
 		self.scDCM = scDCM
 		self.takeImage = takeImage
 		self.imgTime = []
+		self.hotDarkArray = ones(resolutionWidth*resolutionHeight)
 
 	###########################################################################
 	#	loadAllStars() is used to load stellar data from a database (nominally
@@ -377,23 +372,21 @@ class camera:
 	# calculateFOV() finds the angular size of a camera FOV using freshman-level
 	#	optics. The method uses a thin lens approximation.
 	#
-	#	Inputs:
-	#		focalLength: Focal length of modeled lens 
-	#		detectorHeight: y-direction dimension of the lens
-	#		detectorWidth: x-direction dimension of the lens
-	#		
-	#	Outputs:
-	#		A dict with the following entries:
-	#		alhpa: angular size of FOV along y-direction (height) 
-	#		beta: angular size of FOV along x-direction (width) 
-	#
 	#	Notes:
 	#		Assumes lens is thin. Units for detector dimensions and focal length
 	#		can be anything, but they must all match.
 	#
 	###############################################################################
-
 	def calculateFOV(self, focalLength, detectorHeight, detectorWidth, **kwargs):
+		"""!
+		@param focalLength: Focal length of modeled lens 
+		@param detectorHeight: y-direction dimension of the lens
+		@param detectorWidth: x-direction dimension of the lens
+		@return A dict with the following entries:
+		@return alhpa: angular size of FOV along y-direction (height) 
+		@return beta: angular size of FOV along x-direction (width) 
+		"""
+
 		from numpy import sqrt, arctan2, rad2deg
 		f = float(focalLength)
 		a = float(detectorHeight)
@@ -418,20 +411,14 @@ class camera:
 	#	be evaluated. It takes the smallest and largest wavelength values 
 	#	between qe and tc and calculates a numpy arange between them with a
 	#	spacing of lambdaBinSize
-	#
-	#	Inputs:
-	#		qe: qe dictionary input into camera object by user
-	#		tc: tc dictionary input into camera object by user
-	#		lambdaBinSize: lambdaBinSize input into camera object by user
-	#
-	#	Outputs:
-	#		lambdaSet: unified set of wavelengths for tc/qe/planck
-	#
-	#	Notes:
-	#
 	###############################################################################
-
 	def findLambdaSet(self, qe, tc, lambdaBinSize):
+		"""!
+		@param qe: qe dictionary input into camera object by user
+		@param tc: tc dictionary input into camera object by user
+		@param lambdaBinSize: lambdaBinSize input into camera object by user
+		@return lambdaSet: unified set of wavelengths for tc/qe/planck
+		"""		
 		from numpy import concatenate, arange
 		allLambdas = concatenate([qe['lam'],tc['lam']])
 		minLambda = min(allLambdas)
@@ -443,63 +430,121 @@ class camera:
 	#
 	# interpolateLambdaDependent() this function creates unified tc and qe curves
 	#	that can be multiplied simply to create a full sensitivity curve
-	#
-	#	Inputs:
-	#		ex: tc or qe dictionary input into camera object by user
-	#		lambdaSet: unified lambda set (output of camera.findLambdaSet)
-	#
-	#	Outputs:
-	#		interpolatedSet: qe or tc dictionary evaluated at wavelength values
-	#			of lambdSet
-	#
 	#	Notes: I moved the actual funciton to util within the python framework
 	#		because it was useful elsewhere, too.
-	#
 	###############################################################################
-
 	def interpolateLambdaDependent(self, ex,lambdaSet):
+		"""!
+		@param ex: tc or qe dictionary input into camera object by user
+		@param lambdaSet: unified lambda set (output of camera.findLambdaSet)
+		@return interpolatedSet: qe or tc dictionary evaluated at wavelength values
+			of lambdSet
+		"""
 		from util import interpolateLambdaDependent
 		interpolatedSet = interpolateLambdaDependent(ex,lambdaSet)
 		return interpolatedSet
 
 	###############################################################################
 	#
-	# hotDark() is not yet implemented.
-	#
-	#	Inputs:
-	#		
-	#	Outputs:
-	#
-	#	Notes: 
+	# calculateHotDark()
 	#
 	###############################################################################
+	def calculateHotDark(self, detectorArray, resolutionHeight, resolutionWidth):
+		"""!
+		@param detector_array, 
+		@param resolutionHeight, 
+		@param resolutionWidth
+		@return Impure_Array (Normalized) - 1-D resolution array with corrupted pixel factors
+		"""
+		# Module Imports
+		import random
+		import numpy as np
+		##################
 
-	# def calculateHotDark(self):
-	# 	resolutionHeight = self.resolutionHeight
-	# 	resolutionWidth = self.resolutionWidth
-	# 	currentHotDark = self.hotDark
-	# 	#do your thing here
-		
-	# 	self.hotDarkArr = hotDarkArray
+		# Gaussian Knob
+		mu = 0  		# Mean
+		try:
+			sigma = self.hotDarkSigma
+		except:
+			sigma = 1e-6  	    # Std Dev
+			
+		knob = abs(np.random.normal(mu, sigma, 1))  # Initial Number of Corrupt Pixels
+
+		# Image Dimensions
+		numRows = resolutionWidth
+		numCols = resolutionHeight
+
+		imageRes = np.full((numRows, numCols), 125)		# 2D Array of Pixel Value
+		numPix = resolutionHeight * resolutionWidth	# Total Number of Pixels
+
+		# Completely Impure Image
+		impureRes = np.floor(np.random.rand(*imageRes.shape) * 255)
+
+		# Integration Time (days)
+		simulationTime = 10 	# Seconds (Basilisk User Input)
+		timeStep = 1  			# Time Step should be per day of Basilisk Time
+
+		# Integration Loop
+		while timeStep < simulationTime:
+
+			knob += knob + abs(np.random.normal(mu, sigma, 1))  # Knob
+			if knob >= 1:
+				knob = 1.0
+
+			numImp = int(np.ceil(abs(knob) * numPix))  # Impure Pixels
+			good = (numPix - numImp)  # Good Pixels
+
+			# Boolean Mask of Impure Elements
+			boolMask = np.array([0] * good + [1] * numImp).astype(np.bool)
+			np.random.shuffle(boolMask)  # Shuffle
+			np.random.shuffle(boolMask)  # Shuffle
+			np.random.shuffle(boolMask)  # Shuffle
+			mask = boolMask.reshape(resolutionWidth, resolutionHeight)  # Shuffled Mask
+
+			# Altered Resolution
+			imageRes[mask] = impureRes[mask]
+
+			# Pixel Threshold Values
+			avg 		= 125.
+			hotThresh 	= 225.
+			warmThresh 	= 200.
+			coldThresh 	= 50.
+			darkThresh 	= 25.
+
+			# Hot Pixels
+			hot = (imageRes >= hotThresh)
+			imageRes[hot] = random.randint(hotThresh, 255)
+			# Warm Pixels
+			warm = np.logical_and(imageRes < hotThresh, imageRes > avg)
+			imageRes[warm] = random.randint(warmThresh, hotThresh + 25)
+			# Average Pixels
+			nice = (imageRes == avg)
+			imageRes[nice] = avg
+			# Cold Pixels
+			cold = np.logical_and(imageRes < avg, imageRes > darkThresh)
+			imageRes[cold] = random.randint(darkThresh, coldThresh)
+			# Dark Pixels
+			dark = (imageRes <= darkThresh)
+			imageRes[dark] = random.randint(0, darkThresh)
+
+			# Integration Time Step
+			timeStep += 0 + timeStep
+
+
+		# Reshape 'imageRes' into 1-D Array
+		impureNorm = [x / avg for x in imageRes]
+
+		self.hotDarkArray = impureNorm
+
+		return self.hotDarkArray
 
 	###############################################################################
-	#
 	# updateState() is the master function of the camera object. It reads
 	#		takeImage from the BSK messaging system and opens, closes, or updates
 	#		images appropraitely 
-	#
-	#	Inputs:
-	#		None.
-	#
-	#	Outputs:
-	#		None.
-	#
-	#	Notes: 
-	#
 	###############################################################################
 
 	def updateState(self):
-
 		# self.hotDark = self.calculateHotDark(dt)
 
 		#initialize a counter so we can check if we have open images
@@ -610,69 +655,68 @@ class camera:
 
 		return
 
-###############################################################################
-#	Image is a class for the image data product produced by a spacecraft
-#		camera.
-#
-#	methods:
-#
-#	User Variables:
-#		None. All variables in the image object are added dynamically
-#
-#	Computed Variables:
-# 		imageOpen: boolean that keeps track of if the image is currently open
-# 		alpha: list of euler angle rotatons about axis 3 at each timestep
-# 		beta: list of euler angle rotatons about axis 2 at each timestep
-# 		gamma: list of euler angle rotatons about axis 1 at each timestep
-# 		camera: camera object representing the camera this was taken by
-# 		DCM: list of DCMs from intertial to camera frame at each timestep
-# 		scenes: list of scene objects
-# 		starID: list of IDs for each star that is visible at any time
-#			during exposure
-# 		RA: Similar to the RA varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this image. 
-# 		DE: Similar to the DE varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this image.
-# 		n1: Similar to the n1 varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this image.
-# 		n2: Similar to the n2 varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this image.
-# 		n3: Similar to the n3 varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this image.
-# 		VT: Similar to the VT varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this image.
-# 		BVT: Similar to the BVT varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this image.
-# 		c1: 1st component of Camera frame unit vector of all stars visible
-#			at any time in this image
-# 		c2: 2nd component of Camera frame unit vector of all stars visible
-#			at any time in this image
-# 		c3: 3rd component of Camera frame unit vector of all stars visible
-#			at any time in this image
-#		detectorArray: array with summed intensities of light incident on
-#			each pixel
-#
-#	Keyword Arguments:
-#		None
-#
-#	Notes:
-#		-alpha, beta, gamma really need to be removed here. Although the
-#		Euler angle transformation is a lot easier to grasp intuitively, it
-#		would make way a camera-to-body DCM that is stored in the camera
-#		object along with an inertial to spacecraft DCM that is stored in the
-#		spacecraft object. This way the image object will only need camera and
-#		msg passed in.
-#		-This class ultimately needs to be split into image and frame classes
-#		where frames are totaled in order to make the final image. The frames
-#		should be calculated with a margin added to the true FOV because once
-#		we start to add saturation effects, it will matter a lot what is right
-#		outside the FOV (i.e. if the sun is right next to the FOV, the 
-#		background counts will be very high, even though the sun is not imaged
-#		directly)
-#
-###############################################################################
-
 class image:
+	"""!
+	Image is a class for the image data product produced by a spacecraft
+		camera.
+
+	methods:
+
+	User Variables:
+		None. All variables in the image object are added dynamically
+
+	Computed Variables:
+		imageOpen: boolean that keeps track of if the image is currently open
+		alpha: list of euler angle rotatons about axis 3 at each timestep
+		beta: list of euler angle rotatons about axis 2 at each timestep
+		gamma: list of euler angle rotatons about axis 1 at each timestep
+		camera: camera object representing the camera this was taken by
+		DCM: list of DCMs from intertial to camera frame at each timestep
+		scenes: list of scene objects
+		starID: list of IDs for each star that is visible at any time
+			during exposure
+		RA: Similar to the RA varable that is held in the camera object,
+			but with only stars/facets that are in the FOC of this image. 
+		DE: Similar to the DE varable that is held in the camera object,
+			but with only stars/facets that are in the FOC of this image.
+		n1: Similar to the n1 varable that is held in the camera object,
+			but with only stars/facets that are in the FOC of this image.
+		n2: Similar to the n2 varable that is held in the camera object,
+			but with only stars/facets that are in the FOC of this image.
+		n3: Similar to the n3 varable that is held in the camera object,
+			but with only stars/facets that are in the FOC of this image.
+		VT: Similar to the VT varable that is held in the camera object,
+			but with only stars/facets that are in the FOC of this image.
+		BVT: Similar to the BVT varable that is held in the camera object,
+			but with only stars/facets that are in the FOC of this image.
+		c1: 1st component of Camera frame unit vector of all stars visible
+			at any time in this image
+		c2: 2nd component of Camera frame unit vector of all stars visible
+			at any time in this image
+		c3: 3rd component of Camera frame unit vector of all stars visible
+			at any time in this image
+		detectorArray: array with summed intensities of light incident on
+			each pixel
+
+	Keyword Arguments:
+		None
+
+	Notes:
+		-alpha, beta, gamma really need to be removed here. Although the
+		Euler angle transformation is a lot easier to grasp intuitively, it
+		would make way a camera-to-body DCM that is stored in the camera
+		object along with an inertial to spacecraft DCM that is stored in the
+		spacecraft object. This way the image object will only need camera and
+		msg passed in.
+		-This class ultimately needs to be split into image and frame classes
+		where frames are totaled in order to make the final image. The frames
+		should be calculated with a margin added to the true FOV because once
+		we start to add saturation effects, it will matter a lot what is right
+		outside the FOV (i.e. if the sun is right next to the FOV, the 
+		background counts will be very high, even though the sun is not imaged
+		directly)
+
+	"""
 	def __init__(
 		self, 
 		camera,
@@ -701,7 +745,6 @@ class image:
 		self.starID = []
 
 	###############################################################################
-	#
 	# updateState() is the master function of the image object. It does one of
 	#		two things. If self.camera.msg['takeImage'] == 1, it will save the
 	#		current inertial to camera DCM to the DCM list. if  
@@ -710,19 +753,7 @@ class image:
 	#		attirbutes to be used when making scenes. Next, it takes each DCM,
 	#		calculates which stars and bodies are visible at each time step
 	#		and creates a scene.
-	#
-	#	Inputs:
-	#		None.
-	#
-	#	Outputs:
-	#		None. Adds scenes to image object and updates most attributes of
-	#		the image.
-	#
-	#	Notes: 
-	#		None.
-	#
 	###############################################################################
-
 	def updateState(self):
 
 		if self.camera.takeImage== 1:
@@ -844,7 +875,6 @@ class image:
 			sceneMsg['rmOcc'] = 0
 			sceneMsg['addBod'] = 0
 
-
 			if self.camera.msg['psf']:
 				psf = self.psf(self.camera.psfSigma)
 
@@ -889,6 +919,7 @@ class image:
 						)
 					)
 			i = 0
+
 			for eachScene in self.scenes:
 				i+=1
 				if self.camera.msg['psf']:
@@ -917,12 +948,17 @@ class image:
 							)*self.camera.dt
 
 					if self.camera.msg['dark']:
-						eachScene.detectorArray = \
-							eachScene.detectorArray + \
-							self.addPoissonNoise(
-								zeros(len(eachScene.detectorArray)) + \
+						if self.camera.msg['photon']:
+							eachScene.detectorArray = \
+								eachScene.detectorArray + \
+								self.addPoissonNoise(
+									zeros(len(eachScene.detectorArray)) + \
+									self.camera.darkCurrent
+									)
+						else:
+							eachScene.detectorArray = \
+								eachScene.detectorArray + \
 								self.camera.darkCurrent
-								)
 
 			self.detectorArray = 0
 			for eachScene in self.scenes:
@@ -941,11 +977,20 @@ class image:
 
 			#cut off pixels that are saturated
 			self.detectorArray[self.detectorArray > self.camera.dnDepthMax] = self.camera.dnDepthMax
-			# if self.camera.msg['hotDark']:
-			# 	self.detectorArray = self.detectorArray*self.camera.hotDark
-				# if 	self.camera.msg['raster'] + self.camera.msg['photon'] + \
-				# 	self.camera.msg['read']:
-				# 	self.detectorArray = detectorArray*hotDark
+
+	########################################################################################################################
+	########################################################################################################################
+			if self.camera.msg['hotDark']:
+				hd = self.camera.calculateHotDark(
+													self.camera.hotDarkArray,
+													self.camera.resolutionHeight,
+													self.camera.resolutionWidth
+													)
+				import numpy as np
+				hotDark = np.asarray(hd).flatten()
+				self.camera.hotDarkArray = hotDark
+				self.detectorArray = self.detectorArray * hotDark
+
 
 			self.detectorArray = self.detectorArray.reshape(
 				self.camera.resolutionWidth,
@@ -953,55 +998,7 @@ class image:
 				)
 
 	###########################################################################
-	#
 	# findStarsInFOV() finds the pixel and line coordinates of a 
-	#
-	#	Inputs:
-	#		alpha: euler angle rotation about axis 3 at t0
-	#		beta: euler angle rotation about axis 2 at t0
-	#		gamma: euler angle rotation about axis 1 at t0
-	#		alphaMax: largest  alpha at any time
-	#		betaMax: largest beta any time
-	#		alphaMin: smallest  alpha at any time
-	#		betaMin: smallest beta any time
-	#		halfAlpha: Half the angular height of the camera
-	#		halfBeta: Half the angular width of the camera
-	#		alphaResolution: resolution in the line dimension of the camera
-	#		betaResolution: resolution in the pixel dimension of the camera
-	#		RA: RA of all stars that may be in FOV
-	#		DE: DE of all stars that may be in FOV
-	#		n1: inertial coord n1 of all stars that may be in FOV
-	#		n2: inertial coord n2 of all stars that may be in FOV
-	#		n3: inertial coord n3 of all stars that may be in FOV
-	#		VT: Tycho visual magnitude of all stars that may be in FOV
-	#		BVT: Tycho color index of all stars that may be in FOV
-	#		T: Computed temperature of all stars that may be in FOV
-	#		I: Computed incident intensity of all stars that may be in FOV
-	#		solidAngleSubtended: solidAngleSubtended of all stars that may be in FOV
-	#		maxMag: maximum magnitude of camera
-	#		starIDs: starIDs of all stars that may be in FOV
-	#		msg: debug message passed from camera
-	#
-	#	Outputs:
-	#		A dict with the following entries:
-	# 			pixel: pixel coord of all stars in FOV
-	# 			line: line cood of all stars in FOV
-	# 			RA: RA of all stars in FOV
-	# 			DE: DE of all stars in FOV
-	# 			n1: inertial coord n1 of all stars in FOV
-	# 			n2: inertial coord n2 of all stars in FOV
-	# 			n3: inertial coord n3 of all stars in FOV
-	# 			VT: Tycho visual magnitude of all stars in FOV
-	# 			BVT: Tycho color index magnitude of all stars in FOV
-	# 			c1: camera frame coord c1 of all stars that may be in FOV
-	# 			c2: camera frame coord c2 of all stars that may be in FOV
-	# 			c3: camera frame coord c3 of all stars that may be in FOV
-	#			starID : starID of all stars in FOV
-	#			I: Computed incident intensity of all stars in FOV
-	#			T: T of all stars in FOV
-	#			solidAngleSubtended': solidAngleSubtended of all stars in FOV
-	#	Notes:
-	#
 	###########################################################################
 	def findStarsInFOV(
 		self, 
@@ -1025,6 +1022,48 @@ class image:
 		msg,
 		**kwargs):
 
+		"""!
+		@param alpha: euler angle rotation about axis 3 at t0
+		@param beta: euler angle rotation about axis 2 at t0
+		@param gamma: euler angle rotation about axis 1 at t0
+		@param alphaMax: largest  alpha at any time
+		@param betaMax: largest beta any time
+		@param alphaMin: smallest  alpha at any time
+		@param betaMin: smallest beta any time
+		@param halfAlpha: Half the angular height of the camera
+		@param halfBeta: Half the angular width of the camera
+		@param alphaResolution: resolution in the line dimension of the camera
+		@param betaResolution: resolution in the pixel dimension of the camera
+		@param RA: RA of all stars that may be in FOV
+		@param DE: DE of all stars that may be in FOV
+		@param n1: inertial coord n1 of all stars that may be in FOV
+		@param n2: inertial coord n2 of all stars that may be in FOV
+		@param n3: inertial coord n3 of all stars that may be in FOV
+		@param VT: Tycho visual magnitude of all stars that may be in FOV
+		@param BVT: Tycho color index of all stars that may be in FOV
+		@param T: Computed temperature of all stars that may be in FOV
+		@param I: Computed incident intensity of all stars that may be in FOV
+		@param solidAngleSubtended: solidAngleSubtended of all stars that may be in FOV
+		@param maxMag: maximum magnitude of camera
+		@param starIDs: starIDs of all stars that may be in FOV
+		@param msg: debug message passed from camera
+		@return pixel: pixel coord of all stars in FOV
+		@return line: line cood of all stars in FOV
+		@return RA: RA of all stars in FOV
+		@return DE: DE of all stars in FOV
+		@return n1: inertial coord n1 of all stars in FOV
+		@return n2: inertial coord n2 of all stars in FOV
+		@return n3: inertial coord n3 of all stars in FOV
+		@return VT: Tycho visual magnitude of all stars in FOV
+		@return BVT: Tycho color index magnitude of all stars in FOV
+		@return c1: camera frame coord c1 of all stars that may be in FOV
+		@return c2: camera frame coord c2 of all stars that may be in FOV
+		@return c3: camera frame coord c3 of all stars that may be in FOV
+		@return starID : starID of all stars in FOV
+		@return I: Computed incident intensity of all stars in FOV
+		@return T: T of all stars in FOV
+		@return solidAngleSubtended': solidAngleSubtended of all stars in FOV
+		"""
 		from numpy import array, deg2rad, sin, cos, append, sqrt, zeros, ones, logical_and
 		from numpy.linalg import norm
 
@@ -1067,8 +1106,8 @@ class image:
 							self.camera.angularHeight,
 							self.camera.angularWidth
 							),
-						200,
-						200,
+						100,
+						100,
 						False,
 						body.albedo,
 						body.r_eq,
@@ -1210,24 +1249,23 @@ class image:
 		}
 	###########################################################################
 	#
-	# removeOccultations() 
-	#
-	#	Inputs:
-	#		body: Object. Instantiation of the body class from bodies.py.
-	#			Variables used from that class include equatorial radius,
-	#			polar radius, and state (for the position to the body).
-	#
-	#		n1, n2, n3: Numpy Float Arrays. All should be the same size. Each
-	#			star/body fact that is still in the FOV at this point should
-	#			have an entry in each, and each index MUST correspond to data
-	#			from the same star/facet!
-	#
-	#
-	#	Outputs:
-	#		occCheck: Numpy Array. A list of booleans, each corresponding to 
+	# removeOccultations() is a method to remove stars and beacon facets
+	#	that are behind beacons
 	#
 	###########################################################################
+
 	def removeOccultations(self,body,n1,n2,n3):
+		"""!
+		@param body: Object. Instantiation of the body class from bodies.py.
+			Variables used from that class include equatorial radius,
+			polar radius, and state (for the position to the body).
+
+		@param n1, n2, n3: Numpy Float Arrays. All should be the same size. Each
+			star/body fact that is still in the FOV at this point should
+			have an entry in each, and each index MUST correspond to data
+			from the same star/facet!
+		@return occCheck: Numpy Array. A list of booleans, each corresponding to 
+		"""
 		from numpy import array, stack, einsum, logical_or
 		from numpy.linalg import norm
 		#this needs to be multiplied by a transformation matrix in order
@@ -1267,16 +1305,14 @@ class image:
 	# gaussian() calculates the value of a gaussian r away from the center
 	#	with standard deviation sigma. Assumes covariance is a multiple of
 	#	identity
-	#
-	#	Inputs:
-	#		r: distance of point in question from center of gaussian
-	#		sigma: standard deviation of gaussian
-	#
-	#	Outputs:
-	#		I: Intensity of gaussian
-	#
 	###########################################################################
 	def gaussian(self,r,sigma):
+		"""!
+		@param r: distance of point in question from center of gaussian
+		@param sigma: standard deviation of gaussian
+		@return I: Intensity of gaussian
+		"""
+
 		from numpy import exp
 		I = exp(-r**2/(2*sigma**2))
 		return I
@@ -1285,15 +1321,13 @@ class image:
 	#
 	# psf() computes the point spread function for point sources in an image
 	#
-	#	Inputs:
-	#		sigma: standard deviation of gaussian point spread.
-	#
-	#	Outputs:
-	#		psfDict: dictionary with x, y, and I values for PSF. x and y
-	#			convert to pixel/line, and I is intensity.
-	#
 	###########################################################################
 	def psf(self,sigma):
+		"""!
+		@param sigma: standard deviation of gaussian point spread.
+		@return psfDict: dictionary with x, y, and I values for PSF. x and y
+			convert to pixel/line, and I is intensity.
+		"""
 		from numpy import arange, pi, ones
 		from numpy import array, sin, cos, append, linspace
 		r_3sig = sigma*3
@@ -1320,21 +1354,21 @@ class image:
 	# rasterize() floors the pixel and line coordinates and the uses pandas
 	#		to sum all intensity that falls in the same bin.
 	#
-	#	Inputs:
-	#		pixelResolution: number of pixels in the width dimension of the
-	#			detector array
-	# 		lineResolution: number of pixels in the height dimension of the
-	#			detector array
-	# 		pixelCoord: x (pixel) coordinate of every point source in scene
-	# 		lineCoord: y (line) coordinate of every point source in scene
-	#		intensity: incident intensity of every point source in scene
-	#
-	#	Outputs:
-	#		detectorArray: array with summed intenisty for every pixel in
-	#			the detector array
-	#
 	###########################################################################
 	def rasterize(self,pixelResolution,lineResolution,pixelCoord,lineCoord,intensity):
+		"""!
+		@param pixelResolution: number of pixels in the width dimension of the
+			detector array
+		@param lineResolution: number of pixels in the height dimension of the
+			detector array
+		@param pixelCoord: x (pixel) coordinate of every point source in scene
+		@param lineCoord: y (line) coordinate of every point source in scene
+		@param intensity: incident intensity of every point source in scene
+
+		@return detectorArray: array with summed intenisty for every pixel in
+			the detector array
+		"""
+
 		from numpy import floor, zeros, array, arange, append 
 		from numpy import concatenate, logical_and
 		from pandas import DataFrame
@@ -1369,15 +1403,13 @@ class image:
 	#
 	# addReadNoise() adds gaussian read noise. It is called once per image.
 	#
-	#	Inputs:
-	#		detectorArray: array that read noise is to be added to
-	#		sigma: standard deviation of the gaussian noise to be added
-	#
-	#	Outputs:
-	#		detectorArray: detectorArray with read noise added
-	#
 	###########################################################################
 	def addReadNoise(self,detectorArray,sigma):
+		"""!	
+		@param detectorArray: array that read noise is to be added to
+		@param sigma: standard deviation of the gaussian noise to be added
+		@return detectorArray: detectorArray with read noise added
+		"""
 		from numpy.random import randn
 		detectorArray = detectorArray + sigma*randn(len(detectorArray))
 		return detectorArray
@@ -1386,14 +1418,12 @@ class image:
 	#
 	# addPoissonNoise() adds poisson noise
 	#
-	#	Inputs:
-	#		I: array of intensities to add poisson nouse to
-	#
-	#	Outputs:
-	#		I: intensity array with poisson noise added
-	#
 	###########################################################################
 	def addPoissonNoise(self, I):
+		"""!
+		@param I: array of intensities to add poisson nouse to
+		@return I: intensity array with poisson noise added
+		"""
 		from numpy.random import poisson
 		I = I + poisson(I)
 		return I
@@ -1401,18 +1431,13 @@ class image:
 	###########################################################################
 	#	planck() is a function that calculates a planck blackbody function
 	#
-	#	Inputs:
-	#		T: temperature of the star in Kelvin
-	#		lam: wavelength bins at which to calculate in METERS(!)
-	#
-	#	Outputs:
-	#		I: intensity of light at each wavelengh bin in W/m^2/nm/sr
-	#
-	#	Notes:
-	#
 	###########################################################################
-
 	def planck(self, T,lam):
+		"""!
+		@param T: temperature of the star in Kelvin
+		@param lam: wavelength bins at which to calculate in METERS(!)
+		@return I: intensity of light at each wavelengh bin in W/m^2/nm/sr
+		"""
 		from constants import h, c, k_B
 		from numpy import exp
 
@@ -1426,20 +1451,17 @@ class image:
 	###########################################################################
 	#	stefanBoltzmann() is a function that total flux from a star given 
 	#
-	#	Inputs:
-	#		T: temperature of the star in Kelvin
-	#
-	#	Outputs:
-	#		F: total flux at stellar surface in W/m^2
-	#
 	#	Notes:
 	#		This function isn't used in DINO C-REx except as part of the test
 	#		for planck(). The Planck function integrated over all wavelength
 	#		space should be identically equal to the Stephan-Boltzmann function
 	#
 	###########################################################################
-
 	def stefanBoltzmann(self, T):
+		"""!
+		@param T: temperature of the star in Kelvin
+		@return F: total flux at stellar surface in W/m^2
+		"""
 		from constants import sigma
 		return sigma*T**4
 
@@ -1448,17 +1470,13 @@ class image:
 	#		it is used to convert how many photons are incident on the 
 	#		detector per joule of energy
 	#
-	#	Inputs:
-	#		lam: array of wavelength values to evaluate
-	#
-	#	Outputs:
-	#		photonEnergy: energy of a photon at each lam value
-	#
-	#	Notes:
-	#
 	###########################################################################
 
 	def photonEnergy(self, lam):
+		"""!
+		@param lam: array of wavelength values to evaluate
+		@return photonEnergy: energy of a photon at each lam value
+		"""
 		from em import photonEnergy
 		return photonEnergy(lam)
 		from constants import h, c
@@ -1468,12 +1486,6 @@ class image:
 	###########################################################################
 	#	addZodiacalLight() 
 	#
-	#	Inputs: 
-	#		attitudeDCM: DCM for the inertial to camera attitude.
-	#		
-	#	Outputs:
-	#		zodiacalFlux: 
-	#
 	#	Notes: the data represented in pioneer10BkdgStarLight comes from
 	#	Lienert's 1997 reference on diffuse night sky brightness on p39.
 	# 
@@ -1482,8 +1494,12 @@ class image:
 	#
 	#	Rows of the array represent bins of declination.
 	#
-	# ###########################################################################
+	###########################################################################
 	def addZodiacalLight(self):
+		"""!
+		@param attitudeDCM: DCM for the inertial to camera attitude.
+		@return zodiacalFlux: 
+		"""
 		from numpy import array, identity, flip, vstack, hstack, transpose
 		from numpy import arctan2, pi, rad2deg, arcsin, argmin
 		sunAngleRad = arctan2(self.camera.scDCM[1],self.camera.scDCM[0]) + pi
@@ -1535,14 +1551,6 @@ class image:
 
 	###########################################################################
 	#	addBkgdStarLight() 
-	#
-	#	Inputs: 
-	#		attitudeDCM: DCM for the inertial to camera attitude.
-	#		
-	#	Outputs:
-	#		bkgdFlux: flux to be applied to every pixel in the detector array
-	#		representing the brightness of unresolved stars
-	#
 	#	Notes: the data represented in pioneer10BkdgStarLight comes from
 	#	Lienert's 1997 reference on diffuse night sky brightness on p78 and 79.
 	# 
@@ -1552,9 +1560,15 @@ class image:
 	#	Rows of the array represent bins of declination, and are spaced by 10
 	#	degrees. Columns are binned by right ascension and are spaced every 10
 	#	degrees.
-	#
-	# ###########################################################################
+	###########################################################################
 	def addBkgdStarLight(self):
+		"""!	
+		@param attitudeDCM: DCM for the inertial to camera attitude.
+		
+		@return bkgdFlux: flux to be applied to every pixel in the detector array
+		@return representing the brightness of unresolved stars
+		"""
+	
 
 		from numpy import array, arcsin, arctan2, rad2deg, deg2rad, flip
 
@@ -1663,51 +1677,49 @@ class image:
 		bkgdFlux = pioneer10BkdgStarLight[camRAbin,camDEbin][0]*1.28e-8*.156
 
 		return bkgdFlux
-
-###############################################################################
-#	scene is a class for collecting each integration step during an exposure.
-#	These will then be summed to make frames, which are the physically relevant
-#	unit of an image. frames are then summed to create the full images.
-#
-#	User Variables:
-#		None. All variables in the image object are added dynamically
-#
-#	Computed Variables:
-# 		starIDs: Similar to the starID varable that is held in the camera 
-#			object, but with only stars/facets that are in the FOC of 
-#			this scene. 
-# 		RA: Similar to the RA varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this scene. 
-# 		DE: Similar to the DE varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this scene.
-# 		n1: Similar to the n1 varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this scene.
-# 		n2: Similar to the n2 varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this scene.
-# 		n3: Similar to the n3 varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this scene.
-# 		VT: Similar to the VT varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this scene.
-# 		BVT: Similar to the BVT varable that is held in the camera object,
-#			but with only stars/facets that are in the FOC of this scene.
-# 		c1: Similar to the c1 varable that is held in the image object,
-#			but with only stars/facets that are in the FOC of this scene.
-# 		c2: Similar to the c2 varable that is held in the image object,
-#			but with only stars/facets that are in the FOC of this scene.
-# 		c3: Similar to the c3 varable that is held in the image object,
-#			but with only stars/facets that are in the FOC of this scene.
-# 		I: Similar to the I varable that is held in the image object,
-#			but with only stars/facets that are in the FOC of this scene.
-# 		pixel: Similar to the pixel varable that is held in the image object,
-#			but with only stars/facets that are in the FOC of this scene.
-# 		line: Similar to the line varable that is held in the image object,
-#			but with only stars/facets that are in the FOC of this scene.
-#		detectorArray: array of summed intensities on each pixel during
-#			the integration timestep of this scene. Does not include noise.
-#			Added by image.updateState()
-###############################################################################
-
 class scene:
+	"""!
+	scene is a class for collecting each integration step during an exposure.
+	These will then be summed to make frames, which are the physically relevant
+	unit of an image. frames are then summed to create the full images.
+
+	User Variables:
+		None. All variables in the image object are added dynamically
+
+	Computed Variables:
+		starIDs: Similar to the starID varable that is held in the camera 
+			object, but with only stars/facets that are in the FOC of 
+			this scene. 
+		RA: Similar to the RA varable that is held in the camera object,
+			but with only stars/facets that are in the FOC of this scene. 
+		DE: Similar to the DE varable that is held in the camera object,
+			but with only stars/facets that are in the FOC of this scene.
+		n1: Similar to the n1 varable that is held in the camera object,
+			but with only stars/facets that are in the FOC of this scene.
+		n2: Similar to the n2 varable that is held in the camera object,
+			but with only stars/facets that are in the FOC of this scene.
+		n3: Similar to the n3 varable that is held in the camera object,
+			but with only stars/facets that are in the FOC of this scene.
+		VT: Similar to the VT varable that is held in the camera object,
+			but with only stars/facets that are in the FOC of this scene.
+		BVT: Similar to the BVT varable that is held in the camera object,
+			but with only stars/facets that are in the FOC of this scene.
+		c1: Similar to the c1 varable that is held in the image object,
+			but with only stars/facets that are in the FOC of this scene.
+		c2: Similar to the c2 varable that is held in the image object,
+			but with only stars/facets that are in the FOC of this scene.
+		c3: Similar to the c3 varable that is held in the image object,
+			but with only stars/facets that are in the FOC of this scene.
+		I: Similar to the I varable that is held in the image object,
+			but with only stars/facets that are in the FOC of this scene.
+		pixel: Similar to the pixel varable that is held in the image object,
+			but with only stars/facets that are in the FOC of this scene.
+		line: Similar to the line varable that is held in the image object,
+			but with only stars/facets that are in the FOC of this scene.
+		detectorArray: array of summed intensities on each pixel during
+			the integration timestep of this scene. Does not include noise.
+			Added by image.updateState()
+	"""
 	def __init__(
 		self,
 		RA,
@@ -1738,19 +1750,18 @@ class scene:
 		self.line = line
 		self.starIDs = starIDs
 
-###############################################################################
-#	beacon is a class to carry information about opnav beacons.
-#	All data is set by the user, ane instances of the class are really
-#	just carried around to help organize data.
-#
-#	User Variables:
-#		None. All variables in the image object are added dynamically
-#
-#	Computed Variables:
-# 		None.
-###############################################################################
-
 class beacon:
+	"""!
+	Beacon is a class to carry information about opnav beacons.
+	All data is set by the user, ane instances of the class are really
+	just carried around to help organize data.
+
+	User Variables:
+		None. All variables in the image object are added dynamically
+
+	Computed Variables:
+		None.
+	"""
 	def __init__(self):
 		self.state = -1
 		self.r_eq = -1

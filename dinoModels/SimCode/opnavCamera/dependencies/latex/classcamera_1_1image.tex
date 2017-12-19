@@ -1,0 +1,483 @@
+\hypertarget{classcamera_1_1image}{}\section{camera.\+image Class Reference}
+\label{classcamera_1_1image}\index{camera.\+image@{camera.\+image}}
+
+
+Image is a class for the image data product produced by a spacecraft camera.  
+
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_aad473dd65c4639f4ef1fa2f12ea90add}\label{classcamera_1_1image_aad473dd65c4639f4ef1fa2f12ea90add}} 
+def {\bfseries \+\_\+\+\_\+init\+\_\+\+\_\+} (self, \hyperlink{classcamera_1_1camera}{camera}, msg, kwargs)
+\item 
+def \hyperlink{classcamera_1_1image_ad5fcc766f1a0be37d8437f46d0fe720d}{update\+State} (self)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1image_ad5fcc766f1a0be37d8437f46d0fe720d}{update\+State()} is the master function of the image object. \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1image_a07f3ece0789fb705f57985642b41ae47}{find\+Stars\+In\+F\+OV} (self, alpha, beta, gamma, alpha\+Max, beta\+Max, alpha\+Min, beta\+Min, half\+Alpha, half\+Beta, alpha\+Resolution, beta\+Resolution, RA, DE, n1, n2, n3, VT, B\+VT, T, I, solid\+Angle\+Subtended, max\+Mag, star\+I\+Ds, msg, kwargs)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1image_a07f3ece0789fb705f57985642b41ae47}{find\+Stars\+In\+F\+O\+V()} finds the pixel and line coordinates of a \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1image_a47cc2d7f893043af0532d8fc291035e4}{remove\+Occultations} (self, body, n1, n2, n3)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1image_a47cc2d7f893043af0532d8fc291035e4}{remove\+Occultations()} is a method to remove stars and beacon facets that are behind beacons \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1image_a8221ae614b180710c72f2675838939b2}{gaussian} (self, r, sigma)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1image_a8221ae614b180710c72f2675838939b2}{gaussian()} calculates the value of a gaussian r away from the center with standard deviation sigma. \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1image_a20565a1c8ab7898a047e45ca6edf2b1b}{psf} (self, sigma)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1image_a20565a1c8ab7898a047e45ca6edf2b1b}{psf()} computes the point spread function for point sources in an image \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1image_ac6c6e628859396da903359da425f8fbb}{rasterize} (self, pixel\+Resolution, line\+Resolution, pixel\+Coord, line\+Coord, intensity)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1image_ac6c6e628859396da903359da425f8fbb}{rasterize()} floors the pixel and line coordinates and the uses pandas to sum all intensity that falls in the same bin. \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1image_a050f22f120276a1833ac650dbe9d3584}{add\+Read\+Noise} (self, detector\+Array, sigma)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1image_a050f22f120276a1833ac650dbe9d3584}{add\+Read\+Noise()} adds gaussian read noise. \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1image_aedd03c3f51edba0e50a4ae231498a503}{add\+Poisson\+Noise} (self, I)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1image_aedd03c3f51edba0e50a4ae231498a503}{add\+Poisson\+Noise()} adds poisson noise \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1image_a9ea76ebff6206130cfbbe8e45fcf0ca6}{planck} (self, T, lam)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1image_a9ea76ebff6206130cfbbe8e45fcf0ca6}{planck()} is a function that calculates a planck blackbody function \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1image_afda16877d651ac1801fbea9fcf4583c1}{stefan\+Boltzmann} (self, T)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1image_afda16877d651ac1801fbea9fcf4583c1}{stefan\+Boltzmann()} is a function that total flux from a star given \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1image_a9e19e8ea8758f1cb262ca7e048e1e056}{photon\+Energy} (self, lam)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1image_a9e19e8ea8758f1cb262ca7e048e1e056}{photon\+Energy()} calculates the energy per photon at a wavelength lam. \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1image_aa861ed59adf2eb74ef364fe1a5e3c6db}{add\+Zodiacal\+Light} (self)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1image_aa861ed59adf2eb74ef364fe1a5e3c6db}{add\+Zodiacal\+Light()} \end{DoxyCompactList}\item 
+def \hyperlink{classcamera_1_1image_a2a423c50f436f31466814408b7d47c66}{add\+Bkgd\+Star\+Light} (self)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classcamera_1_1image_a2a423c50f436f31466814408b7d47c66}{add\+Bkgd\+Star\+Light()} Notes\+: the data represented in pioneer10\+Bkdg\+Star\+Light comes from Lienert\textquotesingle{}s 1997 reference on diffuse night sky brightness on p78 and 79. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a8974a5d17a134866e3e2ff77879f93bd}\label{classcamera_1_1image_a8974a5d17a134866e3e2ff77879f93bd}} 
+{\bfseries image\+Open}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a957600ec7ab7c2706acd385e4cbf746a}\label{classcamera_1_1image_a957600ec7ab7c2706acd385e4cbf746a}} 
+{\bfseries alpha}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a906cce58dc1cfc480107a71896cd8f43}\label{classcamera_1_1image_a906cce58dc1cfc480107a71896cd8f43}} 
+{\bfseries beta}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a754bcaab2b237884170d5447f421d9c1}\label{classcamera_1_1image_a754bcaab2b237884170d5447f421d9c1}} 
+{\bfseries gamma}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a529e0eb8cc37128b220f7a3e73a83e1f}\label{classcamera_1_1image_a529e0eb8cc37128b220f7a3e73a83e1f}} 
+{\bfseries camera}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a2e4fccb2f3a60a0caa70a6bdc4770568}\label{classcamera_1_1image_a2e4fccb2f3a60a0caa70a6bdc4770568}} 
+{\bfseries RA}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_acbf159774e4257299165993ef353a536}\label{classcamera_1_1image_acbf159774e4257299165993ef353a536}} 
+{\bfseries DE}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a327cf9a27406cb47ab19abb70de9fa94}\label{classcamera_1_1image_a327cf9a27406cb47ab19abb70de9fa94}} 
+{\bfseries n1}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_afdc4281e7b3f4059a1d91185ca47e5e9}\label{classcamera_1_1image_afdc4281e7b3f4059a1d91185ca47e5e9}} 
+{\bfseries n2}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_af1201ba3b4be1d4f5fdc3febb25e09a3}\label{classcamera_1_1image_af1201ba3b4be1d4f5fdc3febb25e09a3}} 
+{\bfseries n3}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a162cfa6c118cb543c1c8b66de95fc996}\label{classcamera_1_1image_a162cfa6c118cb543c1c8b66de95fc996}} 
+{\bfseries VT}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_afb934c2596afd607af6514b5fab13b78}\label{classcamera_1_1image_afb934c2596afd607af6514b5fab13b78}} 
+{\bfseries B\+VT}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a35f32409f375bd8408d4a505432b5400}\label{classcamera_1_1image_a35f32409f375bd8408d4a505432b5400}} 
+{\bfseries c1}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a920a51ba1d9ce36540ec462ffa2c9ff9}\label{classcamera_1_1image_a920a51ba1d9ce36540ec462ffa2c9ff9}} 
+{\bfseries c2}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a9afac2a10678d49191aefff3dad8d3ec}\label{classcamera_1_1image_a9afac2a10678d49191aefff3dad8d3ec}} 
+{\bfseries c3}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a0cbe832fa5c921cbb5a8855f58c3d30b}\label{classcamera_1_1image_a0cbe832fa5c921cbb5a8855f58c3d30b}} 
+{\bfseries D\+CM}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a34582b61d40c7047bd75f57f3e1ac6f3}\label{classcamera_1_1image_a34582b61d40c7047bd75f57f3e1ac6f3}} 
+{\bfseries scenes}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a5cef5a8934d2d25abb1f450220843b57}\label{classcamera_1_1image_a5cef5a8934d2d25abb1f450220843b57}} 
+{\bfseries star\+ID}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a7a909b5be33a5e260ae8434649436d6e}\label{classcamera_1_1image_a7a909b5be33a5e260ae8434649436d6e}} 
+{\bfseries T}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a3fab299944c8f8b43b90b3522b7322bb}\label{classcamera_1_1image_a3fab299944c8f8b43b90b3522b7322bb}} 
+{\bfseries solid\+Angle\+Subtended}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_acc05c19c8aecd06354a840d882061e5b}\label{classcamera_1_1image_acc05c19c8aecd06354a840d882061e5b}} 
+{\bfseries I}
+\end{DoxyCompactItemize}
+\subsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+{\bfseries hd}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_aa422320a4fd0696bd4444c42a00b588c}\label{classcamera_1_1image_aa422320a4fd0696bd4444c42a00b588c}} 
+{\bfseries hot\+\_\+dark} = np.\+asarray(hd).flatten()
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a40f595876a0f0c1ff854304cf7cff7af}\label{classcamera_1_1image_a40f595876a0f0c1ff854304cf7cff7af}} 
+{\bfseries hot\+Dark\+Array}
+\item 
+\mbox{\Hypertarget{classcamera_1_1image_a452d34eef09178a41139fcca01c13b20}\label{classcamera_1_1image_a452d34eef09178a41139fcca01c13b20}} 
+{\bfseries detector\+Array}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Image is a class for the image data product produced by a spacecraft camera. 
+
+methods\+:
+
+User Variables\+: None. All variables in the image object are added dynamically
+
+Computed Variables\+: image\+Open\+: boolean that keeps track of if the image is currently open alpha\+: list of euler angle rotatons about axis 3 at each timestep beta\+: list of euler angle rotatons about axis 2 at each timestep gamma\+: list of euler angle rotatons about axis 1 at each timestep camera\+: camera object representing the camera this was taken by D\+CM\+: list of D\+C\+Ms from intertial to camera frame at each timestep scenes\+: list of scene objects star\+ID\+: list of I\+Ds for each star that is visible at any time during exposure RA\+: Similar to the RA varable that is held in the camera object, but with only stars/facets that are in the F\+OC of this image. DE\+: Similar to the DE varable that is held in the camera object, but with only stars/facets that are in the F\+OC of this image. n1\+: Similar to the n1 varable that is held in the camera object, but with only stars/facets that are in the F\+OC of this image. n2\+: Similar to the n2 varable that is held in the camera object, but with only stars/facets that are in the F\+OC of this image. n3\+: Similar to the n3 varable that is held in the camera object, but with only stars/facets that are in the F\+OC of this image. VT\+: Similar to the VT varable that is held in the camera object, but with only stars/facets that are in the F\+OC of this image. B\+VT\+: Similar to the B\+VT varable that is held in the camera object, but with only stars/facets that are in the F\+OC of this image. c1\+: 1st component of Camera frame unit vector of all stars visible at any time in this image c2\+: 2nd component of Camera frame unit vector of all stars visible at any time in this image c3\+: 3rd component of Camera frame unit vector of all stars visible at any time in this image detector\+Array\+: array with summed intensities of light incident on each pixel
+
+Keyword Arguments\+: None
+
+Notes\+: -\/alpha, beta, gamma really need to be removed here. Although the Euler angle transformation is a lot easier to grasp intuitively, it would make way a camera-\/to-\/body D\+CM that is stored in the camera object along with an inertial to spacecraft D\+CM that is stored in the spacecraft object. This way the image object will only need camera and msg passed in. -\/\+This class ultimately needs to be split into image and frame classes where frames are totaled in order to make the final image. The frames should be calculated with a margin added to the true F\+OV because once we start to add saturation effects, it will matter a lot what is right outside the F\+OV (i.\+e. if the sun is right next to the F\+OV, the background counts will be very high, even though the sun is not imaged directly) 
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classcamera_1_1image_a2a423c50f436f31466814408b7d47c66}\label{classcamera_1_1image_a2a423c50f436f31466814408b7d47c66}} 
+\index{camera\+::image@{camera\+::image}!add\+Bkgd\+Star\+Light@{add\+Bkgd\+Star\+Light}}
+\index{add\+Bkgd\+Star\+Light@{add\+Bkgd\+Star\+Light}!camera\+::image@{camera\+::image}}
+\subsubsection{\texorpdfstring{add\+Bkgd\+Star\+Light()}{addBkgdStarLight()}}
+{\footnotesize\ttfamily def camera.\+image.\+add\+Bkgd\+Star\+Light (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1image_a2a423c50f436f31466814408b7d47c66}{add\+Bkgd\+Star\+Light()} Notes\+: the data represented in pioneer10\+Bkdg\+Star\+Light comes from Lienert\textquotesingle{}s 1997 reference on diffuse night sky brightness on p78 and 79. 
+
+Units for the array are S10\+\_\+sun, given by leinart to be 1.\+28e-\/8$\ast$.156 W/m$^\wedge$2/sr
+
+Rows of the array represent bins of declination, and are spaced by 10 degrees. Columns are binned by right ascension and are spaced every 10 degrees. 
+\begin{DoxyParams}{Parameters}
+{\em attitude\+D\+CM} & D\+CM for the inertial to camera attitude.\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+bkgd\+Flux\+: flux to be applied to every pixel in the detector array 
+
+representing the brightness of unresolved stars 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1image_aedd03c3f51edba0e50a4ae231498a503}\label{classcamera_1_1image_aedd03c3f51edba0e50a4ae231498a503}} 
+\index{camera\+::image@{camera\+::image}!add\+Poisson\+Noise@{add\+Poisson\+Noise}}
+\index{add\+Poisson\+Noise@{add\+Poisson\+Noise}!camera\+::image@{camera\+::image}}
+\subsubsection{\texorpdfstring{add\+Poisson\+Noise()}{addPoissonNoise()}}
+{\footnotesize\ttfamily def camera.\+image.\+add\+Poisson\+Noise (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{I }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1image_aedd03c3f51edba0e50a4ae231498a503}{add\+Poisson\+Noise()} adds poisson noise 
+
+
+\begin{DoxyParams}{Parameters}
+{\em I} & array of intensities to add poisson nouse to \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+I\+: intensity array with poisson noise added 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1image_a050f22f120276a1833ac650dbe9d3584}\label{classcamera_1_1image_a050f22f120276a1833ac650dbe9d3584}} 
+\index{camera\+::image@{camera\+::image}!add\+Read\+Noise@{add\+Read\+Noise}}
+\index{add\+Read\+Noise@{add\+Read\+Noise}!camera\+::image@{camera\+::image}}
+\subsubsection{\texorpdfstring{add\+Read\+Noise()}{addReadNoise()}}
+{\footnotesize\ttfamily def camera.\+image.\+add\+Read\+Noise (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{detector\+Array,  }\item[{}]{sigma }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1image_a050f22f120276a1833ac650dbe9d3584}{add\+Read\+Noise()} adds gaussian read noise. 
+
+It is called once per image. 
+\begin{DoxyParams}{Parameters}
+{\em detector\+Array} & array that read noise is to be added to \\
+\hline
+{\em sigma} & standard deviation of the gaussian noise to be added \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+detector\+Array\+: detector\+Array with read noise added 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1image_aa861ed59adf2eb74ef364fe1a5e3c6db}\label{classcamera_1_1image_aa861ed59adf2eb74ef364fe1a5e3c6db}} 
+\index{camera\+::image@{camera\+::image}!add\+Zodiacal\+Light@{add\+Zodiacal\+Light}}
+\index{add\+Zodiacal\+Light@{add\+Zodiacal\+Light}!camera\+::image@{camera\+::image}}
+\subsubsection{\texorpdfstring{add\+Zodiacal\+Light()}{addZodiacalLight()}}
+{\footnotesize\ttfamily def camera.\+image.\+add\+Zodiacal\+Light (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1image_aa861ed59adf2eb74ef364fe1a5e3c6db}{add\+Zodiacal\+Light()} 
+
+Notes\+: the data represented in pioneer10\+Bkdg\+Star\+Light comes from Lienert\textquotesingle{}s 1997 reference on diffuse night sky brightness on p39.
+
+Units for the array are S10\+\_\+sun, given by leinart to be 1.\+28e-\/8$\ast$.156 W/m$^\wedge$2/sr
+
+Rows of the array represent bins of declination. 
+\begin{DoxyParams}{Parameters}
+{\em attitude\+D\+CM} & D\+CM for the inertial to camera attitude. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+zodiacal\+Flux\+: 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1image_a07f3ece0789fb705f57985642b41ae47}\label{classcamera_1_1image_a07f3ece0789fb705f57985642b41ae47}} 
+\index{camera\+::image@{camera\+::image}!find\+Stars\+In\+F\+OV@{find\+Stars\+In\+F\+OV}}
+\index{find\+Stars\+In\+F\+OV@{find\+Stars\+In\+F\+OV}!camera\+::image@{camera\+::image}}
+\subsubsection{\texorpdfstring{find\+Stars\+In\+F\+O\+V()}{findStarsInFOV()}}
+{\footnotesize\ttfamily def camera.\+image.\+find\+Stars\+In\+F\+OV (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{alpha,  }\item[{}]{beta,  }\item[{}]{gamma,  }\item[{}]{alpha\+Max,  }\item[{}]{beta\+Max,  }\item[{}]{alpha\+Min,  }\item[{}]{beta\+Min,  }\item[{}]{half\+Alpha,  }\item[{}]{half\+Beta,  }\item[{}]{alpha\+Resolution,  }\item[{}]{beta\+Resolution,  }\item[{}]{RA,  }\item[{}]{DE,  }\item[{}]{n1,  }\item[{}]{n2,  }\item[{}]{n3,  }\item[{}]{VT,  }\item[{}]{B\+VT,  }\item[{}]{T,  }\item[{}]{I,  }\item[{}]{solid\+Angle\+Subtended,  }\item[{}]{max\+Mag,  }\item[{}]{star\+I\+Ds,  }\item[{}]{msg,  }\item[{}]{kwargs }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1image_a07f3ece0789fb705f57985642b41ae47}{find\+Stars\+In\+F\+O\+V()} finds the pixel and line coordinates of a 
+
+
+\begin{DoxyParams}{Parameters}
+{\em alpha} & euler angle rotation about axis 3 at t0 \\
+\hline
+{\em beta} & euler angle rotation about axis 2 at t0 \\
+\hline
+{\em gamma} & euler angle rotation about axis 1 at t0 \\
+\hline
+{\em alpha\+Max} & largest alpha at any time \\
+\hline
+{\em beta\+Max} & largest beta any time \\
+\hline
+{\em alpha\+Min} & smallest alpha at any time \\
+\hline
+{\em beta\+Min} & smallest beta any time \\
+\hline
+{\em half\+Alpha} & Half the angular height of the camera \\
+\hline
+{\em half\+Beta} & Half the angular width of the camera \\
+\hline
+{\em alpha\+Resolution} & resolution in the line dimension of the camera \\
+\hline
+{\em beta\+Resolution} & resolution in the pixel dimension of the camera \\
+\hline
+{\em RA} & RA of all stars that may be in F\+OV \\
+\hline
+{\em DE} & DE of all stars that may be in F\+OV \\
+\hline
+{\em n1} & inertial coord n1 of all stars that may be in F\+OV \\
+\hline
+{\em n2} & inertial coord n2 of all stars that may be in F\+OV \\
+\hline
+{\em n3} & inertial coord n3 of all stars that may be in F\+OV \\
+\hline
+{\em VT} & Tycho visual magnitude of all stars that may be in F\+OV \\
+\hline
+{\em B\+VT} & Tycho color index of all stars that may be in F\+OV \\
+\hline
+{\em T} & Computed temperature of all stars that may be in F\+OV \\
+\hline
+{\em I} & Computed incident intensity of all stars that may be in F\+OV \\
+\hline
+{\em solid\+Angle\+Subtended} & solid\+Angle\+Subtended of all stars that may be in F\+OV \\
+\hline
+{\em max\+Mag} & maximum magnitude of camera \\
+\hline
+{\em star\+I\+Ds} & star\+I\+Ds of all stars that may be in F\+OV \\
+\hline
+{\em msg} & debug message passed from camera \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+pixel\+: pixel coord of all stars in F\+OV 
+
+line\+: line cood of all stars in F\+OV 
+
+RA\+: RA of all stars in F\+OV 
+
+DE\+: DE of all stars in F\+OV 
+
+n1\+: inertial coord n1 of all stars in F\+OV 
+
+n2\+: inertial coord n2 of all stars in F\+OV 
+
+n3\+: inertial coord n3 of all stars in F\+OV 
+
+VT\+: Tycho visual magnitude of all stars in F\+OV 
+
+B\+VT\+: Tycho color index magnitude of all stars in F\+OV 
+
+c1\+: camera frame coord c1 of all stars that may be in F\+OV 
+
+c2\+: camera frame coord c2 of all stars that may be in F\+OV 
+
+c3\+: camera frame coord c3 of all stars that may be in F\+OV 
+
+star\+ID \+: star\+ID of all stars in F\+OV 
+
+I\+: Computed incident intensity of all stars in F\+OV 
+
+T\+: T of all stars in F\+OV 
+
+solid\+Angle\+Subtended\textquotesingle{}\+: solid\+Angle\+Subtended of all stars in F\+OV 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1image_a8221ae614b180710c72f2675838939b2}\label{classcamera_1_1image_a8221ae614b180710c72f2675838939b2}} 
+\index{camera\+::image@{camera\+::image}!gaussian@{gaussian}}
+\index{gaussian@{gaussian}!camera\+::image@{camera\+::image}}
+\subsubsection{\texorpdfstring{gaussian()}{gaussian()}}
+{\footnotesize\ttfamily def camera.\+image.\+gaussian (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{r,  }\item[{}]{sigma }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1image_a8221ae614b180710c72f2675838939b2}{gaussian()} calculates the value of a gaussian r away from the center with standard deviation sigma. 
+
+Assumes covariance is a multiple of identity 
+\begin{DoxyParams}{Parameters}
+{\em r} & distance of point in question from center of gaussian \\
+\hline
+{\em sigma} & standard deviation of gaussian \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+I\+: Intensity of gaussian 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1image_a9e19e8ea8758f1cb262ca7e048e1e056}\label{classcamera_1_1image_a9e19e8ea8758f1cb262ca7e048e1e056}} 
+\index{camera\+::image@{camera\+::image}!photon\+Energy@{photon\+Energy}}
+\index{photon\+Energy@{photon\+Energy}!camera\+::image@{camera\+::image}}
+\subsubsection{\texorpdfstring{photon\+Energy()}{photonEnergy()}}
+{\footnotesize\ttfamily def camera.\+image.\+photon\+Energy (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{lam }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1image_a9e19e8ea8758f1cb262ca7e048e1e056}{photon\+Energy()} calculates the energy per photon at a wavelength lam. 
+
+it is used to convert how many photons are incident on the detector per joule of energy 
+\begin{DoxyParams}{Parameters}
+{\em lam} & array of wavelength values to evaluate \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+photon\+Energy\+: energy of a photon at each lam value 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1image_a9ea76ebff6206130cfbbe8e45fcf0ca6}\label{classcamera_1_1image_a9ea76ebff6206130cfbbe8e45fcf0ca6}} 
+\index{camera\+::image@{camera\+::image}!planck@{planck}}
+\index{planck@{planck}!camera\+::image@{camera\+::image}}
+\subsubsection{\texorpdfstring{planck()}{planck()}}
+{\footnotesize\ttfamily def camera.\+image.\+planck (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{T,  }\item[{}]{lam }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1image_a9ea76ebff6206130cfbbe8e45fcf0ca6}{planck()} is a function that calculates a planck blackbody function 
+
+
+\begin{DoxyParams}{Parameters}
+{\em T} & temperature of the star in Kelvin \\
+\hline
+{\em lam} & wavelength bins at which to calculate in M\+E\+T\+E\+RS(!) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+I\+: intensity of light at each wavelengh bin in W/m$^\wedge$2/nm/sr 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1image_a20565a1c8ab7898a047e45ca6edf2b1b}\label{classcamera_1_1image_a20565a1c8ab7898a047e45ca6edf2b1b}} 
+\index{camera\+::image@{camera\+::image}!psf@{psf}}
+\index{psf@{psf}!camera\+::image@{camera\+::image}}
+\subsubsection{\texorpdfstring{psf()}{psf()}}
+{\footnotesize\ttfamily def camera.\+image.\+psf (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{sigma }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1image_a20565a1c8ab7898a047e45ca6edf2b1b}{psf()} computes the point spread function for point sources in an image 
+
+
+\begin{DoxyParams}{Parameters}
+{\em sigma} & standard deviation of gaussian point spread. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+psf\+Dict\+: dictionary with x, y, and I values for P\+SF. x and y convert to pixel/line, and I is intensity. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1image_ac6c6e628859396da903359da425f8fbb}\label{classcamera_1_1image_ac6c6e628859396da903359da425f8fbb}} 
+\index{camera\+::image@{camera\+::image}!rasterize@{rasterize}}
+\index{rasterize@{rasterize}!camera\+::image@{camera\+::image}}
+\subsubsection{\texorpdfstring{rasterize()}{rasterize()}}
+{\footnotesize\ttfamily def camera.\+image.\+rasterize (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{pixel\+Resolution,  }\item[{}]{line\+Resolution,  }\item[{}]{pixel\+Coord,  }\item[{}]{line\+Coord,  }\item[{}]{intensity }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1image_ac6c6e628859396da903359da425f8fbb}{rasterize()} floors the pixel and line coordinates and the uses pandas to sum all intensity that falls in the same bin. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em pixel\+Resolution} & number of pixels in the width dimension of the detector array \\
+\hline
+{\em line\+Resolution} & number of pixels in the height dimension of the detector array \\
+\hline
+{\em pixel\+Coord} & x (pixel) coordinate of every point source in scene \\
+\hline
+{\em line\+Coord} & y (line) coordinate of every point source in scene \\
+\hline
+{\em intensity} & incident intensity of every point source in scene\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+detector\+Array\+: array with summed intenisty for every pixel in the detector array 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1image_a47cc2d7f893043af0532d8fc291035e4}\label{classcamera_1_1image_a47cc2d7f893043af0532d8fc291035e4}} 
+\index{camera\+::image@{camera\+::image}!remove\+Occultations@{remove\+Occultations}}
+\index{remove\+Occultations@{remove\+Occultations}!camera\+::image@{camera\+::image}}
+\subsubsection{\texorpdfstring{remove\+Occultations()}{removeOccultations()}}
+{\footnotesize\ttfamily def camera.\+image.\+remove\+Occultations (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{body,  }\item[{}]{n1,  }\item[{}]{n2,  }\item[{}]{n3 }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1image_a47cc2d7f893043af0532d8fc291035e4}{remove\+Occultations()} is a method to remove stars and beacon facets that are behind beacons 
+
+
+\begin{DoxyParams}{Parameters}
+{\em body} & Object. Instantiation of the body class from bodies.\+py. Variables used from that class include equatorial radius, polar radius, and state (for the position to the body).\\
+\hline
+{\em n1,n2,n3} & Numpy Float Arrays. All should be the same size. Each star/body fact that is still in the F\+OV at this point should have an entry in each, and each index M\+U\+ST correspond to data from the same star/facet! \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+occ\+Check\+: Numpy Array. A list of booleans, each corresponding to 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1image_afda16877d651ac1801fbea9fcf4583c1}\label{classcamera_1_1image_afda16877d651ac1801fbea9fcf4583c1}} 
+\index{camera\+::image@{camera\+::image}!stefan\+Boltzmann@{stefan\+Boltzmann}}
+\index{stefan\+Boltzmann@{stefan\+Boltzmann}!camera\+::image@{camera\+::image}}
+\subsubsection{\texorpdfstring{stefan\+Boltzmann()}{stefanBoltzmann()}}
+{\footnotesize\ttfamily def camera.\+image.\+stefan\+Boltzmann (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{T }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1image_afda16877d651ac1801fbea9fcf4583c1}{stefan\+Boltzmann()} is a function that total flux from a star given 
+
+Notes\+: This function isn\textquotesingle{}t used in D\+I\+NO C-\/\+R\+Ex except as part of the test for \hyperlink{classcamera_1_1image_a9ea76ebff6206130cfbbe8e45fcf0ca6}{planck()}. The Planck function integrated over all wavelength space should be identically equal to the Stephan-\/\+Boltzmann function 
+\begin{DoxyParams}{Parameters}
+{\em T} & temperature of the star in Kelvin \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+F\+: total flux at stellar surface in W/m$^\wedge$2 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classcamera_1_1image_ad5fcc766f1a0be37d8437f46d0fe720d}\label{classcamera_1_1image_ad5fcc766f1a0be37d8437f46d0fe720d}} 
+\index{camera\+::image@{camera\+::image}!update\+State@{update\+State}}
+\index{update\+State@{update\+State}!camera\+::image@{camera\+::image}}
+\subsubsection{\texorpdfstring{update\+State()}{updateState()}}
+{\footnotesize\ttfamily def camera.\+image.\+update\+State (\begin{DoxyParamCaption}\item[{}]{self }\end{DoxyParamCaption})}
+
+
+
+\hyperlink{classcamera_1_1image_ad5fcc766f1a0be37d8437f46d0fe720d}{update\+State()} is the master function of the image object. 
+
+It does one of two things. If self.\+camera.\+msg\mbox{[}\textquotesingle{}take\+Image\textquotesingle{}\mbox{]} == 1, it will save the current inertial to camera D\+CM to the D\+CM list. if self.\+camera.\+msg\mbox{[}\textquotesingle{}take\+Image\textquotesingle{}\mbox{]} == 0, then it will find all stars and bodies that are visible at any time in the exposure and add them to attirbutes to be used when making scenes. Next, it takes each D\+CM, calculates which stars and bodies are visible at each time step and creates a scene. 
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classcamera_1_1image_a2a3c3af742462c4c873d652930ffd44d}\label{classcamera_1_1image_a2a3c3af742462c4c873d652930ffd44d}} 
+\index{camera\+::image@{camera\+::image}!hd@{hd}}
+\index{hd@{hd}!camera\+::image@{camera\+::image}}
+\subsubsection{\texorpdfstring{hd}{hd}}
+{\footnotesize\ttfamily camera.\+image.\+hd\hspace{0.3cm}{\ttfamily [static]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}
+=  self.camera.calculateHotDark(
+                                                    self.camera.hotDarkArray,
+                                                    self.camera.resolutionHeight,
+                                                    self.camera.resolutionWidth
+                                                    )
+\end{DoxyCode}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+camera.\+py\end{DoxyCompactItemize}

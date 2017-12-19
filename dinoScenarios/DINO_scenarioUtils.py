@@ -277,7 +277,7 @@ def defineParameters(
         debug={
             'addStars': 0, 'rmOcc': 1, 'addBod': 1, 'psf': 1,
             'raster': 1, 'photon': 1, 'dark': 1, 'read': 1,
-            'verbose': 1},
+            'verbose': 1, 'hotDark': 1},
         db='../dinoModels/SimCode/opnavCamera/db/tycho.db'  # stellar database
     )
 

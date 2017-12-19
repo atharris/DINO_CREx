@@ -68,7 +68,7 @@ bodies = [bod.earth,bod.luna]
 msg = {
 	'addStars': 0,'rmOcc': 0, 'addBod': 0, 'psf': 1, 
 	'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 
-	'dt': 0.01, 'verbose': 1}
+	'hotDark': 0, 'verbose': 1}
 takeImage = 0
 
 #create camera with no stars in it for tests that don't need them
@@ -129,8 +129,8 @@ starCam = camera.camera(
 	debug=msg,			#debug message
 	db='../db/tycho.db'	#stellar database
 	)
-#create a camera with a tiny detector so we can find just a single
-#star for doing PSF tests.
+# #create a camera with a tiny detector so we can find just a single
+# #star for doing PSF tests.
 
 tinyCam = camera.camera(
 	0.02,				#detectorHeight
@@ -162,7 +162,7 @@ tinyCam = camera.camera(
 def test_4_1_loadAllStars():
 	#load support dict that was calculated offline
 	test_4_1_support_dict = np.load('camera_test_support_files/4.1.test_support.npy')[0]
-	
+	print('sdfg')
 	#check that all sums of arrays loaded into the camera at run time
 	#match what they were when the support dict was made.
 	assert(sum(starCam.T) == test_4_1_support_dict['Tsum'])
@@ -174,25 +174,155 @@ def test_4_1_loadAllStars():
 	assert(sum(starCam.VT) == test_4_1_support_dict['VTsum'])
 	assert(sum(starCam.BVT) == test_4_1_support_dict['BVTsum'])
 
-# # # def test_4_2_calculate_FOV():
-# # # 	cam1 = camera.camera(
-# # # 		1,2,2)
-# # # 	cam2= camera.camera(
-# # # 		3,4,5)
-# # # 	cam3 = camera.camera(
-# # # 		6,4,2)
 
-# # # 	assert(cam1.angularHeight == 15)
-# # # 	assert(cam1.angularWidth == 16)
-# # # 	assert(cam1.angularDiagonal == 18)
+########################################################################
+# Set up cameras for lambda function tests
+########################################################################
+qe1 = {
+    'throughput': np.array([0.5,1.0,1.5]),
+    'lam': np.array([1,2,3]) 
+}
+tc1 = {
+    'throughput': np.array([0.3,0.4,0.5,0.3]),
+    'lam': np.array([1.5,3,4.5,6]) 
+}
 
-# # # 	assert(cam2.angularHeight == 54)
-# # # 	assert(cam2.angularWidth == 45)
-# # # 	assert(cam2.angularDiagonal == 25)
+qe2 = {
+	'throughput': np.array([3,4,5]),
+	'lam': np.array([5,6,7]) 
+}
+tc2 = {
+	'throughput': np.array([0.5,1.0,1.5]),
+	'lam': np.array([3,5,7]) 
+}
 
-# # # 	assert(cam2.angularHeight == 13)
-# # # 	assert(cam2.angularWidth == 17)
-# # # 	assert(cam2.angularDiagonal == 18)
+qe3 = {
+	'throughput': np.array([1,2,3]),
+	'lam': np.array([5.5,6.,6.5])
+}
+tc3 = {
+	'throughput': np.array([2,3,4]),
+	'lam': np.array([6.,6.5,7])	
+}
+
+cam1 = camera.camera(
+	2,
+	2,
+	5.0,
+	512,
+	512,
+	np.identity(3),
+	1000,
+	-1000,
+	qe1,
+	tc1,
+	0.5,
+	0.01**2,
+	2**32, 	
+	1,		
+	0.01, 	
+	100,
+	100,
+	100, 
+	scState,
+	scDCM,
+	bodies,
+	takeImage,
+	debug=msg,
+    db='../db/tycho.db'
+    )
+
+cam2 = camera.camera(
+	3,
+	4,
+	7.0,
+	512,
+	512,
+	np.identity(3),
+	1000,
+	-1000,
+	qe2,
+	tc2,
+	1,
+	0.01**2,
+	2**32, 	
+	1,		
+	0.01, 	
+	100,
+	100,
+	100, 
+	scState,
+	scDCM,
+	bodies,
+	takeImage,
+	debug=msg,
+    db='../db/tycho.db'
+    )
+
+cam3 = camera.camera(
+	6,
+	5,
+	7.0,
+	512,
+	512,
+	np.identity(3),
+	1000,
+	-1000,
+	qe3,
+	tc3,
+	0.1,
+	0.01**2,
+	2**32, 	
+	1,		
+	0.01, 	
+	100,
+	100,
+	100, 
+	scState,
+	scDCM,
+	bodies,
+	takeImage,
+	debug=msg,
+    db='../db/tycho.db'
+    )
+
+def test_4_2_calculate_FOV():
+ 	print(abs(cam1.angularHeight - 22.619864948040430) < 1e-14)
+ 	print(abs(cam1.angularWidth - 22.619864948040430) < 1e-14)
+ 	print(abs(cam1.angularDiagonal - 31.586338096527925) < 1e-14)
+ 	
+ 	print(abs(cam2.angularHeight - 24.189514154024202) < 1e-14)
+ 	print(abs(cam2.angularWidth - 31.890791801845708) < 1e-14)
+ 	print(abs(cam2.angularDiagonal - 39.307648116106620) < 1e-14)
+
+ 	print(abs(cam3.angularHeight - 46.397181027296369) < 1e-14)
+ 	print(abs(cam3.angularWidth - 39.30764811610662) < 1e-14)
+ 	print(abs(cam3.angularDiagonal - 58.31210889845746) < 1e-14)
+
+
+def test_4_3_find_lambda_set():
+	assert(np.array_equal(cam1.lambdaSet, np.array([1.5,2.,2.5,3.])))
+	assert(np.array_equal(cam2.lambdaSet, np.array([5.,6.,7.])))
+	assert(abs(sum(cam3.lambdaSet - np.array([ 6.1,  6.2,  6.3,  6.4,  6.5]))) < 1e-12)
+
+def test_4_4_interpolate_lambda_dependent():
+	assert(np.array_equal(cam1.qe['throughput'], np.array([0.5,0.75,1.,1.25,1.5,0.,0.,0.,0.,0.,0.])))
+	assert(np.array_equal(cam1.qe['lam'], np.array([1.,1.5,2.,2.5,3.,3.5,4.,4.5,5.,5.5,6.])))
+	assert(np.array_equal(cam1.tc['lam'], np.array([1.,1.5,2.,2.5,3.,3.5,4.,4.5,5.,5.5,6.])))
+	assert(np.array_equal(cam2.qe['throughput'], np.array([0,0,3,4,5])))
+	assert(np.array_equal(cam2.qe['lam'], np.array([3,4,5,6,7])))
+	assert(np.array_equal(cam2.tc['throughput'], np.array([0.5,0.75,1.,1.25,1.5])))
+	assert(np.array_equal(cam2.tc['lam'], np.array([3,4,5,6,7])))
+	assert(abs(sum(cam3.qe['throughput'] - np.array([1.,1.2,1.4,1.6,1.8,1.8,2.2,2.4,2.6,2.8,2.8,0.,0.,0.,0.,0.]))) < 1e-12)
+	assert(abs(sum(cam3.qe['lam'] - np.array([5.5,5.6,5.7,5.8,5.9,6.,6.1,6.2,6.3,6.4,6.5,6.6,6.7,6.8,6.9,7.]))) < 1e-12)
+	assert(abs(sum(cam3.tc['throughput'] - np.array([0.,0.,0.,0.,0.,0.,2.2,2.4,2.6,2.8,2.8,3.2,3.4,3.6,3.8,3.8]))) < 1e-12)
+	assert(abs(sum(cam3.tc['lam'] - np.array([5.5,5.6,5.7,5.8,5.9,6.,6.1,6.2,6.3,6.4,6.5,6.6,6.7,6.8,6.9,7.]))) < 1e-12)
+
+def test_4_5_integrated_qe_tc():	
+	assert(abs(sum(cam1.sensitivityCurve - np.array([0.225,1/3.,11/24.,0.6]))) < 1e-12)
+	assert(np.array_equal(cam2.sensitivityCurve, np.array([3,5,7.5])))
+	assert(abs(sum(cam3.sensitivityCurve - np.array([ 4.84,  5.76,  6.76,  7.84,  7.84]))) < 1e-12)
+
 
 def test_4_7_cameraUpdateState():
 	assert(len(noStarCam.images) == 0)
@@ -218,14 +348,11 @@ def test_4_7_cameraUpdateState():
 	assert(len(noStarCam.images[0].scenes) == 3)
 	assert(len(noStarCam.images[1].scenes) == 2)
 
-pdb.set_trace()
 def test_4_8_findStarsInFOV():
-	msg = { 'bodies': [
-		bod.earth,
-		bod.luna
-		], 
+	msg = { 
 		'addStars': 1,'rmOcc': 0, 'addBod': 0, 'psf': 1, 
-		'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 'verbose': 1}
+		'raster': 1, 'photon': 0, 'dark': 0, 
+		'hotDark': 0,'read': 0, 'verbose': 1}
 
 	OriCam = camera.camera(
 		1.5,				#detectorHeight
@@ -293,7 +420,7 @@ def test_4_8_findStarsInFOV():
 		)
 	UMiCam.scDCM = Euler321_2DCM(
 		np.deg2rad(187),
-		np.deg2rad(59),
+		np.deg2rad(-59),
 		np.deg2rad(0)
 		)
 
@@ -477,7 +604,7 @@ def test_4_9_imageRemoveOccultations():
 # set up image for tests 10-12
 tinyCam.scDCM = Euler321_2DCM(
 	np.deg2rad(1.12551889),
-	np.deg2rad(2.26739556),
+	np.deg2rad(-2.26739556),
 	np.deg2rad(0)
 	)
 tinyCam.takeImage = 1
@@ -538,26 +665,338 @@ def test_4_13_rasterize():
 	# 3,2 3=3
 	assert( np.array_equal(offlineRasterize,rasterize) )
 
+# Create Sample Image
+detector_array = np.ones( (50, 262144) ) #initial detector array
+img = 150*detector_array
+mu_0 = 150 	# The Expected Mean == 150
+sig_0 = 0	# The Exptd Std Dev == 0
+
+# Define Means and Std Devs
+sigma1 = 0.1
+sigma2 = 0.2
+
+###############################################################################
+##  ##  PROPERTIES OF GAUSSIAN
+###############################################################################
+#
+# - Mean == Median (== Mode) {Symmetry}
+# - Std_deviation(Image) == sqrt(Variance(Image))
+# - Variance(Image_with_noise) =~= Mean(Image_with_noise)
+#
+###############################################################################
+##  ##  ##  ##
+###############################################################################
 
 
-def test_4_14_photon_energy():
-	#need to take an image so we can access image.photonEnergy()
-	tinyCam.takeImage = 1
-	tinyCam.updateState()
-	tinyCam.takeImage = 0
-	tinyCam.updateState()
+def test_4_13_add_read_noise():
+	rows = 50		# Taking 50 Samples
+	average1 = []
+	median1 = []
+	variance1 = []
+	stdev1 = []
+	average3 = []
+	median3 = []
+	variance3 = []
+	stdev3 = []
+	for i in range(rows):
+		read_1 = starCam.images[0].addReadNoise(img[i, :], sigma1)	# Sigma = 0.1
+		# read_1 = add_read_noise(img, sigma1) - img 	# Sigma = 0.1
+		read_3 = starCam.images[0].addReadNoise(img[i, :], sigma2)	# Sigma = 0.2
+		mu1 = np.mean(read_1)					# Mean    1
+		med1 = np.median(read_1)				# Median  1
+		std1 = np.std(read_1)					# Std Dev 1
+		var1 = np.var(read_1)					# Var 	  1
+		mu3 = np.mean(read_3)					# Mean 	  3
+		med3 = np.median(read_3)				# Median  3
+		std3 = np.std(read_3)					# Std Dev 3
+		var3 = np.var(read_3)					# Var     3
 
-	from constants import h, c
-	testValues = np.array(
-		[ 5960.,  6032.,  8337.,  8759.,  1998.,  
-		9567.,   633.,  3347., 5504.,  5353.])
+		average1.append(mu1)
+		median1.append(med1)
+		variance1.append(var1)
+		stdev1.append(std1)
 
-	runTimeValues = tinyCam.images[0].photonEnergy(testValues)
+		average3.append(mu3)
+		median3.append(med3)
+		variance3.append(var3)
+		stdev3.append(std3)
 
-	energiesComputedOffline = np.array(
-		[  3.33296279e-29,   3.29317942e-29,   2.38268661e-29, 2.26789111e-29, 9.94217129e-29,   
-		2.07635186e-29, 3.13814506e-28,   5.93500396e-29,   3.60909488e-29, 3.71090197e-29])
-	assert (sum(abs(energiesComputedOffline - runTimeValues)) < 1e12)
+
+	# Mean of two different image arrays should be roughly the same (150)
+	assert ( abs( np.mean(average3) - np.mean(average1) )  <= 1e-3 )
+
+	# By property of Gaussian, the mean should equal the median
+	assert ( abs( np.mean(average1) - np.mean(median1) ) <= 1e-3 )
+	assert ( abs( np.mean(average3) - np.mean(median3) ) <= 1e-3 )
+
+	# By property of Gaussian, the variance should equal the standard dev squared
+	assert ( abs( np.mean(variance1) - np.mean(stdev1)**2 ) <= 1e-3 )
+	assert ( abs( np.mean(variance3) - np.mean(stdev3)**2 ) <= 1e-3 )
+
+# Create Sample Image
+init_hot_dark = np.ones( (75, 262144) )  # Initial detector array
+img = 150*init_hot_dark                 # Sample Image Array
+mu_0 = 150 	                            # The Expected Mean == 150
+sig_0 = 0	                            # The Exptd Std Dev == 0
+
+###############################################################################
+##  ##  PROPERTIES OF POISSON
+###############################################################################
+#
+# - Mean(Image) =~= Mean(Image_with_noise)
+# - Std_deviation(Image) == sqrt(Variance(Image))
+# - Variance(Image_with_noise) =~= Mean(Image_with_noise)
+#
+###############################################################################
+##  ##  ##  ##
+###############################################################################
+
+def test_4_14_add_poisson_noise():
+	from scipy.stats import chisquare
+	rows = 75
+	mew = []
+	dev = []
+	sig = []
+	for i in range(rows):
+		fish = starCam.images[0].addPoissonNoise(img[i,:]) - img[0,:]
+		muFish 	= np.mean(fish)
+		varFish = np.var(fish)
+		stdFish = np.std(fish)
+		muImg   = np.mean(img)
+		varImg  = np.var(img)
+		mew.append(muFish)
+		dev.append(stdFish)
+		sig.append(varFish)
+		chi = chisquare(np.array(fish))[1]
+
+	# Chi-Squared Test (p-value must be >= than 0.05 for good Poisson Fit)
+	assert ( chi >= 0.05 )
+	# Mean of Samples == Mean of Normal Image
+	assert ( abs(np.mean(mew) - muImg) <= 0.01 )
+	# Avg of Sample Std Dev == sqrt [ Avg of Sample Variances ]
+	assert ( abs(np.mean(dev) - np.sqrt(np.mean(sig))) <= 1e-3 )
+	# Avg of Sample Variance == Avg of Sample Mean
+	assert ( abs(np.mean(sig) - np.mean(mew)) <= 0.1 )
+
+
+
+def test_4_15_calculate_hot_dark():
+	msg = {
+	'addStars': 0,'rmOcc': 0, 'addBod': 0, 'psf': 1, 
+	'raster': 1, 'photon': 0, 'dark': 1, 'read': 0, 
+	'hotDark': 1, 'verbose': 1}
+
+	init_hot_dark = np.ones( (1, 262144) )
+
+	########################################
+	## 	Initialize Cameras
+	########################################
+	cam1 = camera.camera(
+		2.0,            # detector_height
+		2.0,            # detector_width
+		5.0,            # focal_length
+		512,            # resolution_height
+		512,            # resolution_width
+		np.identity(3), # body2cameraDCM
+		1000,           # maximum magnitude
+		-1000,          # minimum magnitude (for debugging)
+		qe,
+		tc,
+		1,
+		0.01**2, 		# effective area in m^2
+		100,
+		100,
+		1, 
+		2**32,
+		1,
+		0.01,
+		scState,
+		scDCM,
+		bodies,
+		takeImage,
+		# init_hot_dark,	# hot_dark_cam1
+		debug = msg,
+		db='../db/tycho.db'
+		)
+
+	cam2= camera.camera(
+		3.0,
+		4.0,
+		7.0,
+		512,
+		512,
+		np.identity(3),
+		1000,
+		-1000,
+		qe,
+		tc,
+		1,
+		0.01**2, 		# effective area in m^2
+		100,
+		100,
+		1, 
+		2**32,
+		1,
+		0.01,
+		scState,
+		scDCM,
+		bodies,
+		takeImage,
+		# init_hot_dark,	# hot_dark_cam1
+		debug = msg,
+		db='../db/tycho.db'
+		)
+
+	cam3 = camera.camera(
+		6.0,
+		4.0,
+		7.0,
+		512,
+		512,
+		np.identity(3),
+		1000,
+		-1000,
+		qe,
+		tc,
+		1,
+		0.01**2, 		# effective area in m^2
+		100,
+		100,
+		1, 
+		2**32,
+		1,
+		0.01,
+		scState,
+		scDCM,
+		bodies,
+		takeImage,
+		# init_hot_dark,	# hot_dark_cam1
+		debug = msg,
+		db='../db/tycho.db'
+		)
+	
+	cam1.hotDarkSigma = 1
+	cam2.hotDarkSigma = 1
+	cam3.hotDarkSigma = 1
+
+########################################
+## 	Take Two Images without Hot_dark
+########################################
+	msg['hotDark'] = 0
+# 	First Image
+	cam1.takeImage = 1
+	cam2.takeImage = 1
+	cam3.takeImage = 1
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
+	cam1.takeImage = 0
+	cam2.takeImage = 0
+	cam3.takeImage = 0
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
+
+# 	Second Image
+	cam1.takeImage = 1
+	cam2.takeImage = 1
+	cam3.takeImage = 1
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
+	cam1.takeImage = 0
+	cam2.takeImage = 0
+	cam3.takeImage = 0
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
+# ########################################
+# ## 	Take Two Images with Hot_Dark
+# ########################################
+	msg['hotDark'] = 1
+# 	Image Three (+ Hot_Dark)
+	cam1.takeImage = 1
+	cam2.takeImage = 1
+	cam3.takeImage = 1
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
+	cam1.takeImage = 0
+	cam2.takeImage = 0
+	cam3.takeImage = 0
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
+# 	Image Four (+ Hot_Dark)
+	cam1.takeImage = 1
+	cam2.takeImage = 1
+	cam3.takeImage = 1
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
+	cam1.takeImage = 0
+	cam2.takeImage = 0
+	cam3.takeImage = 0
+	cam1.updateState()
+	cam2.updateState()
+	cam3.updateState()
+
+########################################
+## 	Camera 1 Properties
+########################################
+	# Image 1
+	cam1_img1 = cam1.images[0].detectorArray
+	cam11_mean = np.mean(cam1_img1)
+	cam11_var  = np.var(cam1_img1)
+	# Image 2
+	cam1_img2 = cam1.images[1].detectorArray
+	cam12_mean = np.mean(cam1_img2)
+	cam12_var  = np.var(cam1_img2)
+	# Image 3
+	cam1_img3 = cam1.images[2].detectorArray
+	cam13_mean = np.mean(cam1_img3)
+	cam13_var = np.var(cam1_img3)
+	# Image 4
+	cam1_img4 = cam1.images[3].detectorArray
+	cam14_mean = np.mean(cam1_img4)
+	cam14_var = np.var(cam1_img4)
+
+	# Images without Hot_Dark should be different from those with Hot_dark
+	assert ( cam1.images[0].detectorArray.any != cam1.images[2].detectorArray.any )
+	assert ( cam1.images[1].detectorArray.any != cam1.images[3].detectorArray.any )
+	assert ( cam2.images[0].detectorArray.any != cam2.images[2].detectorArray.any )
+	assert ( cam2.images[1].detectorArray.any != cam2.images[3].detectorArray.any )
+	assert ( cam3.images[0].detectorArray.any != cam3.images[2].detectorArray.any )
+	assert ( cam3.images[1].detectorArray.any != cam3.images[3].detectorArray.any )
+
+
+ 	# First Two Images from each camera should have the same MEAN & VARIANCE since NO Hot-Dark Pixels added
+	assert ( abs(np.mean(cam1.images[0].detectorArray) - np.mean(cam1.images[1].detectorArray) ) <= 1e-12 )
+	assert ( abs(np.mean(cam2.images[0].detectorArray) - np.mean(cam2.images[1].detectorArray) ) <= 1e-12 )
+	assert ( abs(np.mean(cam3.images[0].detectorArray) - np.mean(cam3.images[1].detectorArray) ) <= 1e-12 )
+
+	assert ( abs(np.std(cam1.images[0].detectorArray) - np.std(cam1.images[1].detectorArray) ) <= 1e-12 )
+	assert ( abs(np.std(cam2.images[0].detectorArray) - np.std(cam2.images[1].detectorArray) ) <= 1e-12 )
+	assert ( abs(np.std(cam3.images[0].detectorArray) - np.std(cam3.images[1].detectorArray) ) <= 1e-12 )
+
+	# Third Image MEAN & VARIANCE should be different from First Image MEAN & VARIANCE
+	assert ( abs(np.mean(cam1.images[2].detectorArray) - np.mean(cam1.images[0].detectorArray) ) >= 0.1 )
+	assert ( abs(np.mean(cam2.images[2].detectorArray) - np.mean(cam2.images[0].detectorArray) ) >= 0.1 )
+	assert ( abs(np.mean(cam3.images[2].detectorArray) - np.mean(cam3.images[0].detectorArray) ) >= 0.1 )
+
+	assert ( abs(np.std(cam1.images[2].detectorArray) - np.std(cam1.images[0].detectorArray) ) >= 0.1 )
+	assert ( abs(np.std(cam2.images[2].detectorArray) - np.std(cam2.images[0].detectorArray) ) >= 0.1 )
+	assert ( abs(np.std(cam3.images[2].detectorArray) - np.std(cam3.images[0].detectorArray) ) >= 0.1 )
+
+
+	# # Fourth Image MEAN & VARIANCE should be different from SECOND Image MEAN & VARIANCE
+	assert ( abs(np.mean(cam1.images[3].detectorArray) - np.mean(cam1.images[1].detectorArray) ) >= 0.1 )
+	assert ( abs(np.mean(cam2.images[3].detectorArray) - np.mean(cam2.images[1].detectorArray) ) >= 0.1 )
+	assert ( abs(np.mean(cam3.images[3].detectorArray) - np.mean(cam3.images[1].detectorArray) ) >= 0.1 )
+
+	assert ( abs(np.std(cam1.images[3].detectorArray) - np.std(cam1.images[1].detectorArray) ) >= 0.1 )
+	assert ( abs(np.std(cam2.images[3].detectorArray) - np.std(cam2.images[1].detectorArray) ) >= 0.1 )
+	assert ( abs(np.std(cam3.images[3].detectorArray) - np.std(cam3.images[1].detectorArray) ) >= 0.1 )
 
 def test_4_16_pixelLineConversion():
 	#find distance between center of FOV and each star in p/l coords.
@@ -616,6 +1055,26 @@ def test_4_18_PlanckEqTSI():
 	bbCurve = planck(T_sun,lambdaSet)
 	TSI = sum(pi*r_sun**2/au**2*bbCurve)
 	assert( abs((TSI - 1367)/1367) <0.001 )
+
+def test_4_19_photon_energy():
+	#need to take an image so we can access image.photonEnergy()
+	tinyCam.takeImage = 1
+	tinyCam.updateState()
+	tinyCam.takeImage = 0
+	tinyCam.updateState()
+
+	from constants import h, c
+	testValues = np.array(
+		[ 5960.,  6032.,  8337.,  8759.,  1998.,  
+		9567.,   633.,  3347., 5504.,  5353.])
+
+	runTimeValues = tinyCam.images[0].photonEnergy(testValues)
+
+	energiesComputedOffline = np.array(
+		[  3.33296279e-29,   3.29317942e-29,   2.38268661e-29, 2.26789111e-29, 9.94217129e-29,   
+		2.07635186e-29, 3.13814506e-28,   5.93500396e-29,   3.60909488e-29, 3.71090197e-29])
+	assert (sum(abs(energiesComputedOffline - runTimeValues)) < 1e12)
+
 
 def test_4_20_checkFOV():
 	#remove moon from bodies message
@@ -746,16 +1205,6 @@ def test_4_23_lumos():
 	assert ( abs(earthLumos[2]*len(earthLumos[1]) - 2*np.pi*bod.earth.r_eq**2) < 10e-7 )
 
 
-# def test_4_23_lumos():
-# 	earthLumos = lightSimFunctions.lumos(
-# 		np.array([au,0,0]),
-# 		np.array([0,0,0]),
-# 		bod.earth.albedo,
-# 		bod.earth.r_eq,
-# 		100,
-# 		100)
-# 	assert ( abs(earthLumos[2]*len(earthLumos[1]) - 2*np.pi*bod.earth.r_eq**2) < 10e-7 )
-
 def test_4_24_facetAreaCamview_eq_pi_r_sq():
 	earthLightSim = lightSimFunctions.lightSim(
 		np.identity(3),
@@ -774,19 +1223,4 @@ def test_4_24_facetAreaCamview_eq_pi_r_sq():
 		)
 
 
-# def test_4_x_lightSim():
-# 	from lightSimFunctionsOld import lightSim
-# 	earthLightSim = lightSim(
-# 		np.identity(3),
-# 		np.array([0,0,0]),
-# 		np.array([au,0,0]),
-# 		(20,20),
-# 		100,
-# 		100,
-# 		True,
-# 		bod.earth.albedo,
-# 		bod.earth.r_eq,
-# 		'Earth'
-# 		)
-# 	pdb.set_trace()	
-# 	assert( 1 == 1 )
+
