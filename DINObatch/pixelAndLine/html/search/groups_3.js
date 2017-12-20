@@ -1,7 +1,8 @@
 var searchData=
 [
-  ['posvelacc_20_2d_20eoms_20for_20unmodeled_20acceleration',['posVelAcc - EOMs for unmodeled acceleration',['../group___e_o_ms__acc.html',1,'']]],
-  ['posvel_20_2d_20vanilla_20eoms_20of_20position_20and_20velocity',['posVel - vanilla EOMs of position and velocity',['../group___e_o_ms__vanilla.html',1,'']]],
-  ['pixellinebatch_20_2d_20pixel_20and_20line_20measurements_20generation',['pixelLineBatch - pixel and line measurements generation',['../group__pixel__and__line.html',1,'']]],
-  ['pixelandlinesymbolics_20_2d_20symbolic_20function_20for_20testpl_5fgh_2epy',['pixelAndLineSymbolics - symbolic function for testPL_GH.py',['../group__pixel__and__line__symbolic.html',1,'']]]
+  ['initacc_20_2d_20in_20house_20batch_20initialization_20script_20for_20unmodeled_20accleration_20estimation',['initAcc - in house batch initialization script for unmodeled accleration estimation',['../group__init__acc.html',1,'']]],
+  ['initbatch_20_2d_20in_2dline_20callable_20batch_20filter',['initBatch - in-line callable batch filter',['../group__init__batch__function.html',1,'']]],
+  ['init_5facc_5fsrp_5ftest_20_2d_20an_20initialization_20script_20for_20compare_5fsrp_5ftest_2epy',['init_acc_SRP_test - an initialization script for compare_SRP_test.py',['../group__init___s_r_p__acc.html',1,'']]],
+  ['init_5fsrp_5ftest_20_2d_20an_20initialization_20script_20for_20compare_5fsrp_5ftest_2epy',['init_SRP_test - an initialization script for compare_SRP_test.py',['../group__init___s_r_p__vanilla.html',1,'']]],
+  ['init_20_2d_20in_20house_20batch_20initialization_20script',['init - in house batch initialization script',['../group__init__vanilla.html',1,'']]]
 ];

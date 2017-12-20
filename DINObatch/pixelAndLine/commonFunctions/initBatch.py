@@ -61,64 +61,60 @@ import pdb
 #
 # Purpose
 # -----
-# This module is a runable script for the batch filter when called from the "in house" perspective. For other functions in this configuration, please look for "in house" via the search bar. As a result of this, the `init.py` script is intended to run entirely independent of the rest of DINO-CREx and may be used for simplified scenarios or testing, among other applications. 
+# This module is similar to those of \ref init_vanilla or \ref init_acc , except it is intended to be run as function call from a larger script/module such as a DINO sim.  
 #
 # Contents
 # -----
-# The `init.py` script contains a secondary function and a main function:
+# The `initBatch.py` contains a single exportable function:
 #
-# - `main`
-# - `writingText`
+# - `initBatchFnc`
 #
-# It is here that we note `init.py` has largely served as a means to test the functionality of the other batch filter modules. It is provided for such reasons and is not considered an integral part of DINO-CREx. In fact, the DINO-CREx software package should never run a call of `init.py`, as it should be running the function found in \ref init_batch_function 
+# This function serves to unpack inputs, determine which batch filter to run (currently \ref batch_vanilla or \ref batch_acc ) and loop through iterations before packaging the outputs to be passed to the module from where the function was called.
 #
 # The Code
 # =====
 #
-# `main`
+# `initBatchFnc`
 # -----
-# Because `init.py` is a script meant to be run from the terminal, there are no inputs. The operator may choose to tweak various mission settings or spacecraft parameters, which will be covered shortly. One other consequence of this architecture is that there are also no outputs. The script does write to various .pkl files and create plots. However, these are not outputs in the Python function sense. 
+# Before we discuss the code contained within this module, we list the inputs needed:
 #
-# The first significant lines of this function handle the noise to be added to the true measurements. 
+# Name      | Description                                           | Size/Type
+# -----     | -------------------                                   | -----
+# stateValues | dictionary of arrays related to the quantities of interest | dictionary  
+# timeSpan  | times at which observations occur | (N,) numpy array
+# filterObersvations | dictionary of arrays related to measured data  | dictionary
+# angles    | angles at which the observations are taken at each time in `timeSpan`  | numpy array (N,3)
+# extras    | dictionary of various parameters  | dictionary
+#
+# The same is repeated for outputs:
+#
+# Name      | Description         | Size/Type
+# -----     | ------------------- | -----
+# filterOutputs | various results of the filter. One key for each iteration | dictionary
+#
+# Although `initBatch.py` is largely similar in function to the "init" class scripts of \ref init_vanilla and \ref init_acc , there are some differences. Notably in the first lines, some code is needed to bridge any gaps between the provided state and that of the first observation, i.e.,
 # ~~~~~~~~~~~~~~~~{.py}
-#    # create noise for the estimated observations
-#    if 'seed' in extras:
-#      np.random.seed(extras['seed'])
+#    # time to first observation
+#    timeToObs       = np.append( np.array(initialTime), timeSpan[0] )
+#    propagatorInput = ( IC0[0:6], phi0[0:6,0:6], timeToObs, extras ) 
 #
-#    observationNoise = np.zeros([nObservations, 2])
-#    observationNoise[:,0] = rndNrm(0., observationUncertainty[0,0] , nObservations)
-#    observationNoise[:,1] = rndNrm(0., observationUncertainty[1,1] , nObservations)
+#    # execute propagation
+#    IC_posVel  = runRef( propagatorInput )
+#
+#    IC = np.append( IC_posVel[-1,:6], IC0[6:] )
 # ~~~~~~~~~~~~~~~~
-#
-# It is important to note that the measurement uncertainty is applied via a Gaussian noise that has the standard deviation associated with the `observationUncertainty` variable. the variable of `extras['seed']` allows an operator to produce repeatable results, if desired. 
-#  
-# A concept utilized in this function is a "bin". These bins are composed of an observation for each beacon in succession. For example, if Mars, Earth and the Moon are beacons a bin would be ['Mars', 'Earth', 'Moon']. Each bin is then repeated until the total number of observations is satisfied. The bin becomes important if the number of total observations is not divisible by the length of these repeatable bins. This consideration is seen in the dictated loop statements:
+# This is needed because the batch filter algorithms provided for DINO-CREx process an observation for each time given. In the case of the inputs, the first time must have an observation. Therefore, if the provided state initial conditition occurs before the first observation, a bit of propagation is needed to align the first state with the first observation. 
+# 
+# After this initial propagation, `initBatchFnc()` behaves almost identically with other batch initialization scripts. One other notable change, the outputs are packaged into a single dictionary `filterOutputs`:
 # ~~~~~~~~~~~~~~~~{.py}
-#    # loop through all the bins
-#    for bb in xrange( nBins ) :
-#      # while in a bin, loop through beacon keys
-#      for ii in xrange(nUniqueBeacons):
-#            index = bb * nUniqueBeacons + ii
-#
-#            # pull out relevant key
-#            beaconKey = extras['unique_beacon_IDs'][ii]
+#        # save all outputs into the dictionary with a name associated with the iteration
+#        filterOutputs[str(itr)] = {}
+#        filterOutputs[str(itr)]['referenceState'] = referenceState
+#        filterOutputs[str(itr)]['estimatedState'] = estimatedState
+#        filterOutputs[str(itr)]['extraData']      = extraData
 # ~~~~~~~~~~~~~~~~
-# followed by
-# ~~~~~~~~~~~~~~~~{.py}
-#    # fill out the partial bin
-#    for ii in xrange( partialBinLength ):
-#      index = nObsInFullBins + ii
-#      # pull out relevant key
-#      beaconKey = extras['unique_beacon_IDs'][ii]
-# ~~~~~~~~~~~~~~~~
+# This dictionary is then passed to where `initBatch.py` was called from. Note, the dictionaty of `filterOutputs` is organized by iteration, e.g., ``filterOutputs['0']`` if the first iteration.
 #
-# These loops collect the appropriate beacon state and the spacecraft state for each measurement time. The module then creates observation data by using these states as inputs to `fncG()` found in \ref pixel_and_line, i.e.,
-# ~~~~~~~~~~~~~~~~{.py}
-#    G_ref_inputs = (referenceState, obs['SPICE'], angles, extras)
-#    # calculate the estimated observables and organize into an array
-#    obs['truth'] = np.copy(fncG(G_ref_inputs))
-#    obs['measurements'] = np.copy(fncG(G_ref_inputs)) + observationNoise
-## ~~~~~~~~~~~~~~~~
 ## @}
 ################################################################################
 #                  S E C O N D A R Y     F U N C T I O N S:
