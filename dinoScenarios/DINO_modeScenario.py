@@ -88,7 +88,6 @@ def propAndObs_Scenario(useNavOutputs, genPlots):
     """
 
     propSim = DINO_main.DINO_DynSim(100., 100.)
-    propSim.DynClass.scObject.hub.useRotation = False
     obsSim = DINO_main.DINO_DynSim(0.01, 0.01)
 
     propSim.InitializeSimulation()
