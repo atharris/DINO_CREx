@@ -24,6 +24,8 @@ try:
     import simIncludeRW
     import reactionWheelStateEffector
     import rwVoltageInterface
+    import simIncludeGravBody
+    import ExtForceTorque
 
     # import message declarations
     import fswMessages
@@ -69,6 +71,10 @@ class DynamicsClass():
         self.simpleNavObject = simple_nav.SimpleNav()
         self.ephemConvert = ephemeris_converter.EphemerisConverter()
 
+        self.extForceTorque = ExtForceTorque.ExtForceTorque()
+        self.extForceTorque.ModelTag = "externalForceTorque"
+        self.scObject.addDynamicEffector(self.extForceTorque)
+
         # Lists to store gravity bodies and spice planet data
         self.gravBodyList = []
         self.spicePlanetNames = []
@@ -110,6 +116,14 @@ class DynamicsClass():
         self.simpleNavObject.ModelTag = "SimpleNavigation"
 
     def SetGravityBodies(self):
+
+        # clear prior gravitational body and SPICE setup definitions
+        self.gravFactory = simIncludeGravBody.gravBodyFactory()
+
+        # setup Earth Gravity Body
+        earth = self.gravFactory.createEarth()
+        earth.isCentralBody = True  # ensure this is the central gravitational body
+        mu = earth.mu
         def AddMoon(self):
             self.moonGravBody.bodyInMsgName = "moon_planet_data"
             self.moonGravBody.outputMsgName = "moon_display_frame_data"
@@ -121,12 +135,14 @@ class DynamicsClass():
             self.gravBodyList.append(self.moonGravBody)
             self.spicePlanetNames.append(self.moonGravBody.bodyInMsgName[:-12])
         def AddEarth(self):
-            self.earthGravBody.bodyInMsgName = "earth_planet_data"
-            self.earthGravBody.outputMsgName = "earth_display_frame_data"
-            self.earthGravBody.mu = 0.3986004415E+15  # meters^3/s^2
-            self.earthGravBody.radEquator = 6378136.6  # meters
-            self.earthGravBody.isCentralBody = False
-            self.earthGravBody.useSphericalHarmParams = True
+            self.earthGravBody = self.gravFactory.createEarth()
+            self.earthGravBody.isCentralBody = False  # ensure this is the central gravitational body
+            #self.earthGravBody.bodyInMsgName = "earth_planet_data"
+            #self.earthGravBody.outputMsgName = "earth_display_frame_data"
+            #self.earthGravBody.mu = 0.3986004415E+15  # meters^3/s^2
+            #self.earthGravBody.radEquator = 6378136.6  # meters
+            #self.earthGravBody.isCentralBody = False
+            #self.earthGravBody.useSphericalHarmParams = True
             # Store Earth celestial body in the Gravity and Spice lists
             self.gravBodyList.append(self.earthGravBody)
             self.spicePlanetNames.append(self.earthGravBody.bodyInMsgName[:-12])
@@ -201,6 +217,8 @@ class DynamicsClass():
         self.srpDynEffector.coefficientReflection = 1.2
         self.srpDynEffector.sunEphmInMsgName = self.sunGravBody.outputMsgName
         self.srpDynEffector.stateInMsgName = self.scObject.scStateOutMsgName
+        self.scObject.addDynamicEffector(self.srpDynEffector)
+
 
     def SetBeacons(self):
         self.beaconList =[]
@@ -296,6 +314,8 @@ class DynamicsClass():
         self.rwStateEffector = reactionWheelStateEffector.ReactionWheelStateEffector()
         self.rwFactory.addToSpacecraft("ReactionWheels", self.rwStateEffector, self.scObject)
 
+    def AddExtForceTorque(self):
+        self.extForceTorque.cmdTorqueInMsgName = "Lr_requested"
     def AddOpnavCamera(self):
         self.opnavCamera = opnavCamera.opnavCamera("opnavCamera")
         self.opnavCamera.ModelTag = "opnavCamera"
