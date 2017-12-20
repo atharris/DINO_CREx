@@ -25,7 +25,7 @@ try:
     import reactionWheelStateEffector
     import rwVoltageInterface
     import simIncludeGravBody
-    import ExtForceTorque
+    import ExtForceTorque as extFT
 
     # import message declarations
     import fswMessages
@@ -33,10 +33,11 @@ except ImportError:
     from Basilisk import __path__
     import Basilisk.utilities.macros as mc
     import Basilisk.utilities.unitTestSupport as sp
-    from Basilisk.utilities import simIncludeRW
+    from Basilisk.utilities import simIncludeRW, simIncludeGravBody
     from Basilisk.simulation import sim_model, spacecraftPlus, gravityEffector, simple_nav, spice_interface
     from Basilisk.simulation import ephemeris_converter, radiation_pressure, star_tracker, imu_sensor
     from Basilisk.simulation import reactionWheelStateEffector, rwVoltageInterface
+    from Basilisk.simulation import extForceTorque as extFT
 
     bskSpicePath = __path__[0] + '/supportData/EphemerisData/'
 
@@ -71,7 +72,7 @@ class DynamicsClass():
         self.simpleNavObject = simple_nav.SimpleNav()
         self.ephemConvert = ephemeris_converter.EphemerisConverter()
 
-        self.extForceTorque = ExtForceTorque.ExtForceTorque()
+        self.extForceTorque = extFT.ExtForceTorque()
         self.extForceTorque.ModelTag = "externalForceTorque"
         self.scObject.addDynamicEffector(self.extForceTorque)
 
