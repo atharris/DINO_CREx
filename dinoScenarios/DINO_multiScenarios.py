@@ -59,7 +59,7 @@ def basicOrbit_dynScenario(TheDynSim):
     orbPeriod = period = 2 * np.pi * np.sqrt((oe.a ** 3.) / mu)
 
     # Log data for post-processing and plotting
-    simulationTime = mc.sec2nano(0.01 * orbPeriod)
+    simulationTime = mc.sec2nano(10000.)
     numDataPoints = int(orbPeriod)
     samplingTime = simulationTime / (numDataPoints - 1)
     log_DynOutputs(TheDynSim, samplingTime)
