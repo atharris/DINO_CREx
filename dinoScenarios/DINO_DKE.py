@@ -96,6 +96,7 @@ class DynamicsClass():
         SimBase.AddModelToTask(self.taskName, self.starTracker,None, 8)
         SimBase.AddModelToTask(self.taskName, self.gyroModel,None,7)
         SimBase.AddModelToTask(self.taskName, self.rwStateEffector,None,6)
+        SimBase.AddModelToTask(self.taskName, self.extForceTorque, None, 5)
 
 
     # ------------------------------------------------------------------------------------------- #

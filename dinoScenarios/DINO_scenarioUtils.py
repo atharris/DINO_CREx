@@ -129,7 +129,7 @@ def genCamImages(cam, beaconList, r_BN, r_earth, r_moon, r_mars, takeImage):
 
 
         # cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
-        cam.takeImage = takeImage[i]
+        cam.takeImage = takeImage[0,i]
         cam.imgTime = r_BN[i][0]
         cam.updateState()
 
