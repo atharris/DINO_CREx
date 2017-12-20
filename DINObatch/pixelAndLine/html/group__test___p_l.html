@@ -26,12 +26,12 @@
 <table cellspacing="0" cellpadding="0">
  <tbody>
  <tr style="height: 56px;">
-  <td id="projectlogo"><img alt="Logo" src="Basilisk-Logo.jpg"/></td>
+  <td id="projectlogo"><img alt="Logo" src="nav_logo.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Batch Filter Functions
-   &#160;<span id="projectnumber">0.1.5</span>
+   &#160;<span id="projectnumber">0.2.0</span>
    </div>
-   <div id="projectbrief">Functions shared amongst differing batch filters</div>
+   <div id="projectbrief">COlorado Research for Navigation</div>
   </td>
  </tr>
  </tbody>
@@ -92,7 +92,7 @@ Overview </h1>
 <p>After these definitions, the <code>fncG()</code> and <code>fncH()</code> functions of <a class="el" href="group__pixel__and__line.html">pixelLineBatch - pixel and line measurements generation</a> are run </p><div class="fragment"><div class="line">args = ( spacecraft, beacon, angles, extras )</div><div class="line"></div><div class="line">G = fncG( args )</div><div class="line"></div><div class="line">H = fncH( args )</div></div><!-- fragment --><p>The next step is to calculate G and H using symbolic functions that have been coded separately in <a class="el" href="group__pixel__and__line__symbolic.html">pixelAndLineSymbolics - symbolic function for testPL_GH.py</a> . At the time of this documentation, the main function of <a class="el" href="group__pixel__and__line__symbolic.html">pixelAndLineSymbolics - symbolic function for testPL_GH.py</a> uses the same inputs as this script, but there are no inputs for that of the symbolic function. Therefore, if an operator wishes to change some mission paramters for the test, they must then edit pixel_and_line_symobolic , or develop a input support. This symbolic call is found at </p><div class="fragment"><div class="line">symbolic_results = pixel_and_line_symbolics.main()</div></div><!-- fragment --><p>Differences between the outputs of the two methods are then made, and if any absolute difference is greater than 10^-10, the test fails. </p><div class="fragment"><div class="line">diffG = G - np.array(symbolic_results[0:2])</div><div class="line"></div><div class="line">diffH = H[:,0:3] - np.array([symbolic_results[2:5],symbolic_results[5:8]])</div><div class="line"></div><div class="line"><span class="keywordflow">if</span> np.any( np.greater( np.abs( diffG ), 10**(-10) ) ):</div><div class="line">   <span class="keywordflow">print</span> <span class="stringliteral">&#39;P&amp;L G Function did not pass unit test :(&#39;</span></div><div class="line"><span class="keywordflow">else</span>:</div><div class="line">   <span class="keywordflow">print</span> <span class="stringliteral">&#39;P&amp;L G Function passed unit test!&#39;</span></div><div class="line"></div><div class="line"><span class="keywordflow">if</span> np.any( np.greater( np.abs( diffH ), 10**(-10) ) ):</div><div class="line">   <span class="keywordflow">print</span> <span class="stringliteral">&#39;P&amp;L H Function did not pass unit test :(&#39;</span></div><div class="line"><span class="keywordflow">else</span>:</div><div class="line">   <span class="keywordflow">print</span> <span class="stringliteral">&#39;P&amp;L H Function passed unit test!&#39;</span></div></div><!-- fragment --> </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Dec 18 2017 11:32:16 for Batch Filter Functions by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 19 2017 12:04:09 for Batch Filter Functions by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

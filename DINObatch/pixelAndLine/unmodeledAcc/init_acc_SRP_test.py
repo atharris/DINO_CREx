@@ -48,6 +48,50 @@ from beaconBinSPICE import getObs
 import pickle
 
 import pdb
+## \defgroup init_SRP_acc init_acc_SRP_test - an initialization script for compare_SRP_test.py
+##   @{
+## A script used to run the acc batch without SRP in the reference EOMs
+#
+# Overview {#overview}
+# ====
+#
+# Purpose
+# -----
+# This module is nearly identical to \ref init_acc. As in \ref init_SRP_vanilla , the sole difference from is an implemented change to remove SRP from the EOMs used in the creation of a reference trajectory. Because of this, the script is one piece of a methodology for tracking the effectiveness of the batch filter software in the face of incomplete reference EOMs. This script is called so that \ref compare_SRP can unpack the results and compare them to other approaches. 
+#
+# Contents
+# -----
+# Just as in \ref init_acc, `init_SRP_test.py` script contains a secondary function and a main function:
+#
+# - `main`
+# - `writingText`
+#
+# Due to the similarities, only the differences between these two scripts will be discussed
+#
+# The Code
+# =====
+#
+# `main`
+# -----
+# In order to set the stage for the comparison test of \ref compare_SRP , this function runs a batch filter with SRP while creating measured data, but leaves out this force model in the reference propagator. Because of this ommission, the results can be compared with outputs of \ref init_vanilla , \ref init_acc , and \ref init_SRP_acc . This comparison can then be used to evaluate the performance of all four approaches.
+#
+# The first and most signficiant difference between this script and that of \ref init_acc is the line:
+# ~~~~~~~~~~~~~~~~{.py}
+#    # alter to coefficient of reflectivity to be zero. This negates any contribution of
+#    # modeling SRP
+#    extras['cR'] = 0.0
+# ~~~~~~~~~~~~~~~~
+#
+# This line, positioned just before the filter is run, effectively removes any SRP model from the reference propagator. Because the measured data has already be created, the observations have been propated with SRP. The only other difference is the file tag used in pickling:
+#
+# ~~~~~~~~~~~~~~~~{.py}
+#        #  Write the output to the pickle file
+#        fileTag = 'SRP_test'
+#        file = dirIt+'/'+fileTag+'_data.pkl'
+# ~~~~~~~~~~~~~~~~
+# This line simply saves the results of this script to files with names different than those of \ref init_acc ("nominal").
+# 
+## @}
 ################################################################################
 #                  S E C O N D A R Y     F U N C T I O N S:
 ################################################################################
