@@ -17,7 +17,7 @@ import DINO_multiScenarios as scene
 
 
 class DINO_DynSim(SimulationBaseClass.SimBaseClass):
-    def __init__(self, fswUpdateRate, dynUpdateRate):
+    def __init__(self, fswUpdateRate, useFSW,  dynUpdateRate):
         # Create a sim module as an empty container
         SimulationBaseClass.SimBaseClass.__init__(self)
         # Create simulation process names
@@ -55,11 +55,12 @@ class DINO_DynSim(SimulationBaseClass.SimBaseClass):
  #       self.dynPyProc.addInterfaceRef(self.dyn2dynPyInterface)
         # Crate sim subclasses
         self.DynClass = DINO_DKE.DynamicsClass(self, updateRate=dynUpdateRate)
-        self.FSWClass = DINO_FSW.FSWClass(self, updateRate=fswUpdateRate)
+        if useFSW:
+            self.FSWClass = DINO_FSW.FSWClass(self, updateRate=fswUpdateRate)
 
 if __name__ == "__main__":
     # basicOrbit_dynScenario
     # multiOrbitBeacons_dynScenario
     # attFilter_dynScenario
     # opnavCamera_dynScenario
-    scene.basicOrbit_dynScenario(DINO_DynSim(0.01, 0.01))
+    scene.attFilter_dynScenario(DINO_DynSim(0.01, 0.01))

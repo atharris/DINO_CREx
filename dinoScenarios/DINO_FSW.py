@@ -98,7 +98,7 @@ class FSWClass():
         self.mrpControlConfig.inputGuidName = "attErrorInertial3DMsg"
         self.mrpControlConfig.inputVehicleConfigDataName = "vehicleConfigName"
         self.mrpControlConfig.outputDataName = SimBase.DynClass.extForceTorque.cmdTorqueInMsgName
-        self.mrpControlConfig.K = 3.5
+        self.mrpControlConfig.K = 10.0
         self.mrpControlConfig.P = 30.0
         return
 

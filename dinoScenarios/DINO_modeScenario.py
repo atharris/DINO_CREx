@@ -56,6 +56,8 @@ def runSimSegment(TheDynSim, simTime, initialState, initialAtt, timeStr):
     :param timeStr:
     :return:
     '''
+    #TheDynSim.ResetAll()
+
     simTime = mc.sec2nano(simTime)
     samplingTime = mc.sec2nano(min([TheDynSim.fswUpdateRate, TheDynSim.dynUpdateRate]))
     numDataPoints = simTime / samplingTime
@@ -87,8 +89,9 @@ def propAndObs_Scenario(useNavOutputs, genPlots):
     :return: None
     """
 
-    propSim = DINO_main.DINO_DynSim(100., 100.)
-    obsSim = DINO_main.DINO_DynSim(0.01, 0.01)
+    propSim = DINO_main.DINO_DynSim(1000., False, 10000.)
+    propSim.DynClass.scObject.hub.useRotation = False
+    obsSim = DINO_main.DINO_DynSim(0.01, True, 0.01)
 
     propSim.InitializeSimulation()
     obsSim.InitializeSimulation()
@@ -136,10 +139,10 @@ def propAndObs_Scenario(useNavOutputs, genPlots):
 
     ##   Define Mode Sequence Parameters.
 
-    propDurations = [1000., 1000.]
-    obsDurations = [100.0]
+    propDurations = [10.0]
+    obsDurations = [10.0]
 
-    modeSeq = [0, 1, 0]
+    modeSeq = [0]
 
     propInd = 0
     obsInd = 0
@@ -179,11 +182,8 @@ def propAndObs_Scenario(useNavOutputs, genPlots):
             print "* Propagation Mode Starting *"
             print "*****************************"
             execTime = propDurations[propInd]
-            runSimSegment(propSim, propDurations[propInd], np.hstack([r_BN[-1, 1:4], v_BN[-1, 1:4]]).tolist(), np.hstack([sigma_BN[-1, 1:4],omega_BN_B[-1, 1:4]]).tolist() , timeStr)
+            propSim = runSimSegment(propSim, propDurations[propInd], np.hstack([r_BN[-1, 1:4], v_BN[-1, 1:4]]).tolist(), np.hstack([sigma_BN[-1, 1:4],omega_BN_B[-1, 1:4]]).tolist() , timeStr)
             r_BN_temp, v_BN_temp, sigma_BN_temp, omega_BN_B_temp = pull_DynOutputs(propSim,plots=False)
-            #sigma_tilde_BN_temp, omega_tilde_BN_temp = pull_senseOutputs(propSim,plots=False)
-            #sigma_hat_BN_temp, omega_hat_BN_temp = pull_aekfOutputs(propSim,plots=False)
-
             r_sun_temp, r_earth_temp, r_moon_temp, r_mars_temp, r_beacons_temp = pull_DynCelestialOutputs(propSim, plots=False)
 
             batchIC = np.hstack([r_BN_batch[-1, 1:], v_BN_batch[-1, 1:]])
@@ -201,42 +201,40 @@ def propAndObs_Scenario(useNavOutputs, genPlots):
             print "* Observation Mode Starting *"
             print "*****************************"
             execTime = obsDurations[obsInd]/float(len(beaconMsgNameList))
-            runSimSegment(obsSim, obsDurations[obsInd], np.hstack([r_BN[-1, 1:4], v_BN[-1, 1:4]]).tolist(),
+            obsSim.FSWClass.attGuideConfig.inputCelMessName = beaconMsgNameList[0]
+            obsSim = runSimSegment(obsSim, obsDurations[obsInd], np.hstack([r_BN[-1, 1:4], v_BN[-1, 1:4]]).tolist(),
                           np.hstack([sigma_BN[-1, 1:4], omega_BN_B[-1, 1:4]]).tolist(), timeStr)
-            r_BN_temp_local, v_BN_temp_local, sigma_BN_temp_local, omega_BN_B_temp_local = pull_DynOutputs(obsSim,
-                                                                                                           plots=False)
-            r_sun_temp_local, r_earth_temp_local, r_moon_temp_local, r_mars_temp_local, r_beacons_temp_local = pull_DynCelestialOutputs(
+            r_BN_temp, v_BN_temp, sigma_BN_temp, omega_BN_B_temp = pull_DynOutputs(obsSim,
+                                                                                                           plots=True)
+            r_sun_temp, r_earth_temp, r_moon_temp, r_mars_temp, r_beacons_temp = pull_DynCelestialOutputs(
                 obsSim,
                 plots=False)
-            sigma_tilde_BN_temp_local, omega_tilde_BN_temp_local = pull_senseOutputs(obsSim, plots=False)
-            sigma_hat_BN_temp_local, omega_hat_BN_temp_local = pull_aekfOutputs(obsSim, plots=False)
 
+            #for ind in range(1,len(beaconMsgNameList)):
+            #    obsSim.FSWClass.attGuideConfig.inputCelMessName = beaconMsgNameList[ind]
+            #    obsSim = runSimSegment(obsSim, obsDurations[obsInd]/float(len(beaconMsgNameList)), np.hstack([r_BN_temp[-1, 1:4], v_BN_temp[-1, 1:4]]).tolist(),
+            #                  np.hstack([sigma_BN_temp[-1, 1:4], omega_BN_B_temp[-1, 1:4]]).tolist(), timeStr)
+            #    r_BN_temp_local, v_BN_temp_local, sigma_BN_temp_local, omega_BN_B_temp_local = pull_DynOutputs(obsSim,
+            #                                                                                                   plots=False)
+            #    r_sun_temp_local, r_earth_temp_local, r_moon_temp_local, r_mars_temp_local, r_beacons_temp_local = pull_DynCelestialOutputs(
+            #        obsSim,
+            #        plots=False)
+            #    sigma_tilde_BN_temp_local, omega_tilde_BN_temp_local = pull_senseOutputs(obsSim, plots=False)
+            #    #sigma_hat_BN_temp_local, omega_hat_BN_temp_local = pull_aekfOutputs(obsSim, plots=False)
 
-            for ind in range(1,len(beaconMsgNameList)):
-                obsSim.FSWClass.attGuideConfig.inputCelMessName = beaconMsgNameList[ind]
-                runSimSegment(obsSim, obsDurations[obsInd]/float(len(beaconMsgNameList)), np.hstack([r_BN_temp[-1, 1:4], v_BN_temp[-1, 1:4]]).tolist(),
-                              np.hstack([sigma_BN_temp[-1, 1:4], omega_BN_B_temp[-1, 1:4]]).tolist(), timeStr)
-                r_BN_temp_local, v_BN_temp_local, sigma_BN_temp_local, omega_BN_B_temp_local = pull_DynOutputs(obsSim,
-                                                                                                               plots=False)
-                r_sun_temp_local, r_earth_temp_local, r_moon_temp_local, r_mars_temp_local, r_beacons_temp_local = pull_DynCelestialOutputs(
-                    obsSim,
-                    plots=False)
-                sigma_tilde_BN_temp_local, omega_tilde_BN_temp_local = pull_senseOutputs(obsSim, plots=False)
-                sigma_hat_BN_temp_local, omega_hat_BN_temp_local = pull_aekfOutputs(obsSim, plots=False)
-
-                if ind > 0:
-                    #   Update celestial positions
-                    r_sun_temp = np.concatenate((r_sun_temp, r_sun_temp_local))
-                    r_earth_temp = np.concatenate((r_earth_temp, r_earth_temp_local))
-                    r_moon_temp = np.concatenate((r_moon_temp, r_moon_temp_local))
-                    r_mars_temp = np.concatenate((r_mars_temp, r_mars_temp_local))
-                    # r_beacons_temp_local = np.concatenate((r_beacons, r_beacons_temp_local))
-
-                    #   Update SC dynamic params
-                    r_BN_temp = np.concatenate((r_BN_temp, r_BN_temp_local))
-                    v_BN_temp = np.concatenate((v_BN_temp, v_BN_temp_local))
-                    sigma_BN_temp = np.concatenate((sigma_BN_temp, sigma_BN_temp_local))
-                    omega_BN_B_temp = np.concatenate((omega_BN_B_temp, omega_BN_B_temp_local))
+                # if ind > 0:
+                #     #   Update celestial positions
+                #     r_sun_temp = np.concatenate((r_sun_temp, r_sun_temp_local))
+                #     r_earth_temp = np.concatenate((r_earth_temp, r_earth_temp_local))
+                #     r_moon_temp = np.concatenate((r_moon_temp, r_moon_temp_local))
+                #     r_mars_temp = np.concatenate((r_mars_temp, r_mars_temp_local))
+                #     # r_beacons_temp_local = np.concatenate((r_beacons, r_beacons_temp_local))
+                #
+                #     #   Update SC dynamic params
+                #     r_BN_temp = np.concatenate((r_BN_temp, r_BN_temp_local))
+                #     v_BN_temp = np.concatenate((v_BN_temp, v_BN_temp_local))
+                #     sigma_BN_temp = np.concatenate((sigma_BN_temp, sigma_BN_temp_local))
+                #     omega_BN_B_temp = np.concatenate((omega_BN_B_temp, omega_BN_B_temp_local))
 
             takeImage = np.ones([1,len(r_BN_temp)])
 
@@ -254,8 +252,8 @@ def propAndObs_Scenario(useNavOutputs, genPlots):
             #else:
             camInputPos = r_BN_temp
 
-            detectorArrays, imgTimes, imgPos, imgMRP, imgBeaconPos = genCamImages(cam, beacons, camInputPos, r_earth, r_moon,
-                                                                                  r_mars, takeImage)
+            detectorArrays, imgTimes, imgPos, imgMRP, imgBeaconPos = genCamImages(cam, beacons, camInputPos, sigma_BN_temp, omega_BN_B_temp,
+                                                                                  r_earth, r_moon, r_mars, takeImage)
             # Run the Image Processing Module
 
 
