@@ -104,24 +104,26 @@ msg = { 'bodies': [
 	bod.luna,
 	sc
 	], 
-	'add_stars': 0,'rm_occ': 1, 'add_bod': 1, 'psf': 1, 
-	'raster': 1, 'photon': 0, 'dark': 0, 'read': 0}
-
+	'addStars': 1,'rmOcc': 1, 'addBod': 0, 'psf': 1, 
+	'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 'dt': 0.1}
 cam = camera.camera(
 	2, 				#detector_height
 	2, 				#detector_width
 	5.0, 			#focal_length
-	512, 			#resolution_height
-	512,			#resolution_width
+	512, 			#resolutionHeight
+	512,			#resolutionWidth
 	np.identity(3), #body2cameraDCM
 	1000,		    #maximum magnitude
 	-1000,			#minimum magnitude (for debugging)
 	qe,
 	tc,
-	1,
+	.1,
 	0.01**2, #effective area in m^2
 	100, #dark current in electrons per second
 	100, #std for read noise in electrons
+	100, #bin size
+	2**16, #max bin depth
+	1,
 	sc,
 	msg
 	)
@@ -231,15 +233,15 @@ msg = { 'bodies': [
 	bod.luna,
 	sc
 	], 
-	'add_stars': 1,'rm_occ': 1, 'add_bod': 1, 'psf': 1, 
-	'raster': 1, 'photon': 1, 'dark': 1, 'read': 1}
+	'addStars': 1,'rmOcc': 1, 'addBod': 1, 'psf': 1, 
+	'raster': 1, 'photon': 1, 'dark': 1, 'read': 1, 'dt': 0.1}
 
 cam = camera.camera(
 	1, 				#detector_height
 	1, 				#detector_width
 	5.0, 			#focal_length
-	512, 			#resolution_height
-	512,			#resolution_width
+	512, 			#resolutionHeight
+	512,			#resolutionWidth
 	np.identity(3), #body2cameraDCM
 	1000,		    #maximum magnitude
 	-1000,			#minimum magnitude (for debugging)
@@ -249,110 +251,240 @@ cam = camera.camera(
 	0.01**2, #effective area in m^2
 	100, #dark current in electrons per second
 	100, #std for read noise in electrons
+	100, #bin size
+	2**16, #max bin depth
+	1,
 	sc,
 	msg
 	)
 
-take_image_arr = np.concatenate([np.zeros(1),np.ones(20),np.zeros(1)])
+takeImageArr = np.concatenate([np.zeros(1),np.ones(20),np.zeros(1)])
 
 psi = 0
 theta = 0
 phi = 0
 
 sc.attitudeDCM = np.identity(3)
-msg['take_image'] = 1
-cam.update_state()
-msg['take_image'] = 0
-cam.update_state()
+msg['takeImage'] = 1
+cam.updateState()
+msg['takeImage'] = 0
+cam.updateState()
 
-for take_image in take_image_arr:
+for takeImage in takeImageArr:
 	sc.attitudeDCM = adcs.Euler321_2DCM(psi,theta,phi)
 	psi += np.deg2rad(0.05)
-	msg['take_image'] = take_image
-	cam.update_state()
+	msg['takeImage'] = takeImage
+	cam.updateState()
 
-for take_image in take_image_arr:
+for takeImage in takeImageArr:
 	sc.attitudeDCM = adcs.Euler321_2DCM(psi,theta,phi)
 	theta += np.deg2rad(0.05)
-	msg['take_image'] = take_image
-	cam.update_state()
+	msg['takeImage'] = takeImage
+	cam.updateState()
 
-for take_image in take_image_arr:
+for takeImage in takeImageArr:
 	sc.attitudeDCM = adcs.Euler321_2DCM(psi,theta,phi)
 	phi += np.deg2rad(0.15)
-	msg['take_image'] = take_image
-	cam.update_state()
+	msg['takeImage'] = takeImage
+	cam.updateState()
 
-take_image_arr = np.concatenate([np.zeros(1),np.ones(40),np.zeros(1)])
+takeImageArr = np.concatenate([np.zeros(1),np.ones(40),np.zeros(1)])
 
-for take_image in take_image_arr:
+for takeImage in takeImageArr:
 	sc.attitudeDCM = adcs.Euler321_2DCM(psi,theta,phi)
 	psi += np.deg2rad(0.05)/2
 	theta += np.deg2rad(0.05)/2
 	phi += np.deg2rad(0.15)/2
 
-	msg['take_image'] = take_image
-	cam.update_state()
+	msg['takeImage'] = takeImage
+	cam.updateState()
 
 
 psi = np.deg2rad(90)
 theta = 0
 phi = 0
 sc.attitudeDCM = adcs.Euler321_2DCM(psi,theta,phi)
-msg['take_image'] = 1
-cam.update_state()
-msg['take_image'] = 0
-cam.update_state()
+msg['takeImage'] = 1
+cam.updateState()
+msg['takeImage'] = 0
+cam.updateState()
 
-# for take_image in take_image_arr:
+# for takeImage in takeImageArr:
 # 	sc.attitudeDCM = adcs.Euler321_2DCM(psi,theta,phi)
 # 	psi += np.deg2rad(0.05)/2
 # 	theta += np.deg2rad(0.05)/2
 # 	phi += np.deg2rad(0.15)/2
-# 	msg['take_image'] = take_image
-# 	cam.update_state()
+# 	msg['takeImage'] = takeImage
+# 	cam.updateState()
 
 plt.figure()
-plt.imshow(cam.images[0].detector_array.reshape(
-	cam.resolution_height,cam.resolution_width))
+plt.imshow(cam.images[0].detectorArray.reshape(
+	cam.resolutionHeight,cam.resolutionWidth),cmap='Greys_r')
 plt.title('Still Image')
 plt.xlabel('Pixel')
 plt.ylabel('Line')
 
 plt.figure()
-plt.imshow(cam.images[1].detector_array.reshape(
-	cam.resolution_height,cam.resolution_width))
+plt.imshow(cam.images[1].detectorArray.reshape(
+	cam.resolutionHeight,cam.resolutionWidth),cmap='Greys_r')
 plt.title('0.1 Degree Yaw')
 plt.xlabel('Pixel')
 plt.ylabel('Line')
 
 plt.figure()
-plt.imshow(cam.images[2].detector_array.reshape(
-	cam.resolution_height,cam.resolution_width))
+plt.imshow(cam.images[2].detectorArray.reshape(
+	cam.resolutionHeight,cam.resolutionWidth),cmap='Greys_r')
 plt.title('0.1 Degree Pitch')
 plt.xlabel('Pixel')
 plt.ylabel('Line')
 
 plt.figure()
-plt.imshow(cam.images[3].detector_array.reshape(
-	cam.resolution_height,cam.resolution_width))
+plt.imshow(cam.images[3].detectorArray.reshape(
+	cam.resolutionHeight,cam.resolutionWidth),cmap='Greys_r')
 plt.title('0.1 Degree Roll')
 plt.xlabel('Pixel')
 plt.ylabel('Line')
 
 plt.figure()
-plt.imshow(cam.images[4].detector_array.reshape(
-	cam.resolution_height,cam.resolution_width))
+plt.imshow(cam.images[4].detectorArray.reshape(
+	cam.resolutionHeight,cam.resolutionWidth),cmap='Greys_r')
 plt.title('0.1 Degree Yaw, Pitch, and Roll')
 plt.xlabel('Pixel')
 plt.ylabel('Line')
 
 plt.figure()
-plt.imshow(cam.images[5].detector_array.reshape(
-	cam.resolution_height,cam.resolution_width))
+plt.imshow(cam.images[5].detectorArray.reshape(
+	cam.resolutionHeight,cam.resolutionWidth),cmap='Greys_r')
 plt.title('Still Image With Visible Beacons')
 plt.xlabel('Pixel')
 plt.ylabel('Line')
+
+# pdb.set_trace()
+###############################################################################
+#
+#	Breann's Angular Size Question
+#
+###############################################################################
+
+msg = { 'bodies': [
+	bod.earth,
+	bod.luna,
+	sc
+	], 
+	'addStars': 1,'rmOcc': 0, 'addBod': 0, 'psf': 1, 
+	'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 'dt': 0.1}
+
+cam = camera.camera(
+	1, 				#detector_height
+	1, 				#detector_width
+	5.0, 			#focal_length
+	512, 			#resolutionHeight
+	512,			#resolutionWidth
+	np.identity(3), #body2cameraDCM
+	1000,		    #maximum magnitude
+	-1000,			#minimum magnitude (for debugging)
+	qe,
+	tc,
+	1,
+	0.01**2, #effective area in m^2
+	100, #dark current in electrons per second
+	100, #std for read noise in electrons
+	100, #bin size
+	2**16, #max bin depth
+	1,
+	sc,
+	msg
+	)
+
+
+cam.msg['addStars'] = 0
+cam.msg['rmOcc'] = 0
+cam.msg['addBod'] = 0
+cam.msg['psf'] = 1
+cam.msg['raster'] = 1
+cam.msg['photon'] = 1
+cam.msg['dark'] = 1
+cam.msg['read'] = 1
+cam.msg['takeImage'] = 0
+cam.msg['bodies'] = [bod.earth,sc]
+offset = 0
+bod.earth.state = np.array([au/1000,0,0,0,0,0])
+sc.state = bod.earth.state - np.array(
+		[1000000*np.cos(offset)
+		,1000000*np.sin(offset)
+		,0
+		,0,0,0]
+		)
+
+psi = offset
+theta = np.deg2rad(0)
+phi = np.deg2rad(0)
+attitudeDCM = adcs.Euler321_2DCM(psi,theta,phi)
+sc.attitudeDCM = attitudeDCM
+cam.msg['takeImage'] = 1
+cam.updateState()
+cam.msg['takeImage'] = 0
+cam.updateState()
+
+sc.state = bod.earth.state - np.array(
+		[500000*np.cos(offset)
+		,500000*np.sin(offset)
+		,0
+		,0,0,0]
+		)
+
+psi = offset
+theta = np.deg2rad(0)
+phi = np.deg2rad(0)
+attitudeDCM = adcs.Euler321_2DCM(psi,theta,phi)
+sc.attitudeDCM = attitudeDCM
+cam.msg['takeImage'] = 1
+cam.updateState()
+cam.msg['takeImage'] = 0
+cam.updateState()
+sc.state = bod.earth.state - np.array(
+		[100000*np.cos(offset)
+		,100000*np.sin(offset)
+		,0
+		,0,0,0]
+		)
+
+
+
+psi = offset
+theta = np.deg2rad(0)
+phi = np.deg2rad(0)
+attitudeDCM = adcs.Euler321_2DCM(psi,theta,phi)
+sc.attitudeDCM = attitudeDCM
+cam.msg['takeImage'] = 1
+cam.updateState()
+cam.msg['takeImage'] = 0
+cam.updateState()
+
+plt.figure()
+plt.imshow(cam.images[0].detectorArray.reshape(cam.resolutionHeight,cam.resolutionWidth))
+plt.xlabel('Pixel')
+plt.ylabel('Line')
+plt.title('Earth at 1e6 km. Angular Size ≈ 0.73 deg')
+plt.figure()
+plt.imshow(cam.images[1].detectorArray.reshape(cam.resolutionHeight,cam.resolutionWidth))
+plt.xlabel('Pixel')
+plt.ylabel('Line')
+plt.title('Earth at 5e5 km. Angular Size ≈ 1.46 deg')
+plt.figure()
+plt.imshow(cam.images[2].detectorArray.reshape(cam.resolutionHeight,cam.resolutionWidth))
+plt.xlabel('Pixel')
+plt.ylabel('Line')
+plt.title('Earth at 1e5 km. Angular Size ≈ 7.27 deg')
+
+minPix = np.array([min(cam.images[0].scenes[0].pixel), min(cam.images[1].scenes[0].pixel), min(cam.images[2].scenes[0].pixel)])
+maxPix = np.array([max(cam.images[0].scenes[0].pixel), max(cam.images[1].scenes[0].pixel), max(cam.images[2].scenes[0].pixel)])
+pixDiff = maxPix - minPix
+percentOfDetector = pixDiff/cam.resolutionWidth
+angularSizeOnDetector = percentOfDetector*cam.angularWidth
+
+dist2Earth = np.array([1000000, 500000, 100000])
+angularDistance = np.rad2deg(np.arctan2(2*bod.earth.r_eq,dist2Earth))
 
 pdb.set_trace()
 
@@ -367,15 +499,15 @@ pdb.set_trace()
 # 	bod.luna,
 # 	sc
 # 	], 
-# 	'add_stars': 0,'rm_occ': 1, 'add_bod': 1, 'psf': 1, 
-# 	'raster': 1, 'photon': 0, 'dark': 0, 'read': 0}
+# 	'addStars': 0,'rmOcc': 1, 'addBod': 1, 'psf': 1, 
+# 	'raster': 1, 'photon': 0, 'dark': 0, 'read': 0, 'dt': 0.01}
 
 # cam = camera.camera(
-# 	2, 				#detector_height
-# 	2, 				#detector_width
+# 	1, 				#detector_height
+# 	1, 				#detector_width
 # 	5.0, 			#focal_length
-# 	512, 			#resolution_height
-# 	512,			#resolution_width
+# 	512, 			#resolutionHeight
+# 	512,			#resolutionWidth
 # 	np.identity(3), #body2cameraDCM
 # 	1000,		    #maximum magnitude
 # 	-1000,			#minimum magnitude (for debugging)
@@ -385,14 +517,16 @@ pdb.set_trace()
 # 	0.01**2, #effective area in m^2
 # 	100, #dark current in electrons per second
 # 	100, #std for read noise in electrons
+	# 100, #bin size
+	# 2**16, #max bin depth
 # 	sc,
 # 	msg
 # 	)
 
 
 # #Force camera FOV tobe that of the camera in the DRM
-# cam.angular_height=10
-# cam.angular_width=12
+# cam.angularHeight=10
+# cam.angularWidth=12
 
 # offsets = [
 # 	np.deg2rad(0),
@@ -408,15 +542,15 @@ pdb.set_trace()
 # 	'135_deg.npz'
 # 	]
 
-# cam.msg['add_stars'] = 0
-# cam.msg['rm_occ'] = 0
-# cam.msg['add_bod'] = 1
+# cam.msg['addStars'] = 0
+# cam.msg['rmOcc'] = 0
+# cam.msg['addBod'] = 1
 # cam.msg['psf'] = 1
 # cam.msg['raster'] = 1
 # cam.msg['photon'] = 1
 # cam.msg['dark'] = 1
 # cam.msg['read'] = 1
-# cam.msg['take_image'] = 0
+# cam.msg['takeImage'] = 0
 
 # for i in range(0,len(offsets)):
 # 	print(offset)
@@ -437,13 +571,13 @@ pdb.set_trace()
 # 	phi = np.deg2rad(0)
 # 	attitudeDCM = adcs.Euler321_2DCM(psi,theta,phi)
 # 	sc.attitudeDCM = attitudeDCM
-# 	cam.msg['take_image'] = 1
-# 	cam.update_state()
-# 	cam.msg['take_image'] = 0
-# 	cam.update_state()
+# 	cam.msg['takeImage'] = 1
+# 	cam.updateState()
+# 	cam.msg['takeImage'] = 0
+# 	cam.updateState()
 # 	plt.figure()
-# 	plt.imshow(cam.images[i].detector_array.reshape(
-# 		cam.resolution_height,cam.resolution_width))
+# 	plt.imshow(cam.images[i].detectorArray.reshape(
+# 		cam.resolutionHeight,cam.resolutionWidth))
 
 # 	np.savez(filename[i],
 # 		sun_pos = np.array([0,0,0]),
@@ -451,27 +585,27 @@ pdb.set_trace()
 # 		moon_pos = bod.luna.state[0:3],
 # 		sc_pos = sc.state[0:3],
 # 		sc_dcm = attitudeDCM,
-# 		detector_array = cam.images[i].detector_array
+# 		detectorArray = cam.images[i].detectorArray
 # 		)
 # print('##########################################')
 # pdb.set_trace()
-# cam.msg['add_stars'] = 1
-# cam.msg['rm_occ'] = 0
-# cam.msg['add_bod'] = 0
+# cam.msg['addStars'] = 1
+# cam.msg['rmOcc'] = 0
+# cam.msg['addBod'] = 0
 # cam.msg['psf'] = 1
 # cam.msg['raster'] = 1
 # cam.msg['photon'] = 1
 # cam.msg['dark'] = 1
 # cam.msg['read'] = 1
-# cam.msg['take_image'] = 0
+# cam.msg['takeImage'] = 0
 # #Need to reinitiate the camera so we can have stars
 
 # cam = camera.camera(
-# 	2, 				#detector_height
-# 	2, 				#detector_width
+# 	1, 				#detector_height
+# 	1, 				#detector_width
 # 	5.0, 			#focal_length
-# 	512, 			#resolution_height
-# 	512,			#resolution_width
+# 	512, 			#resolutionHeight
+# 	512,			#resolutionWidth
 # 	np.identity(3), #body2cameraDCM
 # 	1000,		    #maximum magnitude
 # 	-1000,			#minimum magnitude (for debugging)
@@ -481,30 +615,33 @@ pdb.set_trace()
 # 	0.01**2, #effective area in m^2
 # 	100, #dark current in electrons per second
 # 	100, #std for read noise in electrons
+	# 100, #bin size
+	# 2**16, #max bin depth
 # 	sc,
 # 	msg
 # 	)
 # #Force camera FOV tobe that of the camera in the DRM
-# cam.angular_height=10
-# cam.angular_width=12
+# cam.angularHeight=10
+# cam.angularWidth=12
 
 
-# cam.msg['take_image'] = 1
-# cam.update_state()
-# msg['take_image'] = 0
-# cam.update_state()
+# cam.msg['takeImage'] = 1
+# cam.updateState()
+# msg['takeImage'] = 0
+# cam.updateState()
 # pdb.set_trace()
 # np.savez('stars_only.npz',
 # 	sun_pos = np.array([0,0,0]),
 # 	sc_pos = sc.state[0:3],
 # 	sc_dcm = attitudeDCM,
-# 	detector_array = cam.images[0].detector_array
+# 	detectorArray = cam.images[0].detectorArray
 # 	)
-# plt.imshow(cam.images[0].detector_array.reshape(
-# 	cam.resolution_height,cam.resolution_width))
+# plt.imshow(cam.images[0].detectorArray.reshape(
+# 	cam.resolutionHeight,cam.resolutionWidth))
 # plt.figure()
 # plt.plot(cam.images[0].scenes[0].pixel,cam.images[0].scenes[0].line,'.')
 # pdb.set_trace()
+
 ###############################################################################
 #
 #	Verification that IP, Nav, and Cam are all doing pixel/line conversion
@@ -519,8 +656,8 @@ pdb.set_trace()
 # bod.earth.r_eq = 10
 # bod.luna.state = np.array([1200, 1000, 400])
 # bod.luna.r_eq = 10
-# msg['add_stars'] = 0
-# msg['add_bod']	= 1
+# msg['addStars'] = 0
+# msg['addBod']	= 1
 # msg['bodies'] = [bod.earth,bod.luna,sc]
 # sc.attitudeDCM = np.array([
 # 	[0 , 1, 0],
@@ -532,8 +669,8 @@ pdb.set_trace()
 # 	5120, 				#detector_height
 # 	5120, 				#detector_width
 # 	100, 			#focal_length
-# 	1024, 			#resolution_height
-# 	1024,			#resolution_width
+# 	1024, 			#resolutionHeight
+# 	1024,			#resolutionWidth
 # 	np.identity(3), #body2cameraDCM
 # 	1000,		    #maximum magnitude
 # 	-1000,			#minimum magnitude (for debugging)
@@ -543,27 +680,29 @@ pdb.set_trace()
 # 	0.01**2, #effective area in m^2
 # 	100, #dark current in electrons per second
 # 	100, #std for read noise in electrons
+	# 100, #bin size
+	# 2**16, #max bin depth
 # 	sc,
 # 	msg
 # 	)
 
-# cam.msg['take_image'] = 1
-# cam.update_state()
-# cam.msg['take_image'] = 0
-# cam.update_state()
+# cam.msg['takeImage'] = 1
+# cam.updateState()
+# cam.msg['takeImage'] = 0
+# cam.updateState()
 
-# plt.imshow(cam.images[0].detector_array.reshape(cam.resolution_height,cam.resolution_width))
+# plt.imshow(cam.images[0].detectorArray.reshape(cam.resolutionHeight,cam.resolutionWidth))
 # print('Pixel: ' + str(cam.images[0].scenes[0].pixel))
 # print('Line: ' + str(cam.images[0].scenes[0].line))
 
 # pix_diff = cam.images[0].scenes[0].pixel[1] - cam.images[0].scenes[0].pixel[0]
 # line_diff = cam.images[0].scenes[0].line[1] - cam.images[0].scenes[0].line[0]
 
-# pix_diff_percent = pix_diff/cam.resolution_width
-# line_diff_percent = line_diff/cam.resolution_height
+# pix_diff_percent = pix_diff/cam.resolutionWidth
+# line_diff_percent = line_diff/cam.resolutionHeight
 
-# pix_ang_separation = pix_diff_percent*cam.angular_width
-# line_ang_separation = line_diff_percent*cam.angular_height
+# pix_ang_separation = pix_diff_percent*cam.angularWidth
+# line_ang_separation = line_diff_percent*cam.angularHeight
 
 # total_diff = np.sqrt(pix_ang_separation**2 + line_ang_separation**2)
 
@@ -587,8 +726,8 @@ pdb.set_trace()
 # 	5120, 				#detector_height
 # 	5120, 				#detector_width
 # 	100, 			#focal_length
-# 	512, 			#resolution_height
-# 	2048,			#resolution_width
+# 	512, 			#resolutionHeight
+# 	2048,			#resolutionWidth
 # 	np.identity(3), #body2cameraDCM
 # 	1000,		    #maximum magnitude
 # 	-1000,			#minimum magnitude (for debugging)
@@ -598,16 +737,18 @@ pdb.set_trace()
 # 	0.01**2, #effective area in m^2
 # 	100, #dark current in electrons per second
 # 	100, #std for read noise in electrons
+	# 100, #bin size
+	# 2**16, #max bin depth
 # 	sc,
 # 	msg
 # 	)
 
-# cam.msg['take_image'] = 1
-# cam.update_state()
-# cam.msg['take_image'] = 0
-# cam.update_state()
+# cam.msg['takeImage'] = 1
+# cam.updateState()
+# cam.msg['takeImage'] = 0
+# cam.updateState()
 
-# plt.imshow(cam.images[0].detector_array.reshape(cam.resolution_height,cam.resolution_width))
+# plt.imshow(cam.images[0].detectorArray.reshape(cam.resolutionHeight,cam.resolutionWidth))
 # print('Pixel: ' + str(cam.images[0].scenes[0].pixel))
 # print('Line: ' + str(cam.images[0].scenes[0].line))
 
@@ -617,8 +758,8 @@ pdb.set_trace()
 # 	5120, 				#detector_height
 # 	5120, 				#detector_width
 # 	100, 			#focal_length
-# 	512, 			#resolution_height
-# 	2048,			#resolution_width
+# 	512, 			#resolutionHeight
+# 	2048,			#resolutionWidth
 # 	np.identity(3), #body2cameraDCM
 # 	1000,		    #maximum magnitude
 # 	-1000,			#minimum magnitude (for debugging)
@@ -628,38 +769,41 @@ pdb.set_trace()
 # 	0.01**2, #effective area in m^2
 # 	100, #dark current in electrons per second
 # 	100, #std for read noise in electrons
+	# 100, #bin size
+	# 2**16, #max bin depth
 # 	sc,
 # 	msg
 # 	)
 
-# cam.msg['take_image'] = 1
-# cam.update_state()
-# cam.msg['take_image'] = 0
-# cam.update_state()
+# cam.msg['takeImage'] = 1
+# cam.updateState()
+# cam.msg['takeImage'] = 0
+# cam.updateState()
 
-# plt.imshow(cam.images[0].detector_array.reshape(cam.resolution_height,cam.resolution_width))
+# plt.imshow(cam.images[0].detectorArray.reshape(cam.resolutionHeight,cam.resolutionWidth))
 # print('Pixel: ' + str(cam.images[0].scenes[0].pixel))
 # print('Line: ' + str(cam.images[0].scenes[0].line))
 
 pdb.set_trace()
 #spoof an array of take image messages.
 #one scene per ms, 500 scenes = 0.5s exposure
-take_image = np.arange(100)
-take_image[take_image < 1] = 0
-take_image[take_image > 1] = 0
-take_image = take_image/take_image
-take_image[np.isnan(take_image)] = 0
+takeImage = np.arange(100)
+takeImage[takeImage < 1] = 0
+takeImage[takeImage > 12] = 0
+takeImage = takeImage/takeImage
+takeImage[np.isnan(takeImage)] = 0
 
-psi = offset
+psi = offset - 0.1
 theta = np.deg2rad(0)
 phi = np.deg2rad(0)
 
 
-for i in range(0,len(take_image)):
-	msg['take_image'] = take_image[i]
+for i in range(0,len(takeImage)):
+	psi += np.deg2rad(0.1)
+	msg['takeImage'] = takeImage[i]
 	attitudeDCM = adcs.Euler321_2DCM(psi,theta,phi)
 	sc.attitudeDCM = attitudeDCM
-	cam.update_state()
+	cam.updateState()
 	# theta = theta - np.deg2rad(360/10000)
 	# phi = phi - np.deg2rad(360/1000)
 	# psi = psi - np.deg2rad(360/1000)
@@ -669,39 +813,41 @@ for i in range(0,len(take_image)):
 pdb.set_trace()
 # plt.figure()
 # plt.gca().invert_yaxis()
-# for each_scene in cam.images[0].scenes:
-# 	plt.plot(each_scene.pixel,each_scene.line,'.')
+# for eachScene in cam.images[0].scenes:
+# 	plt.plot(eachScene.pixel,eachScene.line,'.')
 
 # plt.figure()
 # plt.gca().invert_yaxis()
-# for each_scene in cam.images[0].scenes:
-# 	plt.plot(each_scene.psf_pixel,each_scene.psf_line,'.')
+# for eachScene in cam.images[0].scenes:
+# 	plt.plot(eachScene.psfPixel,eachScene.psfLine,'.')
 
 plt.figure()
-nonzero = cam.images[0].detector_array[cam.images[0].detector_array !=0]
+nonzero = cam.images[0].detectorArray[cam.images[0].detectorArray !=0]
 
 
-plt.imshow(cam.images[0].detector_array.reshape(
-	cam.resolution_height,cam.resolution_width))
+plt.imshow(cam.images[3].detectorArray.reshape(cam.resolutionHeight,cam.resolutionWidth),cmap='Greys_r')
+plt.xlabel('Pixel')
+plt.ylabel('Line')
+plt.title('1 Degree Yaw')
 # 	colors.PowerNorm(gamma=1./2.),cmap='PuBu_r')#,
 #	norm=LogNorm(vmin=min(nonzero), vmax=max(nonzero)))
 
 pdb.set_trace()
 
-x = np.linspace(0, cam.resolution_height -1, cam.resolution_height)
-y = np.linspace(0, cam.resolution_width - 1,cam.resolution_width)
+x = np.linspace(0, cam.resolutionHeight -1, cam.resolutionHeight)
+y = np.linspace(0, cam.resolutionWidth - 1,cam.resolutionWidth)
 x,y = np.meshgrid(x,y)
 
 fig = plt.figure()
 ax = fig.gca(projection='3d')
-ax.plot_surface(x, y, cam.images[0].detector_array.reshape(
-	cam.resolution_height,cam.resolution_width), 
+ax.plot_surface(x, y, cam.images[0].detectorArray.reshape(
+	cam.resolutionHeight,cam.resolutionWidth), 
 	cmap=cm.coolwarm, linewidth=0.2, antialiased=True)
 pdb.set_trace()
 
 if msg['raster']:
 	plt.figure(figsize=(7, 7))
-	im = plt.imshow(img.detector_array.reshape(50,50))
+	im = plt.imshow(img.detectorArray.reshape(50,50))
 	plt.title('Rasterized Stars with PSF and Read Noise')
 	plt.xlabel('Pixel')
 	plt.ylabel('Line')
@@ -709,8 +855,8 @@ else:
 	fig, ax = plt.subplots(figsize=(7, 7))
 	ax.set_facecolor('black')
 	ax.plot(img.pixel,img.line,'w.',markersize=1)
-	ax.set_xlim(0, cam.resolution_width)
-	ax.set_ylim(0, cam.resolution_height)
+	ax.set_xlim(0, cam.resolutionWidth)
+	ax.set_ylim(0, cam.resolutionHeight)
 	ax.set_title('Stars with PSF')
 	ax.set_xlabel('Pixel')
 	ax.set_ylabel('Line')
@@ -729,9 +875,9 @@ plt.legend()
 plt.figure()
 plt.plot(cam.qe['lambda'],cam.qe['throughput'],label='Quantum Effeciency')
 plt.plot(cam.tc['lambda'],cam.tc['throughput'],label='Transmission')
-plt.plot(cam.lambda_set,cam.sensitivity_curve,'--',color='black',label='Sensitivity')
+plt.plot(cam.lambda_set,cam.sensitivityCurve,'--',color='black',label='Sensitivity')
 
-# plt.plot(cam.lambda_set,cam.sensitivity_curve*bb,label='Incident Light')
+# plt.plot(cam.lambda_set,cam.sensitivityCurve*bb,label='Incident Light')
 plt.title('QE, Transmission, and Sensitivity Curves')
 plt.xlabel('Wavelength (nm)')
 plt.ylabel('Percent Throughput')
@@ -756,7 +902,7 @@ plt.figure()
 plt.plot(lambda_set*1e9,bb3000/max(bb5000),'r',label='3000 K')
 plt.plot(lambda_set*1e9,bb4000/max(bb5000),'g',label='4000 K')
 plt.plot(lambda_set*1e9,bb5000/max(bb5000),'b',label='5000 K')
-plt.plot(cam.lambda_set,cam.sensitivity_curve,'--',color='black',label='Sensitivity Curve')
+plt.plot(cam.lambda_set,cam.sensitivityCurve,'--',color='black',label='Sensitivity Curve')
 plt.ylim([0,1.05])
 plt.title('Normalized Fluxes for Three Stars with Sensitivity Curve')
 plt.xlabel('Wavelength (nm)')
@@ -770,7 +916,7 @@ bb5000 = img.planck(5000,cam.lambda_set*1e-9)
 plt.plot(cam.lambda_set,bb3000/max(bb5000),'r',label='3000 K')
 plt.plot(cam.lambda_set,bb4000/max(bb5000),'g',label='4000 K')
 plt.plot(cam.lambda_set,bb5000/max(bb5000),'b',label='5000 K')
-plt.plot(cam.lambda_set,cam.sensitivity_curve,'--',color='black',label='Sensitivity Curve')
+plt.plot(cam.lambda_set,cam.sensitivityCurve,'--',color='black',label='Sensitivity Curve')
 plt.title('Normalized Fluxes for Three Stars with Sensitivity Curve (Zoomed)')
 plt.xlabel('Wavelength (nm)')
 plt.ylabel('Dimensionless Flux/Percent Throughput')
@@ -779,9 +925,9 @@ plt.legend(loc=2)
 
 
 plt.figure()
-plt.plot(cam.lambda_set,bb3000/max(bb5000)*cam.sensitivity_curve,'r',label='3000 K')
-plt.plot(cam.lambda_set,bb4000/max(bb5000)*cam.sensitivity_curve,'g',label='4000 K')
-plt.plot(cam.lambda_set,bb5000/max(bb5000)*cam.sensitivity_curve,'b',label='5000 K')
+plt.plot(cam.lambda_set,bb3000/max(bb5000)*cam.sensitivityCurve,'r',label='3000 K')
+plt.plot(cam.lambda_set,bb4000/max(bb5000)*cam.sensitivityCurve,'g',label='4000 K')
+plt.plot(cam.lambda_set,bb5000/max(bb5000)*cam.sensitivityCurve,'b',label='5000 K')
 plt.title('Camera Response to Three Stars')
 plt.ylabel('Dimensionless Response Function')
 plt.xlabel('Wavelength (nm)')
