@@ -52,14 +52,12 @@ def log_DynCelestialOutputs(TheDynSim, samplingTime):
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.moonGravBody.bodyInMsgName, samplingTime)
     return
 
-
 def log_DynOutputs(TheDynSim, samplingTime):
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.scObject.scStateOutMsgName, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.simpleNavObject.outputAttName, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.gyroModel.OutputDataMsg, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.starTracker.outputStateMessage, samplingTime)
     return
-
 
 def log_aekfOutputs(TheDynSim, samplingTime):
     print "Att output msg name:", TheDynSim.FSWClass.attFilter.outputMsgName
