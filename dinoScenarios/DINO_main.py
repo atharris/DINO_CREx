@@ -63,4 +63,4 @@ if __name__ == "__main__":
     # multiOrbitBeacons_dynScenario
     # attFilter_dynScenario
     # opnavCamera_dynScenario
-    scene.attFilter_dynScenario(DINO_DynSim(0.01, 0.01))
+    scene.attFilter_dynScenario(DINO_DynSim(0.01, True, 0.01))

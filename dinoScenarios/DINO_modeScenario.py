@@ -142,7 +142,7 @@ def propAndObs_Scenario(useNavOutputs, genPlots):
     propDurations = [10.0]
     obsDurations = [10.0]
 
-    modeSeq = [0]
+    modeSeq = [1]
 
     propInd = 0
     obsInd = 0
