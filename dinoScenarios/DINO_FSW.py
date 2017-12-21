@@ -31,6 +31,7 @@ try:
     import rwMotorVoltage
     import simulationArchTypes
     import celestialTwoBodyPoint
+    import hillPoint
 
     # import message declarations
     import fswMessages
@@ -42,7 +43,7 @@ except ImportError:
     from Basilisk.simulation import reactionWheelStateEffector, rwVoltageInterface
     from Basilisk.fswAlgorithms import ephem_difference, ephem_nav_converter
     from Basilisk.fswAlgorithms import MRP_PD, inertial3D, attTrackingError, rwMotorTorque, celestialTwoBodyPoint
-
+    from Basilisk.fswAlgorithms import hillPoint
 import AttitudeFilter as aekf
 
 class FSWClass():
@@ -58,7 +59,7 @@ class FSWClass():
         SimBase.fswPyProc.createPythonTask(self.pyTaskName, self.defaultTaskTimeStep,True, 30)
 
         #   Create normal tasks
-        SimBase.fswProc.addTask(SimBase.CreateNewTask(self.taskName, self.defaultTaskTimeStep))
+        SimBase.dynProc.addTask(SimBase.CreateNewTask(self.taskName, self.defaultTaskTimeStep))
 
         self.attFilter = aekf.AttitudeFilter("attitudeFilter", True, 100)
 
@@ -74,9 +75,9 @@ class FSWClass():
         self.attErrorWrap = SimBase.setModelDataWrap(self.attErrorConfig)
         self.attErrorWrap.ModelTag = "attErrorInertial3D"
 
-        self.attGuideConfig = celestialTwoBodyPoint.celestialTwoBodyPointConfig()
+        self.attGuideConfig = hillPoint.hillPointConfig()
         self.attGuideWrap = SimBase.setModelDataWrap(self.attGuideConfig)
-        self.attGuideWrap.ModelTag = "guidanceInertial3D"
+        self.attGuideWrap.ModelTag = "hillPoint"
 
         # Initialize all modules
         self.baseEphemeris = SimBase.DynClass.marsConvertName # ephemeris base for planet data and vehicle reference
@@ -92,14 +93,12 @@ class FSWClass():
         SimBase.AddModelToTask(self.taskName, self.attGuideWrap, self.attGuideConfig)
         SimBase.AddModelToTask(self.taskName, self.attErrorWrap, self.attErrorConfig)
 
-
-
-    def SetPdController(self):
+    def SetPdController(self, SimBase):
         self.mrpControlConfig.inputGuidName = self.attErrorConfig.outputDataName
         self.mrpControlConfig.inputGuidName = "attErrorInertial3DMsg"
         self.mrpControlConfig.inputVehicleConfigDataName = "vehicleConfigName"
-        self.mrpControlConfig.outputDataName = "LrRequested"
-        self.mrpControlConfig.K = 3.5
+        self.mrpControlConfig.outputDataName = SimBase.DynClass.extForceTorque.cmdTorqueInMsgName
+        self.mrpControlConfig.K = 10.0
         self.mrpControlConfig.P = 30.0
         return
 
@@ -107,8 +106,6 @@ class FSWClass():
         self.attGuideConfig.outputDataName = "attGuideInertial"
         self.attGuideConfig.inputNavDataName = SimBase.DynClass.simpleNavObject.outputTransName
         self.attGuideConfig.inputCelMessName = SimBase.DynClass.earthGravBody.bodyInMsgName
-        self.attGuideConfig.inputSecMessName = SimBase.DynClass.sunGravBody.bodyInMsgName
-        self.attGuideConfig.singularityThresh = 1.0 * math.pi/180.0
         return
 
 
@@ -142,7 +139,7 @@ class FSWClass():
     def InitAllFSWObjects(self, SimBase):
         self.SetAttGuidance(SimBase)
         self.SetAttError(SimBase)
-        self.SetPdController()
+        self.SetPdController(SimBase)
         self.SetMotorTorqueConv(SimBase)
         self.SetAttitudeFilter()
         return

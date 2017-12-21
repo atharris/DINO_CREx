@@ -67,13 +67,15 @@ def define_dino_earthSOI():
     sun_BN = np.array([32.95818246003602, 14.73457852769852, -0.5045251942794007]) * 1000.
     return sun_RN, sun_BN
 
-def genCamImages(cam, beaconList, r_BN, r_earth, r_moon, r_mars, takeImage):
+def genCamImages(cam, beaconList, r_BN, sigma_BN, omega_BN, r_earth, r_moon, r_mars, takeImage):
     """
     Generates camera images given spacecraft and celestial body positions. Intended to return all necessary/relevant
     information for genImgProc().
     :params: cam                : Camera object
     :params: beaconList         : List of nav beacon objects ordered from Earth
     :params: r_BN      : spacecraft inertial position vector over observation window
+    :params: sigma_BN : spacecraft body-inertial attitude over observation window
+    :params: omega_BN : spacecraft body-inertial angular rate over observation window
     :params: r_earth           : earth inertial position vector over observation window
     :params: r_moon                 : moon inertial position vector over observation window
     :params: r_mars                 : mars inertial position vector over observation window
@@ -114,24 +116,23 @@ def genCamImages(cam, beaconList, r_BN, r_earth, r_moon, r_mars, takeImage):
         else:
             sc2bdy = mars.state - cam.scState
 
-        sc2bdyNormed = sc2bdy / np.linalg.norm(sc2bdy)
-        RA = np.arctan2(sc2bdyNormed[1], sc2bdyNormed[0])
-        DE = np.arctan2(sc2bdyNormed[2], np.sqrt(sc2bdyNormed[0] ** 2 + sc2bdyNormed[1] ** 2))
-        cam.scDCM = rbk.euler3212C(np.array([RA, -DE, 0]))
+        #sc2bdyNormed = sc2bdy / np.linalg.norm(sc2bdy)
+        #RA = np.arctan2(sc2bdyNormed[1], sc2bdyNormed[0])
+        #DE = np.arctan2(sc2bdyNormed[2], np.sqrt(sc2bdyNormed[0] ** 2 + sc2bdyNormed[1] ** 2))
+        #cam.scDCM = rbk.euler3212C(np.array([RA, -DE, 0]))
+        cam.scDCM = rbk.MRP2C(sigma_BN[i,1:4])
 
-        # test that forces camera to point at cental star
-        # in orion's belt
-        # cam.scDCM = rbk.euler3212C(
-        #     np.array([
-        #         np.deg2rad(191.93049537),
-        #         np.deg2rad(59.68873246),
-        #         np.deg2rad(0)]))
+        if np.linalg.norm(omega_BN[i,1:4]) < math.degrees(0.1):
+            cam.takeImage = 1
+            cam.imgTime = r_BN[i][0]
+        else:
+            cam.takeImage = 0
 
-
-        # cam.scDCM = rbk.MRP2C(sigma_BN[i][1:4])
-        cam.takeImage = takeImage[i]
-        cam.imgTime = r_BN[i][0]
         cam.updateState()
+
+    cam.takeImage = 0
+    cam.updateState()
+
 
     detectorArrays = []
     imgTimes = []
