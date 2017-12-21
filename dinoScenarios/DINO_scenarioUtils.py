@@ -130,6 +130,10 @@ def genCamImages(cam, beaconList, r_BN, sigma_BN, omega_BN, r_earth, r_moon, r_m
 
         cam.updateState()
 
+    cam.takeImage = 0
+    cam.updateState()
+
+
     detectorArrays = []
     imgTimes = []
     imgPos = []
