@@ -231,8 +231,8 @@ def pull_aekfOutputs(TheDynSim, plots=True):
 
     sigma_err = np.copy(sigma_hat_BN)
     omega_err = np.copy(omega_hat_BN)
-    sigma_err[:-1, 1:4] = np.array(sigma_hat_BN)[:, 1:4] - np.array(sigma_BN)[1:, 1:4]
-    omega_err[:-1, 1:4] = np.array(omega_hat_BN)[:, 1:4] - np.array(omega_BN_B)[1:, 1:4]
+    sigma_err[:, 1:4] = np.array(sigma_hat_BN)[:, 1:4] - np.array(sigma_BN)[1:, 1:4]
+    omega_err[:, 1:4] = np.array(omega_hat_BN)[:, 1:4] - np.array(omega_BN_B)[1:, 1:4]
     covarLog = np.zeros([np.shape(sigma_err)[0], 7])
     covarLog[:, 0:4] = covarLog1
     covarLog[:, 4:7] = covarLog2[:, 1:4]
