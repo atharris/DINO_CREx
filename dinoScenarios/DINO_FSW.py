@@ -43,7 +43,7 @@ except ImportError:
     from Basilisk.simulation import reactionWheelStateEffector, rwVoltageInterface
     from Basilisk.fswAlgorithms import ephem_difference, ephem_nav_converter
     from Basilisk.fswAlgorithms import MRP_PD, inertial3D, attTrackingError, rwMotorTorque, celestialTwoBodyPoint
-    from BSK.fswAlgorithms import hillPoint
+    from Basilisk.fswAlgorithms import hillPoint
 import AttitudeFilter as aekf
 
 class FSWClass():
