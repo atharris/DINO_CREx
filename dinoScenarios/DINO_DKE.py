@@ -90,7 +90,7 @@ class DynamicsClass():
 
         # Assign initialized modules to tasks
         SimBase.AddModelToTask(self.taskName, self.spiceObject, None, 20)
-        SimBase.AddModelToTask(self.taskName, self.ephemConvert, None, 19)
+#        SimBase.AddModelToTask(self.taskName, self.ephemConvert, None, 19)
         SimBase.AddModelToTask(self.taskName, self.scObject, None, 10)
         SimBase.AddModelToTask(self.taskName, self.simpleNavObject, None, 9)
         SimBase.AddModelToTask(self.taskName, self.srpDynEffector, None, 18)

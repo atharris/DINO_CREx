@@ -55,8 +55,8 @@ def log_DynCelestialOutputs(TheDynSim, samplingTime):
 def log_DynOutputs(TheDynSim, samplingTime):
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.scObject.scStateOutMsgName, samplingTime)
     TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.simpleNavObject.outputAttName, samplingTime)
-    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.gyroModel.OutputDataMsg, samplingTime)
-    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.starTracker.outputStateMessage, samplingTime)
+#    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.gyroModel.OutputDataMsg, samplingTime)
+#    TheDynSim.TotalSim.logThisMessage(TheDynSim.DynClass.starTracker.outputStateMessage, samplingTime)
     return
 
 def log_aekfOutputs(TheDynSim, samplingTime):
@@ -96,8 +96,8 @@ def pull_DynCelestialOutputs(TheDynSim, plots=True):
     print 'r_sun = ', la.norm(r_sun[-1:, 1:])
     print 'r_mars = ', la.norm(r_mars[-1:, 1:])
     print 'r_moon = ', la.norm(r_moon[-1:, 1:])
-    for ind in range(0, len(r_beacons)):
-        print 'r_beacon' + str(ind) + ':', la.norm(r_beacons[ind][-1:, 1:])
+    #for ind in range(0, len(r_beacons)):
+    #    print 'r_beacon' + str(ind) + ':', la.norm(r_beacons[ind][-1:, 1:])
 
     dict_data_color = {
         'moon': [r_moon, 'cyan'],

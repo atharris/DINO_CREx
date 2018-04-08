@@ -92,7 +92,7 @@ def propAndObs_Scenario(useNavOutputs, genPlots):
     """
 
     propSim = DINO_main.DINO_DynSim(10., True, 10.)
-    propSim.DynClass.scObject.hub.useRotation = False
+    propSim.DynClass.scObject.hub.useRotation = True
     obsSim = DINO_main.DINO_DynSim(0.01, True, 0.01)
 
     propSim.InitializeSimulation()
@@ -141,10 +141,10 @@ def propAndObs_Scenario(useNavOutputs, genPlots):
 
     ##   Define Mode Sequence Parameters.
 
-    propDurations = [100.0]
-    obsDurations = [2.*1260.0]
+    propDurations = [60.*60.*24.0*30.]
+    obsDurations = [60.*5.0]
 
-    modeSeq = [0,1]
+    modeSeq = [0, 1]
 
     propInd = 0
     obsInd = 0
@@ -208,7 +208,7 @@ def propAndObs_Scenario(useNavOutputs, genPlots):
             obsSim.FSWClass.attGuideConfig.inputCelMessName = beaconMsgNameList[0]
             obsSim = runSimSegment(obsSim, obsDurations[propInd]/float(len(beaconMsgNameList)), np.hstack([r_BN[-1, 1:4], v_BN[-1, 1:4]]).tolist(), np.hstack([sigma_BN[-1, 1:4],omega_BN_B[-1, 1:4]]).tolist() , timeStr)
 
-            r_BN_temp, v_BN_temp, sigma_BN_temp, omega_BN_B_temp = pull_DynOutputs(obsSim, plots=True)
+            r_BN_temp, v_BN_temp, sigma_BN_temp, omega_BN_B_temp = pull_DynOutputs(obsSim, plots=False)
             r_sun_temp, r_earth_temp, r_moon_temp, r_mars_temp, r_beacons_temp = pull_DynCelestialOutputs(obsSim, plots=False)
 
             for ind in range(1,len(beaconMsgNameList)):
@@ -307,4 +307,4 @@ def propAndObs_Scenario(useNavOutputs, genPlots):
 
 
 if __name__ == "__main__":
-    propAndObs_Scenario(False, False)
+    propAndObs_Scenario(False, True)
